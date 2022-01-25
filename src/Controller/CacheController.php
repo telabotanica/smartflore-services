@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\Service\SentiersService;
+use App\Service\TrailsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -19,8 +19,8 @@ class CacheController extends AbstractController
     /**
      * @Route("/cache/warmup")
      */
-    public function warmupCache(SentiersService $sentiers)
+    public function warmupCache(TrailsService $trails)
     {
-        return $this->json($sentiers->getSentiers());
+        return $this->json($trails->getTrails());
     }
 }
