@@ -40,12 +40,22 @@ class Trails
     private $dateModification;
 
     /**
-     * @var \DateTime;
+     * @var ?\DateTime;
      */
     private $dateSuppression;
 
     /**
-     * @var string;
+     * @var ?Occurrence[]
+     */
+    private $occurrences;
+
+    /**
+     * @var ?Chemin;
+     */
+    private $chemin;
+
+    /**
+     * @var ?string;
      */
     private $details;
 }
