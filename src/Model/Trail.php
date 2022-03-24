@@ -2,7 +2,7 @@
 
 namespace App\Model;
 
-class Trails
+class Trail
 {
     /**
      * @var int;

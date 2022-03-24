@@ -15,9 +15,15 @@ class Occurrence
     private $taxo;
 
     /**
-     * @var string
+     * @var Fiche
      */
     private $fiche;
 
+    public function addFiche(Fiche $fiche) {
+        $this->fiche[] = $fiche;
+    }
+
+    public function removeFiche(Fiche $fiche) {
+    }
 
 }

@@ -23,4 +23,12 @@ class CacheController extends AbstractController
     {
         return $this->json($trails->getTrails());
     }
+
+    /**
+     * @Route("/cache/sentier")
+     */
+    public function testCache(TrailsService $trails)
+    {
+        return $this->json($trails->getTrail());
+    }
 }
