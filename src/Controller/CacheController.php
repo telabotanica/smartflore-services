@@ -13,15 +13,17 @@ class CacheController extends AbstractController
      */
     public function cacheStatus()
     {
+        // cache last refresh ?
         return $this->json(['status' => 'OK']);
     }
 
     /**
-     * @Route("/cache/warmup")
+     * @Route("/cache/warmup/{force}", name="cache_warmup", requirements={"force"="force"})
      */
-    public function warmupCache(TrailsService $trails)
+    public function warmupCache(TrailsService $trails, bool $force = false)
     {
-        return $this->json($trails->getTrails());
+        // response: warmed up ok / already fresh / forced refresh / error
+        return $this->json($trails->getTrails($force));
     }
 
     /**
