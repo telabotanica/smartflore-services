@@ -19,3 +19,6 @@ framework:
             trails.cache:
                 default_lifetime: 31536000  # One year
                 adapter: cache.app
+            taxon.cache:
+                default_lifetime: 31536000  # One year
+                adapter: cache.app

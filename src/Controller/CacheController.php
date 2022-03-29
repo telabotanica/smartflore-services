@@ -31,6 +31,6 @@ class CacheController extends AbstractController
      */
     public function testCache(TrailsService $trails)
     {
-        return $this->json($trails->getTrail());
+        return $this->json($trails->getTrail('Sur les traces des mineurs de Gréasque'));
     }
 }
