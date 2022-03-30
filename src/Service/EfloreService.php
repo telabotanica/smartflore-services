@@ -10,17 +10,23 @@ class EfloreService
     private $client;
     private $cache;
     private $taxonApiBaseUrl;
-    private $cardApiUrlTemplate;
+    private $cardApiBaseUrl;
+    private $imagesApiUrlTemplate;
+    private $imageCosteApiUrlTemplate;
 
     public function __construct(
         string $taxonApiBaseUrl,
-        string $cardApiUrlTemplate,
+        string $cardApiBaseUrl,
+        string $imagesApiUrlTemplate,
+        string $imageCosteApiUrlTemplate,
         CacheInterface $taxonCache
     ) {
         $this->client = HttpClient::create();
         $this->cache = $taxonCache;
         $this->taxonApiBaseUrl = $taxonApiBaseUrl;
-        $this->cardApiUrlTemplate = $cardApiUrlTemplate;
+        $this->cardApiBaseUrl = $cardApiBaseUrl;
+        $this->imagesApiUrlTemplate = $imagesApiUrlTemplate;
+        $this->imageCosteApiUrlTemplate = $imageCosteApiUrlTemplate;
     }
 
     public function getTaxonInfo(string $taxonRepo, string $taxonNameId, bool $refresh = false)
@@ -49,7 +55,8 @@ class EfloreService
 
         if ($refresh || !$cardCache->isHit()) {
             // eg. https://www.tela-botanica.org/wikini/eFloreRedaction/api/rest/0.5/pages/SmartFloreBDTFXnt6293?txt.format=text/html&txt.section.titre=Description%2CUsages%2C%C3%89cologie+%26+habitat%2CSources
-            $cardApiUrl = sprintf($this->cardApiUrlTemplate, strtoupper($taxonRepo).'nt'.$taxonId);
+            $cardApiUrl = $this->cardApiBaseUrl.'SmartFlore'.strtoupper($taxonRepo).'nt'.$taxonId
+                .'?txt.format=text/html&txt.section.titre='.urlencode('Description,Usages,Écologie & habitat,Sources');
             $response = $this->client->request('GET', $cardApiUrl);
 
             if (200 !== $response->getStatusCode()) {
@@ -62,5 +69,47 @@ class EfloreService
         }
 
         return $cardCache->get();
+    }
+
+    public function getCardSpeciesImages(string $taxonRepo, string $taxonNameId, bool $refresh = false)
+    {
+        $cardImagesCache = $this->cache->getItem('taxon.card.images.'.$taxonNameId);
+
+        if ($refresh || !$cardImagesCache->isHit()) {
+            // eg. https://api.tela-botanica.org/service:del:0.1/images?navigation.depart=0&navigation.limite=4&masque.standard=1&masque.referentiel=bdtfx&masque.nn=74934&tri=votes&ordre=desc&protocole=3&format=CRS
+            $imagesApiUrl = sprintf($this->imagesApiUrlTemplate, $taxonRepo, $taxonNameId);
+            $response = $this->client->request('GET', $imagesApiUrl);
+
+            if (200 !== $response->getStatusCode()) {
+                throw new \Exception('Response status code is different than expected.');
+            }
+            $images = json_decode($response->getContent());
+
+            $cardImagesCache->set($images);
+            $this->cache->save($cardImagesCache);
+        }
+
+        return $cardImagesCache->get();
+    }
+
+    public function getCardCosteImage(string $taxonRepo, string $taxonId, bool $refresh = false)
+    {
+        $cardImageCosteCache = $this->cache->getItem('taxon.card.images.coste.'.$taxonId);
+
+        if ($refresh || !$cardImageCosteCache->isHit()) {
+            // eg. https://api.tela-botanica.org/service:eflore:0.1/coste/images?masque.nt=29926&referentiel=bdtfx
+            $imageCosteApiUrl = sprintf($this->imageCosteApiUrlTemplate, $taxonId, $taxonRepo);
+            $response = $this->client->request('GET', $imageCosteApiUrl);
+
+            if (200 !== $response->getStatusCode()) {
+                throw new \Exception('Response status code is different than expected.');
+            }
+            $images = json_decode($response->getContent());
+
+            $cardImageCosteCache->set($images);
+            $this->cache->save($cardImageCosteCache);
+        }
+
+        return $cardImageCosteCache->get();
     }
 }

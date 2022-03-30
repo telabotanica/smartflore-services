@@ -34,7 +34,7 @@ class TrailsService
         $trailsCache = $this->cache->getItem('trails.list');
 
         if ($refresh || !$trailsCache->isHit()) {
-            $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl, [
+            $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentiers/', [
                 'timeout' => 120,
                 'headers' => [
                     'Accept: application/json',
@@ -71,7 +71,7 @@ class TrailsService
         $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
 
         if ($refresh || !$trailCache->isHit()) {
-            $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.urlencode($trailName), [
+            $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentiers/'.urlencode($trailName), [
                 'timeout' => 120,
                 'headers' => [
                     'Accept: application/json',
@@ -88,5 +88,33 @@ class TrailsService
         }
 
         return $trailCache->get();
+    }
+
+    public function getTrailSpecieImages(string $trailName, string $taxonRepo, string $taxonId, bool $refresh = false)
+    {
+        $trailSpecieImagesCache = $this->cache->getItem('trails.trail.'.$trailName.'.images.'.strtoupper($taxonRepo).'nt'.$taxonId);
+
+        if ($refresh || !$trailSpecieImagesCache->isHit()) {
+            // https://www.tela-botanica.org/smart-form/services/Sentiers.php/sentier-illustration-fiche/?sentierTitre=Sentier%20botanique%20de%20la%20r%C3%A9serve%20naturelle%20Tr%C3%A9sor&ficheTag=SmartFloreTAXREFnt731626
+            $url = $this->smartfloreLegacyApiBaseUrl
+                .'sentier-illustration-fiche/?sentierTitre='.urlencode($trailName)
+                .'&ficheTag=SmartFlore'.strtoupper($taxonRepo).'nt'.$taxonId;
+            $response = $this->client->request('GET', $url, [
+                'timeout' => 120,
+                'headers' => [
+                    'Accept: application/json',
+                ],
+            ]);
+
+            if (200 !== $response->getStatusCode()) {
+                throw new \Exception('Response status code is different than expected.');
+            }
+            $images = json_decode($response->getContent());
+
+            $trailSpecieImagesCache->set($images);
+            $this->cache->save($trailSpecieImagesCache);
+        }
+
+        return $trailSpecieImagesCache->get();
     }
 }

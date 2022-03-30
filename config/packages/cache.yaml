@@ -16,9 +16,11 @@ framework:
 
         # Namespaced pools use the above "app" backend by default
         pools:
+            # smartflore side data
             trails.cache:
                 default_lifetime: 31536000  # One year
                 adapter: cache.app
+            # eflore side data
             taxon.cache:
                 default_lifetime: 31536000  # One year
                 adapter: cache.app

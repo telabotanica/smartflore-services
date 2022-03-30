@@ -3,29 +3,41 @@
 namespace App\Controller;
 
 use App\Service\EfloreService;
+use App\Service\TrailsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 
 class CardController extends AbstractController
 {
     /**
-     * @Route("/fiche/text/{taxonRepo}/{taxonNameId}", name="sentier_list")
+     * @Route("/fiche/text/{taxonRepo}/{taxonNameId}", name="card_text")
      */
     public function cardText(EfloreService $eflore, string $taxonRepo, string $taxonNameId)
     {
-        $nt = $eflore->getTaxonInfo($taxonRepo, $taxonNameId)->num_taxonomique;
-        return $this->json($eflore->getCardText($taxonRepo, $nt));
+        $taxonId = $eflore->getTaxonInfo($taxonRepo, $taxonNameId)->num_taxonomique;
+        return $this->json($eflore->getCardText($taxonRepo, $taxonId));
     }
 
     /**
-     * @Route("/fiche/images/{taxonRepo}/{taxonNameId}", name="sentier_list")
+     * @Route("/fiche/images/{taxonRepo}/{taxonNameId}/{trailName}", name="card_images")
      */
-    public function cardImages(EfloreService $eflore, string $taxonRepo, string $taxonNameId)
-    {
-        // https://www.tela-botanica.org/smart-form/services/Sentiers.php/sentier-illustration-fiche/?sentierTitre=Sentier%20botanique%20de%20la%20r%C3%A9serve%20naturelle%20Tr%C3%A9sor&ficheTag=SmartFloreTAXREFnt731626
-        // https://api-test.tela-botanica.org/service:eflore:0.1/coste/images?masque.nt=29926&referentiel=bdtfx
-        // https://api.tela-botanica.org/service:del:0.1/images?navigation.depart=0&navigation.limite=4&masque.standard=1&masque.referentiel=bdtfx&masque.nn=74934&tri=votes&ordre=desc&protocole=3&format=CRS
-//        $nt = $eflore->getTaxonInfo($taxonRepo, $taxonNameId)->num_taxonomique;
-//        return $this->json($eflore->getCardText($taxonRepo, $nt));
+    public function cardImages(
+        EfloreService $eflore,
+        TrailsService $trailsService,
+        string $taxonRepo,
+        string $taxonNameId,
+        string $trailName = ''
+    ) {
+        $taxonId = $eflore->getTaxonInfo($taxonRepo, $taxonNameId)->num_taxonomique;
+        $images = $eflore->getCardSpeciesImages($taxonRepo, $taxonNameId)->resultats;
+        $coste = $eflore->getCardCosteImage($taxonRepo, $taxonId)->resultats;
+        $trailSpecieImages = [];
+        if ($trailName) {
+            $trailSpecieImages = $trailsService->getTrailSpecieImages($trailName, $taxonRepo, $taxonId);
+        }
+
+        // array with image id / urls / author ?
+
+        return $this->json([$images, $coste, $trailSpecieImages]);
     }
 }
