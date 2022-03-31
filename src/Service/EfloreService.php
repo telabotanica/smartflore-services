@@ -19,10 +19,10 @@ class EfloreService
         string $cardApiBaseUrl,
         string $imagesApiUrlTemplate,
         string $imageCosteApiUrlTemplate,
-        CacheInterface $taxonCache
+        CacheInterface $trailsCache
     ) {
         $this->client = HttpClient::create();
-        $this->cache = $taxonCache;
+        $this->cache = $trailsCache;
         $this->taxonApiBaseUrl = $taxonApiBaseUrl;
         $this->cardApiBaseUrl = $cardApiBaseUrl;
         $this->imagesApiUrlTemplate = $imagesApiUrlTemplate;

@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Model\Trail;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
@@ -29,6 +30,10 @@ class TrailsService
         $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
     }
 
+    /**
+     * @param bool $refresh
+     * @return Trail[]
+     */
     public function getTrails(bool $refresh = false)
     {
         $trailsCache = $this->cache->getItem('trails.list');
@@ -45,19 +50,19 @@ class TrailsService
                 throw new \Exception('Response status code is different than expected.');
             }
 
-//            $extractor = new PropertyInfoExtractor([], [new PhpDocExtractor(), new ReflectionExtractor()]);
-//            $normalizer = [
-//                new ArrayDenormalizer(),
-//                new PropertyNormalizer(),
-//                new ObjectNormalizer(null, new CamelCaseToSnakeCaseNameConverter(), null, $extractor),
-//            ];
-//            $serializer = new Serializer($normalizer, [new JsonEncoder()]);
-//
-//            $data = $response->getContent();
-//
-//            $trails = $serializer->deserialize($data, 'App\Model\Trail[]', 'json');
+            $extractor = new PropertyInfoExtractor([], [new PhpDocExtractor(), new ReflectionExtractor()]);
+            $normalizer = [
+                new ArrayDenormalizer(),
+                new PropertyNormalizer(),
+                new ObjectNormalizer(null, new CamelCaseToSnakeCaseNameConverter(), null, $extractor),
+            ];
+            $serializer = new Serializer($normalizer, [new JsonEncoder()]);
 
-            $trails = json_decode($response->getContent());
+            $data = $response->getContent();
+
+            $trails = $serializer->deserialize($data, 'App\Model\Trail[]', 'json');
+
+//            $trails = json_decode($response->getContent());
 
             $trailsCache->set($trails);
             $this->cache->save($trailsCache);
@@ -81,7 +86,19 @@ class TrailsService
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
             }
-            $trail = json_decode($response->getContent());
+
+            $extractor = new PropertyInfoExtractor([], [new PhpDocExtractor(), new ReflectionExtractor()]);
+            $normalizer = [
+                new ArrayDenormalizer(),
+                new PropertyNormalizer(),
+                new ObjectNormalizer(null, new CamelCaseToSnakeCaseNameConverter(), null, $extractor),
+            ];
+            $serializer = new Serializer($normalizer, [new JsonEncoder()]);
+
+            $data = $response->getContent();
+
+            $trail = $serializer->deserialize($data, Trail::class, 'json');
+//            $trail = json_decode($response->getContent());
 
             $trailCache->set($trail);
             $this->cache->save($trailCache);

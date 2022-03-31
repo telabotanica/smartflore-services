@@ -19,25 +19,51 @@ class CardController extends AbstractController
     }
 
     /**
-     * @Route("/fiche/images/{taxonRepo}/{taxonNameId}/{trailName}", name="card_images")
+     * @Route("/fiche/images/{taxonRepo}/{taxonNameId}", name="card_images")
      */
     public function cardImages(
+        EfloreService $eflore,
+        string $taxonRepo,
+        string $taxonNameId
+    ) {
+        $images = $eflore->getCardSpeciesImages($taxonRepo, $taxonNameId)->resultats;
+dump($images);
+        // array with image id / urls / author ?
+
+        return $this->json($images);
+    }
+
+    /**
+     * @Route("/fiche/images/{taxonRepo}/{taxonNameId}/{trailName}", name="card_specie_images")
+     */
+    public function cardSpecieImages(
         EfloreService $eflore,
         TrailsService $trailsService,
         string $taxonRepo,
         string $taxonNameId,
-        string $trailName = ''
+        string $trailName
     ) {
         $taxonId = $eflore->getTaxonInfo($taxonRepo, $taxonNameId)->num_taxonomique;
-        $images = $eflore->getCardSpeciesImages($taxonRepo, $taxonNameId)->resultats;
-        $coste = $eflore->getCardCosteImage($taxonRepo, $taxonId)->resultats;
-        $trailSpecieImages = [];
-        if ($trailName) {
-            $trailSpecieImages = $trailsService->getTrailSpecieImages($trailName, $taxonRepo, $taxonId);
-        }
+        $trailSpecieImages = $trailsService->getTrailSpecieImages($trailName, $taxonRepo, $taxonId);
 
         // array with image id / urls / author ?
 
-        return $this->json([$images, $coste, $trailSpecieImages]);
+        return $this->json($trailSpecieImages);
+    }
+
+    /**
+     * @Route("/fiche/images/coste/{taxonRepo}/{taxonNameId}", name="card_coste_image")
+     */
+    public function cardCosteImage(
+        EfloreService $eflore,
+        string $taxonRepo,
+        string $taxonNameId
+    ) {
+        $taxonId = $eflore->getTaxonInfo($taxonRepo, $taxonNameId)->num_taxonomique;
+        $coste = $eflore->getCardCosteImage($taxonRepo, $taxonId)->resultats;
+
+        // array with image id / urls / author ?
+
+        return $this->json($coste);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\Service\TrailsService;
+use App\Service\CacheService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -13,17 +13,17 @@ class CacheController extends AbstractController
      */
     public function cacheStatus()
     {
-        // cache last refresh ?
+        // cache last refresh date and status
         return $this->json(['status' => 'OK']);
     }
 
     /**
      * @Route("/cache/warmup/{force}", name="cache_warmup", requirements={"force"="force"})
      */
-    public function warmupCache(TrailsService $trails, bool $force = false)
+    public function warmupCache(CacheService $cache, bool $force = false)
     {
         // response: warmed up ok / already fresh / forced refresh / error
-        return $this->json($trails->getTrails($force));
+        return $this->json($cache->warmup($force));
     }
 
     /**

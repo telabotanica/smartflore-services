@@ -10,12 +10,12 @@ class Occurrence
     private $position;
 
     /**
-     * @var Taxo
+     * @var Taxon
      */
     private $taxo;
 
     /**
-     * @var Fiche
+     * @var Fiche[]
      */
     private $fiche;
 
@@ -26,4 +26,39 @@ class Occurrence
     public function removeFiche(Fiche $fiche) {
     }
 
+    /**
+     * @return float[]
+     */
+    public function getPosition(): array
+    {
+        return $this->position;
+    }
+
+    /**
+     * @param float[] $position
+     * @return Occurrence
+     */
+    public function setPosition(array $position): Occurrence
+    {
+        $this->position = $position;
+        return $this;
+    }
+
+    /**
+     * @return Taxon
+     */
+    public function getTaxon(): Taxon
+    {
+        return $this->taxo;
+    }
+
+    /**
+     * @param Taxon $taxon
+     * @return Occurrence
+     */
+    public function setTaxon(Taxon $taxon): Occurrence
+    {
+        $this->taxo = $taxon;
+        return $this;
+    }
 }
