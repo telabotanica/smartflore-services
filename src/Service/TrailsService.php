@@ -89,14 +89,14 @@ class TrailsService
 
             $extractor = new PropertyInfoExtractor([], [new PhpDocExtractor(), new ReflectionExtractor()]);
             $normalizer = [
-                new ArrayDenormalizer(),
-                new PropertyNormalizer(),
+//                new ArrayDenormalizer(),
+//                new PropertyNormalizer(),
                 new ObjectNormalizer(null, new CamelCaseToSnakeCaseNameConverter(), null, $extractor),
             ];
             $serializer = new Serializer($normalizer, [new JsonEncoder()]);
 
             $data = $response->getContent();
-
+//dump(json_decode($data)->occurrences);die;
             $trail = $serializer->deserialize($data, Trail::class, 'json');
 //            $trail = json_decode($response->getContent());
 

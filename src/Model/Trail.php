@@ -211,15 +211,21 @@ class Trail
         return $this->occurrences;
     }
 
-    /**
-     * @param Occurrence[]|null $occurrences
-     * @return Trail
-     */
-    public function setOccurrences(?array $occurrences): Trail
-    {
-        $this->occurrences = $occurrences;
-        return $this;
+    public function addOccurrence(Occurrence $occurrence) {
+        $this->occurrences[] = $occurrence;
     }
+
+    public function removeOccurrence(Occurrence $occurrence) {}
+
+//    /**
+//     * @param Occurrence[]|null $occurrences
+//     * @return Trail
+//     */
+//    public function setOccurrences(?array $occurrences): Trail
+//    {
+//        $this->occurrences = $occurrences;
+//        return $this;
+//    }
 
     /**
      * @return Chemin|null
