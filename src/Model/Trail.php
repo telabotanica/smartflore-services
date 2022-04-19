@@ -5,7 +5,7 @@ namespace App\Model;
 class Trail
 {
     /**
-     * @var int;
+     * @var int|string;
      */
     private $id;
 
@@ -60,18 +60,18 @@ class Trail
     private $details;
 
     /**
-     * @return int
+     * @return int|string
      */
-    public function getId(): int
+    public function getId(): mixed
     {
         return $this->id;
     }
 
     /**
-     * @param int $id
+     * @param int|string $id
      * @return Trail
      */
-    public function setId(int $id): Trail
+    public function setId(mixed $id): Trail
     {
         $this->id = $id;
         return $this;

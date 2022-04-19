@@ -29,18 +29,18 @@ class EfloreService
         $this->imageCosteApiUrlTemplate = $imageCosteApiUrlTemplate;
     }
 
-    public function getTaxonInfo(string $taxonRepo, string $taxonNameId, bool $refresh = false)
+    public function getTaxonInfo(string $taxonRepo, int $taxonNameId, bool $refresh = false)
     {
         $taxonCache = $this->cache->getItem('taxon.'.$taxonRepo.'.'.$taxonNameId);
 
         if ($refresh || !$taxonCache->isHit()) {
             // eg. https://api.tela-botanica.org/service:eflore:0.1/taxref/taxons/125328
-            $response = $this->client->request('GET', $this->taxonApiBaseUrl.'/'.$taxonRepo.'/taxons/'.$taxonNameId);
+            $response = $this->client->request('GET', $this->taxonApiBaseUrl.$taxonRepo.'/taxons/'.$taxonNameId);
 
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
             }
-            $taxon = json_decode($response->getContent());
+            $taxon = json_decode($response->getContent(), true);
 
             $taxonCache->set($taxon);
             $this->cache->save($taxonCache);
@@ -83,7 +83,7 @@ class EfloreService
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
             }
-            $images = json_decode($response->getContent());
+            $images = json_decode($response->getContent(), true);
 
             $cardImagesCache->set($images);
             $this->cache->save($cardImagesCache);
@@ -104,7 +104,7 @@ class EfloreService
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
             }
-            $images = json_decode($response->getContent());
+            $images = json_decode($response->getContent(), true);
 
             $cardImageCosteCache->set($images);
             $this->cache->save($cardImageCosteCache);

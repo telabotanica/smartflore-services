@@ -36,7 +36,7 @@ class CacheService
             foreach ($trail->getOccurrences() as $occurrence) {
                 dump($occurrence);
                 $taxon = $occurrence->getTaxon();
-                $taxonId = $this->cards->getTaxonInfo($taxon->getReferential(), $taxon->getNumNom(), $force)->num_taxonomique;
+                $taxonId = $this->cards->getTaxonInfo($taxon->getReferential(), $taxon->getNumNom(), $force)['num_taxonomique'];
 
                 if (!in_array($taxonId, $alreadySeenTaxon)) {
                     $alreadySeenTaxon[] = $taxonId;
