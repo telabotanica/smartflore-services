@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Model\Trail;
+use Symfony\Component\HttpClient\CurlHttpClient;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
@@ -40,7 +41,7 @@ class TrailsService
 
         if ($refresh || !$trailsCache->isHit()) {
             $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentiers/', [
-                'timeout' => 120,
+                'timeout' => 180,
                 'headers' => [
                     'Accept: application/json',
                 ],
@@ -82,15 +83,15 @@ class TrailsService
                     'Accept: application/json',
                 ],
             ]);
-
+dump($this->smartfloreLegacyApiBaseUrl.'sentiers/'.urlencode($trailName));
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
             }
 
             $extractor = new PropertyInfoExtractor([], [new PhpDocExtractor(), new ReflectionExtractor()]);
             $normalizer = [
-//                new ArrayDenormalizer(),
-//                new PropertyNormalizer(),
+                new ArrayDenormalizer(),
+                new PropertyNormalizer(),
                 new ObjectNormalizer(null, new CamelCaseToSnakeCaseNameConverter(), null, $extractor),
             ];
             $serializer = new Serializer($normalizer, [new JsonEncoder()]);
@@ -98,7 +99,7 @@ class TrailsService
             $data = $response->getContent();
 //dump(json_decode($data)->occurrences);die;
             $trail = $serializer->deserialize($data, Trail::class, 'json');
-//            $trail = json_decode($response->getContent());
+//            $trail = json_decode($response->getContent(), true);
 
             $trailCache->set($trail);
             $this->cache->save($trailCache);
@@ -126,7 +127,7 @@ class TrailsService
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
             }
-            $images = json_decode($response->getContent());
+            $images = json_decode($response->getContent(), true);
 
             $trailSpecieImagesCache->set($images);
             $this->cache->save($trailSpecieImagesCache);

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Service\CacheService;
+use App\Service\TrailsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 

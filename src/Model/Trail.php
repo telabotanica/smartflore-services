@@ -25,11 +25,6 @@ class Trail
     private $position;
 
     /**
-     * @var string;
-     */
-    private $photo;
-
-    /**
      * @var \DateTime;
      */
     private $dateCreation;
@@ -50,19 +45,9 @@ class Trail
     private $occurrences;
 
     /**
-     * @var ?Chemin;
-     */
-    private $chemin;
-
-    /**
-     * @var ?string;
-     */
-    private $details;
-
-    /**
      * @return int|string
      */
-    public function getId(): mixed
+    public function getId()
     {
         return $this->id;
     }
@@ -71,7 +56,7 @@ class Trail
      * @param int|string $id
      * @return Trail
      */
-    public function setId(mixed $id): Trail
+    public function setId($id): Trail
     {
         $this->id = $id;
         return $this;
@@ -128,24 +113,6 @@ class Trail
     public function setPosition(array $position): Trail
     {
         $this->position = $position;
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getPhoto(): string
-    {
-        return $this->photo;
-    }
-
-    /**
-     * @param string $photo
-     * @return Trail
-     */
-    public function setPhoto(string $photo): Trail
-    {
-        $this->photo = $photo;
         return $this;
     }
 
@@ -226,40 +193,4 @@ class Trail
 //        $this->occurrences = $occurrences;
 //        return $this;
 //    }
-
-    /**
-     * @return Chemin|null
-     */
-    public function getChemin(): ?Chemin
-    {
-        return $this->chemin;
-    }
-
-    /**
-     * @param Chemin|null $chemin
-     * @return Trail
-     */
-    public function setChemin(?Chemin $chemin): Trail
-    {
-        $this->chemin = $chemin;
-        return $this;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getDetails(): ?string
-    {
-        return $this->details;
-    }
-
-    /**
-     * @param string|null $details
-     * @return Trail
-     */
-    public function setDetails(?string $details): Trail
-    {
-        $this->details = $details;
-        return $this;
-    }
 }

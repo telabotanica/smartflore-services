@@ -23,6 +23,10 @@ class CacheService
     /**
      * Smoke test each cached routes to warmup cache and check for defect
      * All in one solution
+     *
+     * for each trails :
+     * get occurrences, their taxon and infos
+     * trails -> trail -> occurrence -> taxon
      * @return array of stats ?
      */
     public function warmup(bool $force)

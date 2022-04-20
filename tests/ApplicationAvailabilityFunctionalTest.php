@@ -20,8 +20,8 @@ class ApplicationAvailabilityFunctionalTest extends WebTestCase
     public function urlProvider()
     {
         yield ['/cache/status'];
-//        yield ['/cache/warmup'];
-//        yield ['/sentiers'];
+        yield ['/cache/warmup'];
+        yield ['/sentiers'];
         yield ['/sentiers/Sur les traces des mineurs de Gréasque'];
         yield ['/fiche/text/bdtfx/74934']; // OK
         yield ['/fiche/images/bdtfx/74934']; // OK

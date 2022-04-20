@@ -62,7 +62,7 @@ class EfloreService
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
             }
-            $card = json_decode($response->getContent());
+            $card = json_decode($response->getContent(), true);
 
             $cardCache->set($card);
             $this->cache->save($cardCache);
