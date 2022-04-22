@@ -25,24 +25,14 @@ class Trail
     private $position;
 
     /**
-     * @var \DateTime;
-     */
-    private $dateCreation;
-
-    /**
-     * @var \DateTime;
-     */
-    private $dateModification;
-
-    /**
-     * @var ?\DateTime;
-     */
-    private $dateSuppression;
-
-    /**
-     * @var ?Occurrence[]
+     * @var ?Occurrence[] $occurrences
      */
     private $occurrences;
+
+    /**
+     * @var string;
+     */
+    private $details;
 
     /**
      * @return int|string
@@ -117,60 +107,6 @@ class Trail
     }
 
     /**
-     * @return \DateTime
-     */
-    public function getDateCreation(): \DateTime
-    {
-        return $this->dateCreation;
-    }
-
-    /**
-     * @param \DateTime $dateCreation
-     * @return Trail
-     */
-    public function setDateCreation(\DateTime $dateCreation): Trail
-    {
-        $this->dateCreation = $dateCreation;
-        return $this;
-    }
-
-    /**
-     * @return \DateTime
-     */
-    public function getDateModification(): \DateTime
-    {
-        return $this->dateModification;
-    }
-
-    /**
-     * @param \DateTime $dateModification
-     * @return Trail
-     */
-    public function setDateModification(\DateTime $dateModification): Trail
-    {
-        $this->dateModification = $dateModification;
-        return $this;
-    }
-
-    /**
-     * @return \DateTime|null
-     */
-    public function getDateSuppression(): ?\DateTime
-    {
-        return $this->dateSuppression;
-    }
-
-    /**
-     * @param \DateTime|null $dateSuppression
-     * @return Trail
-     */
-    public function setDateSuppression(?\DateTime $dateSuppression): Trail
-    {
-        $this->dateSuppression = $dateSuppression;
-        return $this;
-    }
-
-    /**
      * @return Occurrence[]|null
      */
     public function getOccurrences(): ?array
@@ -184,6 +120,11 @@ class Trail
 
     public function removeOccurrence(Occurrence $occurrence) {}
 
+//    public function hasOccurrence()
+//    {
+//        return count($this->occurrences) > 0;
+//    }
+
 //    /**
 //     * @param Occurrence[]|null $occurrences
 //     * @return Trail
@@ -193,4 +134,22 @@ class Trail
 //        $this->occurrences = $occurrences;
 //        return $this;
 //    }
+
+    /**
+     * @return string
+     */
+    public function getDetails(): string
+    {
+        return $this->details;
+    }
+
+    /**
+     * @param string $details
+     * @return Trail
+     */
+    public function setDetails(string $details): Trail
+    {
+        $this->details = $details;
+        return $this;
+    }
 }

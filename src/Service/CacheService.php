@@ -3,21 +3,25 @@
 namespace App\Service;
 
 use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Component\Stopwatch\Stopwatch;
 
 class CacheService
 {
-    public $trails;
-    public $cards;
-    public $cache;
+    private $trails;
+    private $cards;
+    private $cache;
+    private $stopwatch;
 
     public function __construct(
         TrailsService $trails,
         EfloreService $cards,
-        CacheInterface $trailsCache
+        CacheInterface $trailsCache,
+        Stopwatch $stopwatch
     ) {
         $this->trails = $trails;
         $this->cards = $cards;
         $this->cache = $trailsCache;
+        $this->stopwatch = $stopwatch;
     }
 
     /**
@@ -31,39 +35,42 @@ class CacheService
      */
     public function warmup(bool $force)
     {
+        $this->stopwatch->start('warmup-cache');
         $alreadySeenTaxon = [];
         $trails = $this->trails->getTrails($force);
         foreach ($trails as $trail) {
-            $trail = $this->trails->getTrail($trail->getNom(), $force);
-//            dump($trail);
+            $trailName = $this->trails->extractTrailName($trail);
+            $trail = $this->trails->getTrail($trailName, $force);
 
             foreach ($trail->getOccurrences() as $occurrence) {
-                dump($occurrence);
-                $taxon = $occurrence->getTaxon();
-                $taxonId = $this->cards->getTaxonInfo($taxon->getReferential(), $taxon->getNumNom(), $force)['num_taxonomique'];
+                $taxon = $occurrence->getTaxo();
+                $taxonId = $this->cards->getTaxonInfo($taxon->getReferentiel(), $taxon->getNumNom(), $force)['num_taxonomique'];
 
                 if (!in_array($taxonId, $alreadySeenTaxon)) {
                     $alreadySeenTaxon[] = $taxonId;
 
-                    $this->cards->getCardText($taxon->getReferential(), $taxonId, $force);
-                    $this->cards->getCardSpeciesImages($taxon->getReferential(), $taxon->getNumNom(), $force);
-                    $this->cards->getCardCosteImage($taxon->getReferential(), $taxonId, $force);
+                    $this->cards->getCardText($taxon->getReferentiel(), $taxonId, $force);
+                    $this->cards->getCardSpeciesImages($taxon->getReferentiel(), $taxon->getNumNom(), $force);
+                    $this->cards->getCardCosteImage($taxon->getReferentiel(), $taxonId, $force);
                 }
 
-                $this->trails->getTrailSpecieImages($trail->getNom(), $taxon->getReferential(), $taxonId, $force);
+                $this->trails->getTrailSpecieImages($trailName, $taxon->getReferentiel(), $taxonId, $force);
             }
         }
 
+        $event = $this->stopwatch->stop('warmup-cache');
+
+        // execution time, counts, errors, etc.
         $stats = [
             'trails' => count($trails),
             'date' => (new \DateTime())->format('r'),
             'forced' => $force,
+            'time' => $event->getDuration(),
         ];
         $statsCache = $this->cache->getItem('stats');
         $statsCache->set($stats);
         $this->cache->save($statsCache);
 
-        // execution time, counts, errors, etc.
         return $stats;
     }
 

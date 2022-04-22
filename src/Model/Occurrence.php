@@ -17,36 +17,38 @@ class Occurrence
     /**
      * @return float[]
      */
-    public function getPosition(): array
+    public function getPosition(): ?array
     {
         return $this->position;
     }
 
     /**
-     * @param float[] $position
+     * @param float $position
      * @return Occurrence
      */
-    public function setPosition(array $position): Occurrence
+    public function addPosition(float $position): Occurrence
     {
-        $this->position = $position;
+        $this->position[] = $position;
         return $this;
     }
+
+    public function removePosition(float $position) {}
 
     /**
      * @return Taxon
      */
-    public function getTaxon(): Taxon
+    public function getTaxo(): Taxon
     {
         return $this->taxo;
     }
 
     /**
-     * @param Taxon $taxon
+     * @param Taxon $taxo
      * @return Occurrence
      */
-    public function setTaxon(Taxon $taxon): Occurrence
+    public function setTaxo(Taxon $taxo): Occurrence
     {
-        $this->taxo = $taxon;
+        $this->taxo = $taxo;
         return $this;
     }
 }

@@ -3,16 +3,12 @@
 namespace App\Service;
 
 use App\Model\Trail;
-use Symfony\Component\HttpClient\CurlHttpClient;
 use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter;
 use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Normalizer\PropertyNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Contracts\Cache\CacheInterface;
 
@@ -51,19 +47,14 @@ class TrailsService
                 throw new \Exception('Response status code is different than expected.');
             }
 
-            $extractor = new PropertyInfoExtractor([], [new PhpDocExtractor(), new ReflectionExtractor()]);
+            $extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
             $normalizer = [
                 new ArrayDenormalizer(),
-                new PropertyNormalizer(),
-                new ObjectNormalizer(null, new CamelCaseToSnakeCaseNameConverter(), null, $extractor),
+                new ObjectNormalizer(null, null, null, $extractor),
             ];
             $serializer = new Serializer($normalizer, [new JsonEncoder()]);
 
-            $data = $response->getContent();
-
-            $trails = $serializer->deserialize($data, 'App\Model\Trail[]', 'json');
-
-//            $trails = json_decode($response->getContent());
+            $trails = $serializer->deserialize($response->getContent(), 'App\Model\Trail[]', 'json');
 
             $trailsCache->set($trails);
             $this->cache->save($trailsCache);
@@ -83,23 +74,19 @@ class TrailsService
                     'Accept: application/json',
                 ],
             ]);
-dump($this->smartfloreLegacyApiBaseUrl.'sentiers/'.urlencode($trailName));
+
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
             }
 
-            $extractor = new PropertyInfoExtractor([], [new PhpDocExtractor(), new ReflectionExtractor()]);
+            $extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
             $normalizer = [
                 new ArrayDenormalizer(),
-                new PropertyNormalizer(),
-                new ObjectNormalizer(null, new CamelCaseToSnakeCaseNameConverter(), null, $extractor),
+                new ObjectNormalizer(null, null, null, $extractor),
             ];
             $serializer = new Serializer($normalizer, [new JsonEncoder()]);
 
-            $data = $response->getContent();
-//dump(json_decode($data)->occurrences);die;
-            $trail = $serializer->deserialize($data, Trail::class, 'json');
-//            $trail = json_decode($response->getContent(), true);
+            $trail = $serializer->deserialize($response->getContent(), Trail::class, 'json');
 
             $trailCache->set($trail);
             $this->cache->save($trailCache);
@@ -134,5 +121,14 @@ dump($this->smartfloreLegacyApiBaseUrl.'sentiers/'.urlencode($trailName));
         }
 
         return $trailSpecieImagesCache->get();
+    }
+
+    public function extractTrailName(Trail $trail): string
+    {
+        if ($trail->getDetails()) {
+            return substr($trail->getDetails(), strlen($this->smartfloreLegacyApiBaseUrl.'sentiers/'));
+        }
+
+        return '';
     }
 }

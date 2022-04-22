@@ -35,7 +35,10 @@ class EfloreService
 
         if ($refresh || !$taxonCache->isHit()) {
             // eg. https://api.tela-botanica.org/service:eflore:0.1/taxref/taxons/125328
-            $response = $this->client->request('GET', $this->taxonApiBaseUrl.$taxonRepo.'/taxons/'.$taxonNameId);
+            $response = $this->client->request('GET',
+                $this->taxonApiBaseUrl.$taxonRepo.'/taxons/'.$taxonNameId,
+                ['timeout' => 120]
+            );
 
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
@@ -57,7 +60,7 @@ class EfloreService
             // eg. https://www.tela-botanica.org/wikini/eFloreRedaction/api/rest/0.5/pages/SmartFloreBDTFXnt6293?txt.format=text/html&txt.section.titre=Description%2CUsages%2C%C3%89cologie+%26+habitat%2CSources
             $cardApiUrl = $this->cardApiBaseUrl.'SmartFlore'.strtoupper($taxonRepo).'nt'.$taxonId
                 .'?txt.format=text/html&txt.section.titre='.urlencode('Description,Usages,Écologie & habitat,Sources');
-            $response = $this->client->request('GET', $cardApiUrl);
+            $response = $this->client->request('GET', $cardApiUrl, ['timeout' => 120]);
 
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
@@ -78,7 +81,7 @@ class EfloreService
         if ($refresh || !$cardImagesCache->isHit()) {
             // eg. https://api.tela-botanica.org/service:del:0.1/images?navigation.depart=0&navigation.limite=4&masque.standard=1&masque.referentiel=bdtfx&masque.nn=74934&tri=votes&ordre=desc&protocole=3&format=CRS
             $imagesApiUrl = sprintf($this->imagesApiUrlTemplate, $taxonRepo, $taxonNameId);
-            $response = $this->client->request('GET', $imagesApiUrl);
+            $response = $this->client->request('GET', $imagesApiUrl, ['timeout' => 120]);
 
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');

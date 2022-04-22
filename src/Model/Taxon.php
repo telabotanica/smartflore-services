@@ -37,7 +37,7 @@ class Taxon
     /**
      * @var string
      */
-    private $referential;
+    private $referentiel;
 
     /**
      * @var int
@@ -155,18 +155,18 @@ class Taxon
     /**
      * @return string
      */
-    public function getReferential(): string
+    public function getReferentiel(): string
     {
-        return $this->referential;
+        return $this->referentiel;
     }
 
     /**
-     * @param string $referential
+     * @param string $referentiel
      * @return Taxon
      */
-    public function setReferential(string $referential): Taxon
+    public function setReferentiel(string $referentiel): Taxon
     {
-        $this->referential = $referential;
+        $this->referentiel = $referentiel;
         return $this;
     }
 
