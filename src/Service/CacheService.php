@@ -31,9 +31,9 @@ class CacheService
      * for each trails :
      * get occurrences, their taxon and infos
      * trails -> trail -> occurrence -> taxon
-     * @return array of stats ?
+     * @return array of stats
      */
-    public function warmup(bool $force)
+    public function warmup(bool $force): array
     {
         $this->stopwatch->start('warmup-cache');
         $alreadySeenTaxon = [];
@@ -59,17 +59,22 @@ class CacheService
         }
 
         $event = $this->stopwatch->stop('warmup-cache');
+        $time = floor($event->getDuration()/1000);
+        dump($event->getDuration()/1000);
 
-        // execution time, counts, errors, etc.
-        $stats = [
-            'trails' => count($trails),
-            'date' => (new \DateTime())->format('r'),
-            'forced' => $force,
-            'time' => $event->getDuration(),
-        ];
         $statsCache = $this->cache->getItem('stats');
-        $statsCache->set($stats);
-        $this->cache->save($statsCache);
+        if (!$force && $statsCache->isHit()) {
+            $stats = $statsCache->get();
+        } else {
+            $stats = [
+                'trails' => count($trails),
+                'date' => (new \DateTime())->format('r'),
+                'forced' => $force,
+                'time' => $time.'s',
+            ];
+            $statsCache->set($stats);
+            $this->cache->save($statsCache);
+        }
 
         return $stats;
     }
@@ -77,5 +82,15 @@ class CacheService
     public function refresh()
     {
         return $this->warmup(true);
+    }
+
+    public function getStatus(): array
+    {
+        $cache = $this->cache->getItem('stats');
+
+        return [
+            'status' => 'ok',
+            'details' => $cache->isHit() ? $cache->get() : []
+        ];
     }
 }

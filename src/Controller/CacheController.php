@@ -12,10 +12,9 @@ class CacheController extends AbstractController
     /**
      * @Route("/cache/status")
      */
-    public function cacheStatus()
+    public function cacheStatus(CacheService $cacheService)
     {
-        // cache last refresh date and status
-        return $this->json(['status' => 'OK']);
+        return $this->json($cacheService->getStatus());
     }
 
     /**
