@@ -14,8 +14,9 @@ framework:
         # APCu (not recommended with heavy random-write workloads as memory fragmentation can cause perf issues)
         #app: cache.adapter.apcu
 
-        # As APCu is not available on test server, we need to go with simple array cache for now
-        app: cache.adapter.array
+        # As APCu is not available on test server, we need to go with simple filesystem cache for now
+        #directory: '%kernel.cache_dir%/pools' # Only used with cache.adapter.filesystem
+        app: cache.adapter.filesystem
 
         # Namespaced pools use the above "app" backend by default
         pools:
