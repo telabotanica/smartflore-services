@@ -21,11 +21,11 @@ class ApplicationAvailabilityFunctionalTest extends WebTestCase
     {
         yield ['/cache/status'];
         yield ['/cache/warmup'];
-        yield ['/sentiers'];
-        yield ['/sentiers/Sur les traces des mineurs de Gréasque'];
-        yield ['/fiche/text/bdtfx/74934']; // OK
-        yield ['/fiche/images/bdtfx/74934']; // OK
-        yield ['/fiche/images/bdtfx/74934/Sur les traces des mineurs de Gréasque']; // OK
-        yield ['/fiche/images/coste/bdtfx/74934'];
+        yield ['/trail'];
+        yield ['/trail/Sur les traces des mineurs de Gréasque'];
+        yield ['/card/text/bdtfx/74934'];
+        yield ['/card/images/bdtfx/74934'];
+        yield ['/card/images/bdtfx/74934/Sur les traces des mineurs de Gréasque'];
+        yield ['/card/images/coste/bdtfx/74934'];
     }
 }
