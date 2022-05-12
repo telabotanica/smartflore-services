@@ -60,7 +60,6 @@ class CacheService
 
         $event = $this->stopwatch->stop('warmup-cache');
         $time = floor($event->getDuration()/1000);
-        dump($event->getDuration()/1000);
 
         $statsCache = $this->cache->getItem('stats');
         if (!$force && $statsCache->isHit()) {
