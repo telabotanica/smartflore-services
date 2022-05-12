@@ -1,0 +1,16 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Smart'Flore services
+            description: Trails, card species and other details
+            version: "0.0.1"
+        servers:
+#          - url: "https://www.tela-botanica.org/smartflore-services/"
+#            description: "Production server"
+          - url: "https://beta.tela-botanica.org/smartflore-services/"
+            description: "Staging server"
+    areas: # to filter documented areas
+        path_patterns:
+            - ^/?!_error
+            - ^/trail
+            - ^/card

@@ -3,23 +3,47 @@
 namespace App\Controller;
 
 use App\Service\TrailsService;
+use OpenApi\Annotations as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 
 class TrailController extends AbstractController
 {
     /**
-     * @Route("/sentiers", name="sentier_list")
+     * @OA\Response(
+     *     response="200",
+     *     description="Trails list",
+     *     @OA\JsonContent(
+     *         type="array",
+     *         @OA\Items(type="object")
+     *     )
+     * )
+     * @OA\Tag(name="Trails")
+     * @Route("/trail", name="sentier_list", methods={"GET"})
      */
-    public function sentiers(TrailsService $trails)
+    public function trailsList(TrailsService $trails)
     {
         return $this->json($trails->getTrails());
     }
 
     /**
-     * @Route("/sentiers/{name}", name="sentier_details")
+     * @OA\Response(
+     *     response="200",
+     *     description="Trail details",
+     *     @OA\JsonContent(
+     *         type="object"
+     *     )
+     * )
+     * @OA\Parameter(
+     *     name="taxonRepo",
+     *     in="path",
+     *     description="The trail name",
+     *     @OA\Schema(type="string")
+     * )
+     * @OA\Tag(name="Trails")
+     * @Route("/trail/{name}", name="sentier_details", methods={"GET"})
      */
-    public function sentier(TrailsService $trails, string $name)
+    public function trailDetails(TrailsService $trails, string $name)
     {
         return $this->json($trails->getTrail($name));
     }
