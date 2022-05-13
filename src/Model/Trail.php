@@ -17,6 +17,11 @@ class Trail
     /**
      * @var string;
      */
+    private $displayName;
+
+    /**
+     * @var string;
+     */
     private $auteur;
 
     /**
@@ -67,6 +72,17 @@ class Trail
     public function setNom(string $nom): Trail
     {
         $this->nom = $nom;
+        return $this;
+    }
+
+    public function getDisplayName(): string
+    {
+        return $this->displayName;
+    }
+
+    public function setDisplayName(string $displayName): self
+    {
+        $this->displayName = $displayName;
         return $this;
     }
 

@@ -64,6 +64,8 @@ class TrailsService
              * @var $trail Trail
              */
             foreach ($trails as $trail) {
+                $trail->setDisplayName($trail->getNom());
+                $trail->setNom(self::extractTrailName($trail));
                 $trail->setDetails($this->router->generate('trail_details', [
                     'name' => $trail->getNom()
                 ], UrlGeneratorInterface::ABSOLUTE_URL));
@@ -125,6 +127,7 @@ class TrailsService
             ]);
 
             if (200 !== $response->getStatusCode()) {
+                dump($url);
                 throw new \Exception('Response status code is different than expected.');
             }
             $images = json_decode($response->getContent(), true);
@@ -136,10 +139,11 @@ class TrailsService
         return $trailSpecieImagesCache->get();
     }
 
-    public function extractTrailName(Trail $trail): string
+    public static function extractTrailName(Trail $trail): string
     {
         if ($trail->getDetails()) {
-            return substr($trail->getDetails(), strlen($this->smartfloreLegacyApiBaseUrl.'sentiers/'));
+            $parts = explode('/', $trail->getDetails());
+            return urldecode(end($parts));
         }
 
         return '';

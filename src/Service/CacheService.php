@@ -36,15 +36,15 @@ class CacheService
     public function warmup(bool $force): array
     {
         $this->stopwatch->start('warmup-cache');
+
         $alreadySeenTaxon = [];
         $trails = $this->trails->getTrails($force);
         foreach ($trails as $trail) {
-            $trailName = $this->trails->extractTrailName($trail);
-            $trail = $this->trails->getTrail($trailName, $force);
-
-            foreach ($trail->getOccurrences() as $occurrence) {
+            $trailDetails = $this->trails->getTrail($trail->getNom(), $force);
+            foreach ($trailDetails->getOccurrences() as $occurrence) {
                 $taxon = $occurrence->getTaxo();
-                $taxonId = $this->cards->getTaxonInfo($taxon->getReferentiel(), $taxon->getNumNom(), $force)['num_taxonomique'];
+                $taxonId = $this->cards->getTaxonInfo(
+                    $taxon->getReferentiel(), $taxon->getNumNom(), $force)['num_taxonomique'];
 
                 if (!in_array($taxonId, $alreadySeenTaxon)) {
                     $alreadySeenTaxon[] = $taxonId;
@@ -54,7 +54,7 @@ class CacheService
                     $this->cards->getCardCosteImage($taxon->getReferentiel(), $taxonId, $force);
                 }
 
-                $this->trails->getTrailSpecieImages($trailName, $taxon->getReferentiel(), $taxonId, $force);
+                $this->trails->getTrailSpecieImages($trail->getNom(), $taxon->getReferentiel(), $taxonId, $force);
             }
         }
 
