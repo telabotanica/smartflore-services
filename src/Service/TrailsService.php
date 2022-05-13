@@ -6,6 +6,7 @@ use App\Model\Trail;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
@@ -17,14 +18,17 @@ class TrailsService
     private $client;
     private $cache;
     private $smartfloreLegacyApiBaseUrl;
+    private $router;
 
     public function __construct(
         string $smartfloreLegacyApiBaseUrl,
-        CacheInterface $trailsCache
+        CacheInterface $trailsCache,
+        UrlGeneratorInterface $router
     ) {
         $this->client = HttpClient::create();
         $this->cache = $trailsCache;
         $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
+        $this->router = $router;
     }
 
     /**
@@ -55,6 +59,15 @@ class TrailsService
             $serializer = new Serializer($normalizer, [new JsonEncoder()]);
 
             $trails = $serializer->deserialize($response->getContent(), 'App\Model\Trail[]', 'json');
+
+            /**
+             * @var $trail Trail
+             */
+            foreach ($trails as $trail) {
+                $trail->setDetails($this->router->generate('trail_details', [
+                    'name' => $trail->getNom()
+                ], UrlGeneratorInterface::ABSOLUTE_URL));
+            }
 
             $trailsCache->set($trails);
             $this->cache->save($trailsCache);

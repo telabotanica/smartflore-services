@@ -19,7 +19,7 @@ class TrailController extends AbstractController
      *     )
      * )
      * @OA\Tag(name="Trails")
-     * @Route("/trail", name="sentier_list", methods={"GET"})
+     * @Route("/trail", name="trail_list", methods={"GET"})
      */
     public function trailsList(TrailsService $trails)
     {
@@ -41,7 +41,7 @@ class TrailController extends AbstractController
      *     @OA\Schema(type="string")
      * )
      * @OA\Tag(name="Trails")
-     * @Route("/trail/{name}", name="sentier_details", methods={"GET"})
+     * @Route("/trail/{name}", name="trail_details", methods={"GET"})
      */
     public function trailDetails(TrailsService $trails, string $name)
     {
