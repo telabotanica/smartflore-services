@@ -67,7 +67,7 @@ class TrailsService
                 $trail->setDisplayName($trail->getNom());
                 $trail->setNom(self::extractTrailName($trail));
                 $trail->setDetails($this->router->generate('trail_details', [
-                    'name' => $trail->getNom()
+                    'id' => $trail->getNom()
                 ], UrlGeneratorInterface::ABSOLUTE_URL));
             }
 
@@ -91,6 +91,9 @@ class TrailsService
             ]);
 
             if (200 !== $response->getStatusCode()) {
+                if ('Ce sentier n\'existe pas' === $response->getContent(false)) {
+                    throw new TrailNotFoundException('This trail does not exist');
+                }
                 throw new \Exception('Response status code is different than expected.');
             }
 
@@ -127,7 +130,6 @@ class TrailsService
             ]);
 
             if (200 !== $response->getStatusCode()) {
-                dump($url);
                 throw new \Exception('Response status code is different than expected.');
             }
             $images = json_decode($response->getContent(), true);
@@ -137,6 +139,20 @@ class TrailsService
         }
 
         return $trailSpecieImagesCache->get();
+    }
+
+    /**
+     * @param string $id It's a string because trail ID is deserialized as a string (maybe should fix)
+     */
+    public function getTrailname(string $id): string
+    {
+        $trails = $this->getTrails();
+        foreach ($trails as $trail) {
+            if ($trail->getId() === $id) {
+                return $trail->getNom();
+            }
+        }
+        return '';
     }
 
     public static function extractTrailName(Trail $trail): string

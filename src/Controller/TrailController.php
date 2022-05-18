@@ -35,16 +35,21 @@ class TrailController extends AbstractController
      *     )
      * )
      * @OA\Parameter(
-     *     name="taxonRepo",
+     *     name="id",
      *     in="path",
-     *     description="The trail name",
-     *     @OA\Schema(type="string")
+     *     description="The trail ID or name",
+     *     @OA\Schema(type="integer")
      * )
      * @OA\Tag(name="Trails")
-     * @Route("/trail/{name}", name="trail_details", methods={"GET"})
+     * @Route("/trail/{id}", name="trail_details", methods={"GET"})
      */
-    public function trailDetails(TrailsService $trails, string $name)
+    public function trailDetails(TrailsService $trails, $id)
     {
-        return $this->json($trails->getTrail($name));
+        if (is_numeric($id)) {
+            $id = $trails->getTrailName($id);
+        }
+
+        return $this->json($trails->getTrail($id));
     }
 }
+
