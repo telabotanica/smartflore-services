@@ -19,7 +19,10 @@ class Occurrence
      */
     public function getPosition(): ?array
     {
-        return $this->position;
+        return $this->position ? [
+            'lat' => $this->position[1],
+            'lng' => $this->position[0],
+        ] : null;
     }
 
     /**

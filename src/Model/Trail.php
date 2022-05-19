@@ -124,7 +124,10 @@ class Trail
      */
     public function getPosition(): array
     {
-        return $this->position;
+        return [
+            'lat' => $this->position[1],
+            'lng' => $this->position[0],
+        ];
     }
 
     /**
