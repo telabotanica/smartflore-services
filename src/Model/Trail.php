@@ -2,40 +2,55 @@
 
 namespace App\Model;
 
+use Symfony\Component\Serializer\Annotation\Groups;
+
 class Trail
 {
     /**
      * @var int|string;
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $id;
 
     /**
      * @var string;
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $nom;
 
     /**
      * @var string;
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $displayName;
 
     /**
      * @var string;
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $auteur;
 
     /**
      * @var float[];
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $position;
 
     /**
      * @var ?Occurrence[] $occurrences
+     * @Groups ({"show_trail"})
      */
     private $occurrences;
 
     /**
+     * @var ?int $occurrencesCount
+     * @Groups ({"show_trail", "list_trail"})
+     */
+    private $occurrencesCount;
+
+    /**
      * @var string;
+     * @Groups ({"list_trail"})
      */
     private $details;
 
@@ -130,11 +145,14 @@ class Trail
         return $this->occurrences;
     }
 
-    public function addOccurrence(Occurrence $occurrence) {
+    public function addOccurrence(Occurrence $occurrence): void
+    {
         $this->occurrences[] = $occurrence;
+        $this->setOccurrencesCount(count($this->occurrences));
     }
 
-    public function removeOccurrence(Occurrence $occurrence) {}
+    public function removeOccurrence(Occurrence $occurrence): void
+    {}
 
 //    public function hasOccurrence()
 //    {
@@ -150,6 +168,29 @@ class Trail
 //        $this->occurrences = $occurrences;
 //        return $this;
 //    }
+
+    /**
+     * @return int|null
+     */
+    public function getOccurrencesCount(): ?int
+    {
+        return $this->occurrencesCount;
+    }
+
+    /**
+     * @param int|null $occurrencesCount
+     * @return Trail
+     */
+    public function setOccurrencesCount(?int $occurrencesCount): Trail
+    {
+        $this->occurrencesCount = $occurrencesCount;
+        return $this;
+    }
+
+    public function computeOccurrencesCount(): void
+    {
+        $this->setOccurrencesCount(count($this->getOccurrences()));
+    }
 
     /**
      * @return string

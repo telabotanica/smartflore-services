@@ -58,15 +58,23 @@ class TrailsService
             ];
             $serializer = new Serializer($normalizer, [new JsonEncoder()]);
 
-            $trails = $serializer->deserialize($response->getContent(), 'App\Model\Trail[]', 'json');
+            $trails = $serializer->deserialize($response->getContent(), 'App\Model\Trail[]', 'json', [
+                'remove_empty_tags' => true
+            ]);
 
             /**
              * @var $trail Trail
              */
-            foreach ($trails as $trail) {
+            foreach ($trails as &$trail) {
+                $trailName = self::extractTrailName($trail);
+
+                // override reference with more details
+                $trail = $this->getTrail($trailName);
+
+                $trail->computeOccurrencesCount();
                 $trail->setDisplayName($trail->getNom());
-                $trail->setNom(self::extractTrailName($trail));
-                $trail->setDetails($this->router->generate('trail_details', [
+                $trail->setNom($trailName);
+                $trail->setDetails($this->router->generate('show_trail', [
                     'id' => $trail->getNom()
                 ], UrlGeneratorInterface::ABSOLUTE_URL));
             }

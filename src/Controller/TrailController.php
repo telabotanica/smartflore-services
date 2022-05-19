@@ -5,7 +5,9 @@ namespace App\Controller;
 use App\Service\TrailsService;
 use OpenApi\Annotations as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class TrailController extends AbstractController
 {
@@ -19,11 +21,13 @@ class TrailController extends AbstractController
      *     )
      * )
      * @OA\Tag(name="Trails")
-     * @Route("/trail", name="trail_list", methods={"GET"})
+     * @Route("/trail", name="list_trail", methods={"GET"})
      */
-    public function trailsList(TrailsService $trails)
+    public function trailsList(TrailsService $trails, SerializerInterface $serializer)
     {
-        return $this->json($trails->getTrails());
+        $json = $serializer->serialize($trails->getTrails(), 'json', ['groups' => 'list_trail']);
+
+        return new JsonResponse($json, 200, [], true);
     }
 
     /**
@@ -41,7 +45,7 @@ class TrailController extends AbstractController
      *     @OA\Schema(type="integer")
      * )
      * @OA\Tag(name="Trails")
-     * @Route("/trail/{id}", name="trail_details", methods={"GET"})
+     * @Route("/trail/{id}", name="show_trail", methods={"GET"})
      */
     public function trailDetails(TrailsService $trails, $id)
     {
