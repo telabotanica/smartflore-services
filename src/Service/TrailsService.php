@@ -69,7 +69,7 @@ class TrailsService
                 $trailName = self::extractTrailName($trail);
 
                 // override reference with more details
-                $trail = $this->getTrail($trailName);
+                $trail = $this->getTrail($trailName, $refresh);
 
                 $trail->computeOccurrencesCount();
                 $trail->setDisplayName($trail->getNom());
