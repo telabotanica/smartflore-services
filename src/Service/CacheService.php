@@ -53,8 +53,6 @@ class CacheService
                     $this->cards->getCardSpeciesImages($taxon->getReferentiel(), $taxon->getNumNom(), $force);
                     $this->cards->getCardCosteImage($taxon->getReferentiel(), $taxonId, $force);
                 }
-
-                $this->trails->getTrailSpecieImages($trail->getNom(), $taxon->getReferentiel(), $taxonId, $force);
             }
         }
 

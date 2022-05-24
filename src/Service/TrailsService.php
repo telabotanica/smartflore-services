@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Model\Image;
 use App\Model\Trail;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
@@ -19,16 +20,19 @@ class TrailsService
     private $cache;
     private $smartfloreLegacyApiBaseUrl;
     private $router;
+    private $efloreService;
 
     public function __construct(
         string $smartfloreLegacyApiBaseUrl,
         CacheInterface $trailsCache,
-        UrlGeneratorInterface $router
+        UrlGeneratorInterface $router,
+        EfloreService $efloreService
     ) {
         $this->client = HttpClient::create();
         $this->cache = $trailsCache;
         $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
         $this->router = $router;
+        $this->efloreService = $efloreService;
     }
 
     /**
@@ -77,6 +81,7 @@ class TrailsService
                 $trail->setDetails($this->router->generate('show_trail', [
                     'id' => $trail->getNom()
                 ], UrlGeneratorInterface::ABSOLUTE_URL));
+                $this->collectTrailImages($trail, $refresh);
             }
 
             $trailsCache->set($trails);
@@ -114,6 +119,8 @@ class TrailsService
 
             $trail = $serializer->deserialize($response->getContent(), Trail::class, 'json');
 
+            $this->collectTrailImages($trail, $refresh);
+
             $trailCache->set($trail);
             $this->cache->save($trailCache);
         }
@@ -121,15 +128,14 @@ class TrailsService
         return $trailCache->get();
     }
 
-    public function getTrailSpecieImages(string $trailName, string $taxonRepo, string $taxonId, bool $refresh = false)
+    public function getTrailSpecieImages(string $trailName, bool $refresh = false)
     {
-        $trailSpecieImagesCache = $this->cache->getItem('trails.trail.'.$trailName.'.images.'.strtoupper($taxonRepo).'nt'.$taxonId);
+        $trailSpecieImagesCache = $this->cache->getItem('trails.trail.'.$trailName.'.images');
 
         if ($refresh || !$trailSpecieImagesCache->isHit()) {
-            // https://www.tela-botanica.org/smart-form/services/Sentiers.php/sentier-illustration-fiche/?sentierTitre=Sentier%20botanique%20de%20la%20r%C3%A9serve%20naturelle%20Tr%C3%A9sor&ficheTag=SmartFloreTAXREFnt731626
+            // https://www.tela-botanica.org/smart-form/services/Sentiers.php/sentier-illustration-fiche/?sentierTitre=Sentier%20botanique%20de%20la%20r%C3%A9serve%20naturelle%20Tr%C3%A9sor
             $url = $this->smartfloreLegacyApiBaseUrl
-                .'sentier-illustration-fiche/?sentierTitre='.urlencode($trailName)
-                .'&ficheTag=SmartFlore'.strtoupper($taxonRepo).'nt'.$taxonId;
+                .'sentier-illustration-fiche/?sentierTitre='.urlencode($trailName);
             $response = $this->client->request('GET', $url, [
                 'timeout' => 120,
                 'headers' => [
@@ -142,7 +148,20 @@ class TrailsService
             }
             $images = json_decode($response->getContent(), true);
 
-            $trailSpecieImagesCache->set($images);
+            $res = [];
+            foreach ($images as $key => $val) {
+                $matches = [];
+                if (preg_match('@SmartFlore(\w+)nt(\d+)@', $key, $matches)) {
+                    $taxoRepo = strtolower($matches[1]);
+                    $taxoId = $matches[2];
+                    $res[$taxoRepo][$taxoId] = array_map(function ($img) {
+                        dump($img);
+                        return new Image($img['url'], 'occurrence');
+                    }, $val['illustrations']);
+                }
+            }
+
+            $trailSpecieImagesCache->set($res);
             $this->cache->save($trailSpecieImagesCache);
         }
 
@@ -171,5 +190,32 @@ class TrailsService
         }
 
         return '';
+    }
+
+    /**
+     * Get image collection
+     */
+    public function collectTrailImages(Trail $trail, bool $refresh = false)
+    {
+        $occurrencesImages = $this->getTrailSpecieImages($trail->getNom(), $refresh);
+        foreach ($trail->getOccurrences() as $occurrence) {
+            $taxon = $occurrence->getTaxo();
+            $taxonId = $this->efloreService->getTaxonInfo(
+                $taxon->getReferentiel(), $taxon->getNumNom(), $refresh)['num_taxonomique'];
+
+            $images = $occurrencesImages[$taxon->getReferentiel()][$taxonId] ?? [];
+            $coste = $this->efloreService->getCardCosteImage($taxon->getReferentiel(), $taxonId, $refresh);
+            if ($coste) {
+                $images[] = $coste;
+            }
+            $images += $this->efloreService->getCardSpeciesImages(
+                $taxon->getReferentiel(), $taxon->getNumNom(), $refresh);
+
+            $images = array_filter($images);
+            $occurrence->setImages($images);
+            if (!$trail->getImage()) {
+                $trail->setImage(reset($images));
+            }
+        }
     }
 }

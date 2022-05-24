@@ -15,6 +15,11 @@ class Occurrence
     private $taxo;
 
     /**
+     * @var array
+     */
+    private $images;
+
+    /**
      * @return float[]
      */
     public function getPosition(): ?array
@@ -52,6 +57,24 @@ class Occurrence
     public function setTaxo(Taxon $taxo): Occurrence
     {
         $this->taxo = $taxo;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getImages(): array
+    {
+        return $this->images;
+    }
+
+    /**
+     * @param array $images
+     * @return Occurrence
+     */
+    public function setImages(array $images): Occurrence
+    {
+        $this->images = $images;
         return $this;
     }
 }

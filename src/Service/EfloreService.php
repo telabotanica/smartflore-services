@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Model\Image;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\CacheInterface;
 
@@ -86,9 +87,14 @@ class EfloreService
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
             }
-            $images = json_decode($response->getContent(), true);
+            $images = json_decode($response->getContent(), true)['resultats'];
 
-            $cardImagesCache->set($images);
+            $res = [];
+            foreach ($images as $image) {
+                $res[] = new Image($image['id_image'], $image['binaire.href']);
+            }
+
+            $cardImagesCache->set($res);
             $this->cache->save($cardImagesCache);
         }
 
@@ -107,9 +113,13 @@ class EfloreService
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
             }
-            $images = json_decode($response->getContent(), true);
+            $image = json_decode($response->getContent(), true)['resultats'] ?? [];
+            $image = reset($image) ?: [];
+            if ($image) {
+                $image = new Image(0, $image['binaire.href']);
+            }
 
-            $cardImageCosteCache->set($images);
+            $cardImageCosteCache->set($image ?? []);
             $this->cache->save($cardImageCosteCache);
         }
 

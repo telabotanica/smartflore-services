@@ -7,31 +7,31 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class Trail
 {
     /**
-     * @var int|string;
+     * @var int|string
      * @Groups ({"show_trail", "list_trail"})
      */
     private $id;
 
     /**
-     * @var string;
+     * @var string
      * @Groups ({"show_trail", "list_trail"})
      */
     private $nom;
 
     /**
-     * @var string;
+     * @var string
      * @Groups ({"show_trail", "list_trail"})
      */
     private $displayName;
 
     /**
-     * @var string;
+     * @var string
      * @Groups ({"show_trail", "list_trail"})
      */
     private $auteur;
 
     /**
-     * @var float[];
+     * @var float[]
      * @Groups ({"show_trail", "list_trail"})
      */
     private $position;
@@ -49,10 +49,16 @@ class Trail
     private $occurrencesCount;
 
     /**
-     * @var string;
+     * @var string
      * @Groups ({"list_trail"})
      */
     private $details;
+
+    /**
+     * @var ?Image
+     * @Groups ({"show_trail", "list_trail"})
+     */
+    private $image;
 
     /**
      * @return int|string
@@ -210,6 +216,24 @@ class Trail
     public function setDetails(string $details): Trail
     {
         $this->details = $details;
+        return $this;
+    }
+
+    /**
+     * @return ?Image
+     */
+    public function getImage(): ?Image
+    {
+        return $this->image;
+    }
+
+    /**
+     * @param ?Image $image
+     * @return Trail
+     */
+    public function setImage(?Image $image): Trail
+    {
+        $this->image = $image;
         return $this;
     }
 }
