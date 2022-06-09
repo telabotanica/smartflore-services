@@ -2,6 +2,8 @@
 
 namespace App\Model;
 
+use Symfony\Component\Serializer\Annotation\SerializedName;
+
 class Occurrence
 {
     /**
@@ -11,6 +13,7 @@ class Occurrence
 
     /**
      * @var Taxon
+     * @SerializedName("taxon")
      */
     private $taxo;
 

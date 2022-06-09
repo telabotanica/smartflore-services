@@ -21,7 +21,7 @@ class TrailController extends AbstractController
      *     )
      * )
      * @OA\Tag(name="Trails")
-     * @Route("/trail", name="list_trail", methods={"GET"})
+     * @Route("/trails", name="list_trail", methods={"GET"})
      */
     public function trailsList(TrailsService $trails, SerializerInterface $serializer)
     {

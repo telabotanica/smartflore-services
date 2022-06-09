@@ -155,7 +155,6 @@ class TrailsService
                     $taxoRepo = strtolower($matches[1]);
                     $taxoId = $matches[2];
                     $res[$taxoRepo][$taxoId] = array_map(function ($img) {
-                        dump($img);
                         return new Image($img['url'], 'occurrence');
                     }, $val['illustrations']);
                 }

@@ -2,45 +2,43 @@
 
 namespace App\Model;
 
+use Symfony\Component\Serializer\Annotation\SerializedName;
+
 class Taxon
 {
     /**
      * @var string
+     * @SerializedName("species")
      */
     private $espece;
 
     /**
      * @var string
+     * @SerializedName("author")
      */
     private $auteurEspece;
 
     /**
      * @var string
-     */
-    private $auteurGenre;
-
-    /**
-     * @var string
-     */
-    private $auteurFamille;
-
-    /**
-     * @var string
+     * @SerializedName("genus")
      */
     private $genre;
 
     /**
      * @var string
+     * @SerializedName("family")
      */
     private $famille;
 
     /**
      * @var string
+     * @SerializedName("referential")
      */
     private $referentiel;
 
     /**
      * @var int
+     * @SerializedName("name_id")
      */
     private $numNom;
 
@@ -77,42 +75,6 @@ class Taxon
     public function setAuteurEspece(string $auteurEspece): Taxon
     {
         $this->auteurEspece = $auteurEspece;
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getAuteurGenre(): string
-    {
-        return $this->auteurGenre;
-    }
-
-    /**
-     * @param string $auteurGenre
-     * @return Taxon
-     */
-    public function setAuteurGenre(string $auteurGenre): Taxon
-    {
-        $this->auteurGenre = $auteurGenre;
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getAuteurFamille(): string
-    {
-        return $this->auteurFamille;
-    }
-
-    /**
-     * @param string $auteurFamille
-     * @return Taxon
-     */
-    public function setAuteurFamille(string $auteurFamille): Taxon
-    {
-        $this->auteurFamille = $auteurFamille;
         return $this;
     }
 

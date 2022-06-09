@@ -3,6 +3,7 @@
 namespace App\Model;
 
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\SerializedName;
 
 class Trail
 {
@@ -15,18 +16,21 @@ class Trail
     /**
      * @var string
      * @Groups ({"show_trail", "list_trail"})
+     * @SerializedName("name")
      */
     private $nom;
 
     /**
      * @var string
      * @Groups ({"show_trail", "list_trail"})
+     * @SerializedName("display_name")
      */
     private $displayName;
 
     /**
      * @var string
      * @Groups ({"show_trail", "list_trail"})
+     * @SerializedName("author")
      */
     private $auteur;
 
@@ -59,6 +63,14 @@ class Trail
      * @Groups ({"show_trail", "list_trail"})
      */
     private $image;
+
+    /**
+     * @var Path
+     * @SerializedName("path")
+     * @Groups ({"show_trail"})
+     */
+    private $chemin;
+
 
     /**
      * @return int|string
@@ -234,6 +246,23 @@ class Trail
     public function setImage(?Image $image): Trail
     {
         $this->image = $image;
+        return $this;
+    }
+    /**
+     * @return Path
+     */
+    public function getChemin(): Path
+    {
+        return $this->chemin;
+    }
+
+    /**
+     * @param Path $chemin
+     * @return Trail
+     */
+    public function setChemin(Path $chemin): Trail
+    {
+        $this->chemin = $chemin;
         return $this;
     }
 }
