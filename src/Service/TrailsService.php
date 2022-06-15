@@ -74,14 +74,6 @@ class TrailsService
 
                 // override reference with more details
                 $trail = $this->getTrail($trailName, $refresh);
-
-                $trail->computeOccurrencesCount();
-                $trail->setDisplayName($trail->getNom());
-                $trail->setNom($trailName);
-                $trail->setDetails($this->router->generate('show_trail', [
-                    'id' => $trail->getNom()
-                ], UrlGeneratorInterface::ABSOLUTE_URL));
-                $this->collectTrailImages($trail, $refresh);
             }
 
             $trailsCache->set($trails);
@@ -119,6 +111,13 @@ class TrailsService
 
             $trail = $serializer->deserialize($response->getContent(), Trail::class, 'json');
 
+            $trail->computeOccurrencesCount();
+            $trail->setDisplayName($trail->getNom());
+            $trail->setNom($trailName);
+            $trail->setDetails($this->router->generate('show_trail', [
+                'id' => $trail->getNom()
+            ], UrlGeneratorInterface::ABSOLUTE_URL));
+
             $this->collectTrailImages($trail, $refresh);
 
             $trailCache->set($trail);
@@ -152,10 +151,10 @@ class TrailsService
             foreach ($images as $key => $val) {
                 $matches = [];
                 if (preg_match('@SmartFlore(\w+)nt(\d+)@', $key, $matches)) {
-                    $taxoRepo = strtolower($matches[1]);
-                    $taxoId = $matches[2];
-                    $res[$taxoRepo][$taxoId] = array_map(function ($img) {
-                        return new Image($img['url'], 'occurrence');
+                    $taxonRepo = strtolower($matches[1]);
+                    $taxonId = $matches[2];
+                    $res[$taxonRepo][$taxonId] = array_map(static function ($img) {
+                        return new Image((int)$img['id'], $img['url']);
                     }, $val['illustrations']);
                 }
             }
@@ -203,17 +202,18 @@ class TrailsService
                 $taxon->getReferentiel(), $taxon->getNumNom(), $refresh)['num_taxonomique'];
 
             $images = $occurrencesImages[$taxon->getReferentiel()][$taxonId] ?? [];
+            $images += $this->efloreService->getCardSpeciesImages(
+                $taxon->getReferentiel(), $taxon->getNumNom(), $refresh);
+
             $coste = $this->efloreService->getCardCosteImage($taxon->getReferentiel(), $taxonId, $refresh);
             if ($coste) {
                 $images[] = $coste;
             }
-            $images += $this->efloreService->getCardSpeciesImages(
-                $taxon->getReferentiel(), $taxon->getNumNom(), $refresh);
 
-            $images = array_filter($images);
-            $occurrence->setImages($images);
-            if (!$trail->getImage()) {
-                $trail->setImage(reset($images));
+            $occurrence->setImages(array_filter($images));
+
+            if (!$trail->getImage() && $occurrence->getFirstImage()) {
+                $trail->setImage($occurrence->getFirstImage());
             }
         }
     }

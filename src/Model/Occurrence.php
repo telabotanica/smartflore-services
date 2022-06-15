@@ -2,6 +2,7 @@
 
 namespace App\Model;
 
+use Symfony\Component\Serializer\Annotation\Ignore;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 
 class Occurrence
@@ -79,5 +80,13 @@ class Occurrence
     {
         $this->images = $images;
         return $this;
+    }
+
+    /**
+     * @Ignore()
+     */
+    public function getFirstImage()
+    {
+        return $this->images[0] ?? false;
     }
 }

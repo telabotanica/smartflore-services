@@ -2,15 +2,19 @@
 
 namespace App\Model;
 
+use Symfony\Component\Serializer\Annotation\Groups;
+
 class Image
 {
     /**
      * @var int
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $id;
 
     /**
      * @var string
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $url;
 
