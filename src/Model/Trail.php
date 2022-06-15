@@ -142,9 +142,15 @@ class Trail
      */
     public function getPosition(): array
     {
-        return [
+        $position = [
             'lat' => $this->position[1],
             'lng' => $this->position[0],
+        ];
+
+        // start and end will diverge in the future
+        return [
+            'start' => $position,
+            'end' => $position,
         ];
     }
 
