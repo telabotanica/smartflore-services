@@ -169,7 +169,7 @@ class TrailsService
     /**
      * @param string $id It's a string because trail ID is deserialized as a string (maybe should fix)
      */
-    public function getTrailname(string $id): string
+    public function getTrailName(string $id): string
     {
         $trails = $this->getTrails();
         foreach ($trails as $trail) {
@@ -187,7 +187,7 @@ class TrailsService
             return urldecode(end($parts));
         }
 
-        return '';
+        throw new \Exception('missing trail name');
     }
 
     /**
