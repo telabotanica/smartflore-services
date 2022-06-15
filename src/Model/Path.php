@@ -10,7 +10,7 @@ class Path
     private $type;
 
     /**
-     * @var Point[]
+     * @var array
      */
     private $coordinates;
 
@@ -27,14 +27,17 @@ class Path
 
     public function getCoordinates(): array
     {
-        return $this->coordinates;
+        $coordinates = [];
+        foreach ($this->coordinates as $coordinate) {
+            $coordinates[] = (new Point())->setPosition($coordinate)->getPosition();
+        }
+
+        return $coordinates;
     }
 
     public function setCoordinates(array $coordinates)
     {
-        foreach ($coordinates as $coord) {
-            $this->coordinates[] = (new Point())->setPosition($coord)->getPosition();
-        }
+        $this->coordinates = $coordinates;
 
         return $this;
     }
