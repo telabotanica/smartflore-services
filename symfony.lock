@@ -1,4 +1,16 @@
 {
+    "cache/adapter-common": {
+        "version": "1.3.0"
+    },
+    "cache/array-adapter": {
+        "version": "1.2.0"
+    },
+    "cache/hierarchical-cache": {
+        "version": "1.2.0"
+    },
+    "cache/tag-interop": {
+        "version": "1.1.0"
+    },
     "doctrine/annotations": {
         "version": "1.13",
         "recipe": {
@@ -19,6 +31,9 @@
     },
     "doctrine/lexer": {
         "version": "1.2.1"
+    },
+    "league/geotools": {
+        "version": "1.0.0"
     },
     "monolog/monolog": {
         "version": "2.5.0"
@@ -47,6 +62,9 @@
     },
     "phar-io/version": {
         "version": "3.2.1"
+    },
+    "php-http/discovery": {
+        "version": "1.14.2"
     },
     "phpdocumentor/reflection-common": {
         "version": "2.2.0"
@@ -103,6 +121,15 @@
     },
     "psr/log": {
         "version": "1.1.4"
+    },
+    "psr/simple-cache": {
+        "version": "1.0.1"
+    },
+    "react/event-loop": {
+        "version": "v1.3.0"
+    },
+    "react/promise": {
+        "version": "v2.9.0"
     },
     "roave/security-advisories": {
         "version": "dev-latest"
@@ -385,6 +412,9 @@
     },
     "webmozart/assert": {
         "version": "1.10.0"
+    },
+    "willdurand/geocoder": {
+        "version": "4.5.0"
     },
     "zircote/swagger-php": {
         "version": "4.4.1"

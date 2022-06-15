@@ -4,6 +4,8 @@ namespace App\Service;
 
 use App\Model\Image;
 use App\Model\Trail;
+use League\Geotools\Coordinate\Coordinate;
+use League\Geotools\Geotools;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
@@ -216,5 +218,25 @@ class TrailsService
                 $trail->setImage($occurrence->getFirstImage());
             }
         }
+    }
+
+    public static function getTrailLength(Trail $trail): float
+    {
+        $distance = 0;
+
+        $points = [];
+        foreach ($trail->getChemin()->getCoordinates() as $point) {
+            $points[] = new Coordinate(array_values($point));
+        }
+
+        $geotools = new Geotools();
+        array_walk($points, static function($point) use (&$distance, $geotools, $points) {
+            $next = next($points);
+            if ($next) {
+                $distance += $geotools->distance()->setFrom($point)->setTo($next)->flat();
+            }
+        });
+
+        return $distance;
     }
 }

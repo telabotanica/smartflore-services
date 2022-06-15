@@ -2,6 +2,7 @@
 
 namespace App\Model;
 
+use App\Service\TrailsService;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 
@@ -71,6 +72,11 @@ class Trail
      */
     private $chemin;
 
+    /**
+     * @var int
+     * @Groups ({"show_trail", "list_trail"})
+     */
+    private $pathLength;
 
     /**
      * @return int|string
@@ -269,6 +275,28 @@ class Trail
     public function setChemin(Path $chemin): Trail
     {
         $this->chemin = $chemin;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPathLength(): int
+    {
+        if (!$this->pathLength) {
+            $this->setPathLength(round(TrailsService::getTrailLength($this)));
+        }
+
+        return $this->pathLength;
+    }
+
+    /**
+     * @param int $pathLength
+     * @return Trail
+     */
+    public function setPathLength(int $pathLength): Trail
+    {
+        $this->pathLength = $pathLength;
         return $this;
     }
 }
