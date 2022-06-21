@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Model\Image;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpClient\NativeHttpClient;
 use Symfony\Contracts\Cache\CacheInterface;
 
 class EfloreService
@@ -20,9 +21,15 @@ class EfloreService
         string $cardApiBaseUrl,
         string $imagesApiUrlTemplate,
         string $imageCosteApiUrlTemplate,
+        bool $useNativeHttpClient,
         CacheInterface $trailsCache
     ) {
-        $this->client = HttpClient::create();
+        if ($useNativeHttpClient) {
+            $this->client = new NativeHttpClient();
+        } else {
+            $this->client = HttpClient::create();
+        }
+
         $this->cache = $trailsCache;
         $this->taxonApiBaseUrl = $taxonApiBaseUrl;
         $this->cardApiBaseUrl = $cardApiBaseUrl;

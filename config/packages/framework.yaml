@@ -20,6 +20,10 @@ framework:
     php_errors:
         log: true
 
+    http_client:
+        default_options:
+            retry_failed: true
+
 when@test:
     framework:
         test: true
