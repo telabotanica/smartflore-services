@@ -2,15 +2,37 @@
 
 namespace App\Model;
 
+use OpenApi\Annotations as OA;
+use Symfony\Component\Serializer\Annotation\Groups;
+
 class Path
 {
     /**
      * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="LineString"
+     * )
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $type;
 
     /**
      * @var array
+     * @OA\Property(
+     *     type="array",
+     *     @OA\Items(
+     *         type="array",
+     *         @OA\Items(type="float"),
+     *     ),
+     *     example={
+     *         {"lat":43.610769, "lon":3.876716},
+     *         {"lat":43.610769, "lon":3.876716},
+     *         {"lat":43.610769, "lon":3.876716},
+     *         {"lat":43.610769, "lon":3.876716}
+     *     }
+     * )
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $coordinates;
 

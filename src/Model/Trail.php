@@ -3,6 +3,8 @@
 namespace App\Model;
 
 use App\Service\TrailsService;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 
@@ -10,12 +12,20 @@ class Trail
 {
     /**
      * @var int|string
+     * @OA\Property(
+     *     type="int",
+     *     example="146"
+     * )
      * @Groups ({"show_trail", "list_trail"})
      */
     private $id;
 
     /**
      * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="Arbres Remarquables"
+     * )
      * @Groups ({"show_trail", "list_trail"})
      * @SerializedName("name")
      */
@@ -23,6 +33,10 @@ class Trail
 
     /**
      * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="Arbres vraiment remarquables mais genre de ouf tmtc"
+     * )
      * @Groups ({"show_trail", "list_trail"})
      * @SerializedName("display_name")
      */
@@ -30,6 +44,10 @@ class Trail
 
     /**
      * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="Tela Botanica"
+     * )
      * @Groups ({"show_trail", "list_trail"})
      * @SerializedName("author")
      */
@@ -37,30 +55,48 @@ class Trail
 
     /**
      * @var float[]
+     * @OA\Property(
+     *     type="array",
+     *     @OA\Items(type="array", @OA\Items(type="float")),
+     *     example={"start":{"lat":43.610769, "lon":3.876716}, "end":{"lat":43.610769, "lon":3.876716}}
+     * )
      * @Groups ({"show_trail", "list_trail"})
      */
     private $position;
 
     /**
      * @var ?Occurrence[] $occurrences
+     * @OA\Property(
+     *     type="array",
+     *     @OA\Items(ref=@Model(type=Occurrence::class))
+     * )
      * @Groups ({"show_trail"})
      */
     private $occurrences;
 
     /**
      * @var ?int $occurrencesCount
+     * @OA\Property(
+     *     type="int",
+     *     example="42"
+     * )
      * @Groups ({"show_trail", "list_trail"})
      */
     private $occurrencesCount;
 
     /**
      * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="https://example.com/link+to+trail+details"
+     * )
      * @Groups ({"list_trail"})
      */
     private $details;
 
     /**
      * @var ?Image
+     * @OA\Property(ref=@Model(type=Image::class))
      * @Groups ({"show_trail", "list_trail"})
      */
     private $image;
@@ -74,6 +110,10 @@ class Trail
 
     /**
      * @var int
+     * @OA\Property(
+     *     type="int",
+     *     example="420"
+     * )
      * @Groups ({"show_trail", "list_trail"})
      */
     private $pathLength;
@@ -83,7 +123,7 @@ class Trail
      */
     public function getId()
     {
-        return $this->id;
+        return (int) $this->id;
     }
 
     /**

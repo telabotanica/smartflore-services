@@ -2,6 +2,9 @@
 
 namespace App\Model;
 
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Annotations as OA;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\Ignore;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 
@@ -9,17 +12,30 @@ class Occurrence
 {
     /**
      * @var float[]
+     * @OA\Property(
+     *     type="array",
+     *     @OA\Items(type="float"),
+     *     example={"lat":43.610769, "lon":3.876716}
+     * )
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $position;
 
     /**
      * @var Taxon
+     * @OA\Property(ref=@Model(type=Taxon::class))
+     * @Groups ({"show_trail", "list_trail"})
      * @SerializedName("taxon")
      */
     private $taxo;
 
     /**
-     * @var array
+     * @var Image[]
+     * @OA\Property(
+     *     type="array",
+     *     @OA\Items(ref=@Model(type=Image::class))
+     * )
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $images;
 

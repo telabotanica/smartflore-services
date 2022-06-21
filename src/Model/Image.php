@@ -2,18 +2,27 @@
 
 namespace App\Model;
 
+use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 class Image
 {
     /**
      * @var int
+     * @OA\Property(
+     *     type="int",
+     *     example="131269"
+     * )
      * @Groups ({"show_trail", "list_trail"})
      */
     private $id;
 
     /**
      * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="https://example.com/link+to+original+full+format+image"
+     * )
      * @Groups ({"show_trail", "list_trail"})
      */
     private $url;

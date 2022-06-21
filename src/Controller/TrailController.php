@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Model\Trail;
 use App\Service\TrailsService;
+use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,8 +19,8 @@ class TrailController extends AbstractController
      *     description="Trails list",
      *     @OA\JsonContent(
      *         type="array",
-     *         @OA\Items(type="object")
-     *     )
+     *         @OA\Items(ref=@Model(type=Trail::class, groups={"show_trail"}))
+     *     ),
      * )
      * @OA\Tag(name="Trails")
      * @Route("/trails", name="list_trail", methods={"GET"})
@@ -35,7 +37,8 @@ class TrailController extends AbstractController
      *     response="200",
      *     description="Trail details",
      *     @OA\JsonContent(
-     *         type="object"
+     *         type="object",
+     *         ref=@Model(type=Trail::class, groups={"show_trail"})
      *     )
      * )
      * @OA\Parameter(

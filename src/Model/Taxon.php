@@ -2,43 +2,76 @@
 
 namespace App\Model;
 
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Annotations as OA;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 
 class Taxon
 {
     /**
      * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="Acer Monspesulanum"
+     * )
      * @SerializedName("species")
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $espece;
 
     /**
      * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="L."
+     * )
      * @SerializedName("author")
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $auteurEspece;
 
     /**
      * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="Acer"
+     * )
      * @SerializedName("genus")
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $genre;
 
     /**
      * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="Sapindaceae"
+     * )
      * @SerializedName("family")
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $famille;
 
     /**
      * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="bdtfx"
+     * )
      * @SerializedName("referential")
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $referentiel;
 
     /**
      * @var int
+     * @OA\Property(
+     *     type="int",
+     *     example="182"
+     * )
      * @SerializedName("name_id")
+     * @Groups ({"show_trail", "list_trail"})
      */
     private $numNom;
 
