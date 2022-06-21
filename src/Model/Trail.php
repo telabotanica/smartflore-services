@@ -184,7 +184,7 @@ class Trail
     }
 
     /**
-     * @return float[]
+     * @return float[][]
      */
     public function getPosition(): array
     {
@@ -197,6 +197,17 @@ class Trail
         return [
             'start' => $position,
             'end' => $position,
+        ];
+    }
+
+    /**
+     * @return float[]
+     */
+    public function getStartPosition(): array
+    {
+        return [
+            'lat' => $this->position[1],
+            'lng' => $this->position[0],
         ];
     }
 

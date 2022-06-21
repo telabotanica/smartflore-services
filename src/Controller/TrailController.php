@@ -3,11 +3,13 @@
 namespace App\Controller;
 
 use App\Model\Trail;
+use App\Service\BoundingBoxPolygonFactory;
 use App\Service\TrailsService;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -22,12 +24,34 @@ class TrailController extends AbstractController
      *         @OA\Items(ref=@Model(type=Trail::class, groups={"show_trail"}))
      *     ),
      * )
+     * @OA\Parameter(
+     *     name="bbox",
+     *     in="query",
+     *     description="Bounding box's upper-left and lower-right coordinates",
+     *     @OA\Schema(type="string"),
+     *     example="90.0,179.0,-90.0,-172.0"
+     * )
      * @OA\Tag(name="Trails")
      * @Route("/trails", name="list_trail", methods={"GET"})
      */
-    public function trailsList(TrailsService $trails, SerializerInterface $serializer)
-    {
-        $json = $serializer->serialize($trails->getTrails(), 'json', ['groups' => 'list_trail']);
+    public function trailsList(
+        TrailsService $trails,
+        SerializerInterface $serializer,
+        Request $request,
+        BoundingBoxPolygonFactory $polygonFactory
+    ) {
+        $list = $trails->getTrails();
+
+        if ($bbox = $request->query->get('bbox')) {
+            // we need two coordinates to build a bounding box: northEast and southWest
+            $coords = explode(',', $bbox);
+
+            $list = $trails->getTrailsInsideBoundaries(
+                $polygonFactory->createBoundingBoxPolygon($coords)
+            );
+        }
+
+        $json = $serializer->serialize($list, 'json', ['groups' => 'list_trail']);
 
         return new JsonResponse($json, 200, [], true);
     }

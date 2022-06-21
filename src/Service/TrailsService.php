@@ -6,6 +6,7 @@ use App\Model\Image;
 use App\Model\Trail;
 use League\Geotools\Coordinate\Coordinate;
 use League\Geotools\Geotools;
+use League\Geotools\Polygon\Polygon;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
@@ -238,5 +239,21 @@ class TrailsService
         });
 
         return $distance;
+    }
+
+    /**
+     * @return Trail[]
+     */
+    public function getTrailsInsideBoundaries(Polygon $polygon): array
+    {
+        $trails = [];
+        foreach ($this->getTrails() as $trail) {
+            $coordinate = new Coordinate(array_values($trail->getStartPosition()));
+            if ($polygon->pointInPolygon($coordinate)) {
+                $trails[] = $trail;
+            }
+        }
+
+        return $trails;
     }
 }
