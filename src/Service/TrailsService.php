@@ -169,10 +169,7 @@ class TrailsService
         return $trailSpecieImagesCache->get();
     }
 
-    /**
-     * @param string $id It's a string because trail ID is deserialized as a string (maybe should fix)
-     */
-    public function getTrailName(string $id): string
+    public function getTrailName(int $id): string
     {
         $trails = $this->getTrails();
         foreach ($trails as $trail) {

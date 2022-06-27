@@ -77,7 +77,7 @@ class TrailController extends AbstractController
     public function trailDetails(TrailsService $trails, $id)
     {
         if (is_numeric($id)) {
-            $id = $trails->getTrailName($id);
+            $id = $trails->getTrailName((int) $id);
         }
 
         return $this->json($trails->getTrail($id));
