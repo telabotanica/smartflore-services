@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Service\EfloreService;
-use App\Service\TrailsService;
 use OpenApi\Annotations as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;

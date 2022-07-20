@@ -7,7 +7,6 @@ use App\Model\Trail;
 use League\Geotools\Coordinate\Coordinate;
 use League\Geotools\Geotools;
 use League\Geotools\Polygon\Polygon;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -16,6 +15,7 @@ use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class TrailsService
 {
@@ -27,11 +27,12 @@ class TrailsService
 
     public function __construct(
         string $smartfloreLegacyApiBaseUrl,
+        HttpClientInterface $httpClient,
         CacheInterface $trailsCache,
         UrlGeneratorInterface $router,
         EfloreService $efloreService
     ) {
-        $this->client = HttpClient::create();
+        $this->client = $httpClient;
         $this->cache = $trailsCache;
         $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
         $this->router = $router;
@@ -82,7 +83,7 @@ class TrailsService
             $trailsCache->set($trails);
             $this->cache->save($trailsCache);
         }
-
+//die;
         return $trailsCache->get();
     }
 
@@ -111,9 +112,12 @@ class TrailsService
                 new ObjectNormalizer(null, null, null, $extractor),
             ];
             $serializer = new Serializer($normalizer, [new JsonEncoder()]);
-
+var_dump($response->getContent());
             $trail = $serializer->deserialize($response->getContent(), Trail::class, 'json');
 
+            /**
+             * @var $trail Trail
+             */
             $trail->computeOccurrencesCount();
             $trail->setDisplayName($trail->getNom());
             $trail->setNom($trailName);
@@ -121,6 +125,7 @@ class TrailsService
                 'id' => $trail->getNom()
             ], UrlGeneratorInterface::ABSOLUTE_URL));
 
+            $this->collectOccurrencesTaxonInfos($trail, $refresh);
             $this->collectTrailImages($trail, $refresh);
 
             $trailCache->set($trail);
@@ -193,19 +198,18 @@ class TrailsService
     /**
      * Get image collection
      */
-    public function collectTrailImages(Trail $trail, bool $refresh = false)
+    private function collectTrailImages(Trail $trail, bool $refresh = false)
     {
         $occurrencesImages = $this->getTrailSpecieImages($trail->getNom(), $refresh);
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxo();
-            $taxonId = $this->efloreService->getTaxonInfo(
-                $taxon->getReferentiel(), $taxon->getNumNom(), $refresh)['num_taxonomique'];
 
-            $images = $occurrencesImages[$taxon->getReferentiel()][$taxonId] ?? [];
+            $images = $occurrencesImages[$taxon->getReferentiel()][$taxon->getTaxonomicId()] ?? [];
             $images += $this->efloreService->getCardSpeciesImages(
                 $taxon->getReferentiel(), $taxon->getNumNom(), $refresh);
 
-            $coste = $this->efloreService->getCardCosteImage($taxon->getReferentiel(), $taxonId, $refresh);
+            $coste = $this->efloreService->getCardCosteImage(
+                $taxon->getReferentiel(), $taxon->getTaxonomicId(), $refresh);
             if ($coste) {
                 $images[] = $coste;
             }
@@ -252,5 +256,37 @@ class TrailsService
         }
 
         return $trails;
+    }
+
+    /**
+     * Get full taxonomic infos, vernacular names, external links
+     */
+    private function collectOccurrencesTaxonInfos(Trail $trail, bool $refresh)
+    {
+        foreach ($trail->getOccurrences() as $occurrence) {
+            $taxon = $occurrence->getTaxo();
+            $taxonInfos = $this->efloreService->getTaxonInfo(
+                $taxon->getReferentiel(), $taxon->getNumNom(), $refresh);
+            $taxon->setTaxonomicId($taxonInfos['num_taxonomique'])
+                ->setFullName($taxonInfos['nom_complet'])
+                ->setHtmlCompleteName($taxonInfos['nom_sci_html_complet']);
+
+            if (isset($taxonInfos['rang.libelle'], $taxonInfos['type_epithete']) && 'Espèce' !== $taxonInfos['rang.libelle']) {
+                $taxon->setWikipediaUrl(
+                    'https://fr.wikipedia.org/wiki/'
+                    .str_replace(' ', '_',
+                        substr($taxonInfos['nom_sci_complet'], 0,
+                            strpos($taxonInfos['nom_sci_complet'], ' '.$taxonInfos['type_epithete'])))
+                );
+            }
+
+            $vernacularInfos = $this->efloreService->getVernacularName(
+                $taxon->getReferentiel(), $taxon->getTaxonomicId(), $refresh);
+            foreach ($vernacularInfos as $vernacularInfo) {
+                if ('fra' === ($vernacularInfo['code_langue'] ?? '')) {
+                    $taxon->addVernacularName($vernacularInfo['nom'], $vernacularInfo['num_statut'] ?? 0);
+                }
+            }
+        }
     }
 }

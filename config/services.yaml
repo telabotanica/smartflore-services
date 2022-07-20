@@ -31,4 +31,29 @@ services:
             - '%env(SMARTFLORE_CARD_API_BASE_URL)%'
             - '%env(DEL_IMAGES_URL_TEMPLATE)%'
             - '%env(COSTE_IMAGE_URL_TEMPLATE)%'
+            - '%env(VERNACULAR_NAME_URL_TEMPLATE)%'
             - '%env(USE_NATIVE_HTTP_CLIENT)%'
+
+when@test:
+    services:
+        Symfony\Contracts\HttpClient\HttpClientInterface:
+            synthetic: true
+
+#        App\Service\TrailsService:
+#            arguments:
+#                - '%env(SMARTFLORE_LEGACY_API_BASE_URL)%'
+#                - '@App\Tests\Mock\FakeHttpClient'
+#        App\Service\EfloreService:
+#            arguments:
+#                - '%env(EFLORE_API_BASE_URL)%'
+#                - '%env(SMARTFLORE_CARD_API_BASE_URL)%'
+#                - '%env(DEL_IMAGES_URL_TEMPLATE)%'
+#                - '%env(COSTE_IMAGE_URL_TEMPLATE)%'
+#                - '%env(VERNACULAR_NAME_URL_TEMPLATE)%'
+#                - '%env(USE_NATIVE_HTTP_CLIENT)%'
+#                - '@App\Tests\Mock\FakeHttpClient'
+        # We override the original http client injected with FakeHttpClient
+#        App\Service\TrailsService:
+#            arguments:
+#        App\Service\EfloreService:
+#            - $httpClient: 'App\Tests\Mock\FakeHttpClient'

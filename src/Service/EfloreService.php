@@ -6,35 +6,47 @@ use App\Model\Image;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\NativeHttpClient;
 use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class EfloreService
 {
+    // vernacular names referentials indexed by referential
+    private const REFERENTIALS = [
+        'bdtfx' => 'nvjfl',
+        'bdtxa' => 'nva',
+    ];
+
     private $client;
     private $cache;
     private $taxonApiBaseUrl;
     private $cardApiBaseUrl;
     private $imagesApiUrlTemplate;
     private $imageCosteApiUrlTemplate;
+    private $vernacularNameApiUrlTemplate;
 
     public function __construct(
         string $taxonApiBaseUrl,
         string $cardApiBaseUrl,
         string $imagesApiUrlTemplate,
         string $imageCosteApiUrlTemplate,
+        string $vernacularNameApiUrlTemplate,
         bool $useNativeHttpClient,
+        HttpClientInterface $httpClient,
         CacheInterface $trailsCache
     ) {
-        if ($useNativeHttpClient) {
-            $this->client = new NativeHttpClient();
-        } else {
-            $this->client = HttpClient::create();
-        }
+//        if ($useNativeHttpClient) {
+//            $this->client = new NativeHttpClient();
+//        } else {
+//            $this->client = HttpClient::create();
+//        }
 
+        $this->client = $httpClient;
         $this->cache = $trailsCache;
         $this->taxonApiBaseUrl = $taxonApiBaseUrl;
         $this->cardApiBaseUrl = $cardApiBaseUrl;
         $this->imagesApiUrlTemplate = $imagesApiUrlTemplate;
         $this->imageCosteApiUrlTemplate = $imageCosteApiUrlTemplate;
+        $this->vernacularNameApiUrlTemplate = $vernacularNameApiUrlTemplate;
     }
 
     public function getTaxonInfo(string $taxonRepo, int $taxonNameId, bool $refresh = false)
@@ -94,6 +106,7 @@ class EfloreService
             if (200 !== $response->getStatusCode()) {
                 throw new \Exception('Response status code is different than expected.');
             }
+//            dump($response);die;
             $images = json_decode($response->getContent(), true)['resultats'];
 
             $res = [];
@@ -113,23 +126,55 @@ class EfloreService
         $cardImageCosteCache = $this->cache->getItem('taxon.card.images.coste.'.$taxonId);
 
         if ($refresh || !$cardImageCosteCache->isHit()) {
-            // eg. https://api.tela-botanica.org/service:eflore:0.1/coste/images?masque.nt=29926&referentiel=bdtfx
-            $imageCosteApiUrl = sprintf($this->imageCosteApiUrlTemplate, $taxonId, $taxonRepo);
-            $response = $this->client->request('GET', $imageCosteApiUrl);
+            $image = [];
+            // only bdtfx taxa has Coste's image
+            if ('bdtfx' === $taxonRepo) {
+                // eg. https://api.tela-botanica.org/service:eflore:0.1/coste/images?masque.nt=29926&referentiel=bdtfx
+                $imageCosteApiUrl = sprintf($this->imageCosteApiUrlTemplate, $taxonId, $taxonRepo);
+                $response = $this->client->request('GET', $imageCosteApiUrl);
 
-            if (200 !== $response->getStatusCode()) {
-                throw new \Exception('Response status code is different than expected.');
-            }
-            $image = json_decode($response->getContent(), true)['resultats'] ?? [];
-            $image = reset($image) ?: [];
-            if ($image) {
-                $image = new Image(0, $image['binaire.href']);
+                if (200 !== $response->getStatusCode()) {
+                    throw new \Exception('Response status code is different than expected.');
+                }
+                $image = json_decode($response->getContent(), true)['resultats'] ?? [];
+                $image = reset($image) ?: [];
+                if ($image) {
+                    $image = new Image(0, $image['binaire.href']);
+                }
             }
 
-            $cardImageCosteCache->set($image ?? []);
+            $cardImageCosteCache->set($image);
             $this->cache->save($cardImageCosteCache);
         }
 
         return $cardImageCosteCache->get();
+    }
+
+    public function getVernacularName(string $taxonRepo, string $taxonId, bool $refresh = false)
+    {
+        $vernacularReferential = $this::REFERENTIALS[$taxonRepo] ?? null;
+        $vernacularNameCache = $this->cache->getItem('taxon.vernacular.name.'.$taxonId);
+
+        if ($refresh || !$vernacularNameCache->isHit()) {
+            $vernacularNames = [];
+            if ($vernacularReferential) {
+                // eg. https://api.tela-botanica.org/service:eflore:0.1/nvjfl/noms-vernaculaires/?masque.nt=141&retour.champs=num_taxon,num_statut,code_langue&navigation.limite=99
+                $vernacularNameApiUrl = sprintf($this->vernacularNameApiUrlTemplate,$vernacularReferential, $taxonId);
+                $response = $this->client->request('GET', $vernacularNameApiUrl);
+
+                if (200 !== $response->getStatusCode() && !(
+                        404 === $response->getStatusCode()
+                        && 'Les données recherchées sont introuvables.' === $response->getContent(false)
+                    )) {
+                    throw new \Exception('Response status code is different than expected.');
+                }
+                $vernacularNames = json_decode($response->getContent(false), true)['resultat'] ?? [];
+            }
+
+            $vernacularNameCache->set($vernacularNames);
+            $this->cache->save($vernacularNameCache);
+        }
+
+        return $vernacularNameCache->get();
     }
 }
