@@ -8,6 +8,7 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "ext-json": "*",
+        "ext-intl": "*",
         "doctrine/annotations": "^1.13",
         "league/geotools": "~1.0.0",
         "nelmio/api-doc-bundle": "^4.9",

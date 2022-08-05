@@ -51,6 +51,12 @@ class TrailController extends AbstractController
             );
         }
 
+        // alphabetical sort
+        $coll = collator_create('fr_FR');
+        usort($list, static function(Trail $a, Trail $b) use ($coll) {
+            return collator_compare($coll, mb_strtolower($a->getDisplayName()), mb_strtolower($b->getDisplayName()));
+        });
+
         $json = $serializer->serialize($list, 'json', ['groups' => 'list_trail']);
 
         return new JsonResponse($json, 200, [], true);
