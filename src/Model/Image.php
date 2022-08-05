@@ -13,7 +13,7 @@ class Image
      *     type="int",
      *     example="131269"
      * )
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail", "show_taxon"})
      */
     private $id;
 
@@ -21,9 +21,9 @@ class Image
      * @var string
      * @OA\Property(
      *     type="string",
-     *     example="https://example.com/link+to+original+full+format+image"
+     *     example="https://api.tela-botanica.org/img:002221908M.jpg"
      * )
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail", "show_taxon"})
      */
     private $url;
 

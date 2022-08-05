@@ -74,19 +74,25 @@ class TrailController extends AbstractController
      * @OA\Parameter(
      *     name="id",
      *     in="path",
-     *     description="The trail ID or name",
-     *     @OA\Schema(type="integer")
+     *     description="The trail ID (or trail name string)",
+     *     @OA\Schema(type="integer"),
+     *     example="146"
      * )
      * @OA\Tag(name="Trails")
      * @Route("/trail/{id}", name="show_trail", methods={"GET"})
      */
-    public function trailDetails(TrailsService $trails, $id)
-    {
+    public function trailDetails(
+        TrailsService $trails,
+        SerializerInterface $serializer,
+        $id
+    ) {
         if (is_numeric($id)) {
             $id = $trails->getTrailName((int) $id);
         }
 
-        return $this->json($trails->getTrail($id));
+        $json = $serializer->serialize($trails->getTrail($id), 'json', ['groups' => 'show_trail']);
+
+        return new JsonResponse($json, 200, [], true);
     }
 }
 

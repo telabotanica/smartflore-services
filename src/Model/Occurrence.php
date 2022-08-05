@@ -17,14 +17,14 @@ class Occurrence
      *     @OA\Items(type="float"),
      *     example={"lat":43.610769, "lon":3.876716}
      * )
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail"})
      */
     private $position;
 
     /**
      * @var Taxon
      * @OA\Property(ref=@Model(type=Taxon::class))
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail"})
      * @SerializedName("taxon")
      */
     private $taxo;
@@ -35,7 +35,7 @@ class Occurrence
      *     type="array",
      *     @OA\Items(ref=@Model(type=Image::class))
      * )
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail"})
      */
     private $images;
 

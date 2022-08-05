@@ -13,10 +13,10 @@ class Taxon
      * @var string
      * @OA\Property(
      *     type="string",
-     *     example="Acer Monspesulanum"
+     *     example="Acer campestre"
      * )
-     * @SerializedName("species")
-     * @Groups ({"show_trail", "list_trail"})
+     * @SerializedName("scientific_name")
+     * @Groups({"show_trail", "show_taxon"})
      */
     private $espece;
 
@@ -24,12 +24,21 @@ class Taxon
      * @var string
      * @OA\Property(
      *     type="string",
-     *     example="L."
+     *     example="Acer campestre L."
      * )
-     * @SerializedName("author")
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "show_taxon"})
      */
-    private $auteurEspece;
+    private $fullScientificName;
+
+    /**
+     * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="<span class=""sci""><span class=""gen"">Acer</span> <span class=""sp"">campestre</span></span> <span class=""auteur"">L.</span> [<span class=""annee"">1753</span>, <span class=""biblio"">Sp. Pl., 2 : 1055</span>]"
+     * )
+     * @Groups({"show_taxon"})
+     */
+    private $htmlFullScientificName;
 
     /**
      * @var string
@@ -38,7 +47,7 @@ class Taxon
      *     example="Acer"
      * )
      * @SerializedName("genus")
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_taxon"})
      */
     private $genre;
 
@@ -49,7 +58,7 @@ class Taxon
      *     example="Sapindaceae"
      * )
      * @SerializedName("family")
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_taxon"})
      */
     private $famille;
 
@@ -59,8 +68,8 @@ class Taxon
      *     type="string",
      *     example="bdtfx"
      * )
-     * @SerializedName("referential")
-     * @Groups ({"show_trail", "list_trail"})
+     * @SerializedName("taxon_repository")
+     * @Groups({"show_trail", "show_taxon"})
      */
     private $referentiel;
 
@@ -68,12 +77,80 @@ class Taxon
      * @var int
      * @OA\Property(
      *     type="int",
-     *     example="182"
+     *     example="141"
      * )
      * @SerializedName("name_id")
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "show_taxon"})
      */
     private $numNom;
+
+    /**
+     * @var int
+     */
+    private $acceptedScientificNameId;
+
+    /**
+     * @var int
+     * @OA\Property(
+     *     type="int",
+     *     example="8522"
+     * )
+     * @Groups({"show_taxon"})
+     */
+    private $taxonomicId;
+
+    /**
+     * @var string[]
+     * @OA\Property(
+     *     type="array",
+     *     @OA\Items(
+     *         type="string"
+     *     ),
+     *     example={
+     *         "Acéraille",
+     *         "Érable champêtre"
+     *     }
+     * )
+     * @Groups({"show_trail", "show_taxon"})
+     */
+    private $vernacularNames;
+
+    /**
+     * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="https://fr.wikipedia.org/wiki/Acer_campestre"
+     * )
+     * @Groups({"show_taxon"})
+     */
+    private $wikipediaUrl;
+
+    /**
+     * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="https://www.tela-botanica.org/widget:cel:cartoPoint?num_nom_ret=141&referentiel=bdtfx"
+     * )
+     * @Groups({"show_taxon"})
+     */
+    private $mapUrl;
+
+    /**
+     * @var Card
+     * @OA\Property(ref=@Model(type=Card::class))
+     * @Groups({"show_taxon"})
+     */
+    private $card;
+
+    /**
+     * @var Image[]
+     * @OA\Property(
+     *     type="array",
+     *     @OA\Items(ref=@Model(type=Image::class))
+     * )
+     * @Groups({"show_taxon"})
+     */
+    private $images;
 
     /**
      * @return string
@@ -96,18 +173,36 @@ class Taxon
     /**
      * @return string
      */
-    public function getAuteurEspece(): string
+    public function getFullScientificName(): string
     {
-        return $this->auteurEspece;
+        return $this->fullScientificName;
     }
 
     /**
-     * @param string $auteurEspece
+     * @param string $fullScientificName
      * @return Taxon
      */
-    public function setAuteurEspece(string $auteurEspece): Taxon
+    public function setFullScientificName(string $fullScientificName): Taxon
     {
-        $this->auteurEspece = $auteurEspece;
+        $this->fullScientificName = $fullScientificName;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getHtmlFullScientificName(): string
+    {
+        return $this->htmlFullScientificName;
+    }
+
+    /**
+     * @param string $htmlFullScientificName
+     * @return Taxon
+     */
+    public function setHtmlFullScientificName(string $htmlFullScientificName): Taxon
+    {
+        $this->htmlFullScientificName = $htmlFullScientificName;
         return $this;
     }
 
@@ -180,6 +275,151 @@ class Taxon
     public function setNumNom(int $numNom): Taxon
     {
         $this->numNom = $numNom;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getAcceptedScientificNameId(): int
+    {
+        return $this->acceptedScientificNameId;
+    }
+
+    /**
+     * @param int $acceptedScientificNameId
+     * @return Taxon
+     */
+    public function setAcceptedScientificNameId(int $acceptedScientificNameId): Taxon
+    {
+        $this->acceptedScientificNameId = $acceptedScientificNameId;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTaxonomicId(): int
+    {
+        return $this->taxonomicId;
+    }
+
+    /**
+     * @param int $taxonomicId
+     * @return Taxon
+     */
+    public function setTaxonomicId(int $taxonomicId): Taxon
+    {
+        $this->taxonomicId = $taxonomicId;
+        return $this;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getVernacularNames(): array
+    {
+        return $this->vernacularNames;
+    }
+
+    /**
+     * @param string[] $vernacularNames
+     * @return Taxon
+     */
+    public function setVernacularNames(array $vernacularNames): Taxon
+    {
+        $this->vernacularNames = $vernacularNames;
+        return $this;
+    }
+
+    public function addVernacularName(string $vernacularName, int $order = 0)
+    {
+        if ($order) {
+            $this->vernacularNames[$order] = $vernacularName;
+        } else {
+            $this->vernacularNames[] = $vernacularName;
+        }
+    }
+
+    /**
+     * @return string
+     */
+    public function getWikipediaUrl(): string
+    {
+        return $this->wikipediaUrl
+            ?? 'https://fr.wikipedia.org/wiki/'.str_replace (' ', '_', $this->espece);
+    }
+
+    /**
+     * @param string $wikipediaUrl
+     * @return Taxon
+     */
+    public function setWikipediaUrl(string $wikipediaUrl): Taxon
+    {
+        $this->wikipediaUrl = $wikipediaUrl;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMapUrl(): string
+    {
+        return $this->mapUrl
+            ?? sprintf(
+                'https://www.tela-botanica.org/widget:cel:cartoPoint?referentiel=%s&num_nom_ret=%s',
+                $this->getReferentiel(),
+                $this->getNumNom()
+            );
+    }
+
+    /**
+     * @param string $mapUrl
+     * @return Taxon
+     */
+    public function setMapUrl(string $mapUrl): Taxon
+    {
+        $this->mapUrl = $mapUrl;
+        return $this;
+    }
+
+    /**
+     * @return Card
+     */
+    public function getCard(): Card
+    {
+        if (!$this->card) {
+            $this->card = new Card();
+        }
+
+        return $this->card;
+    }
+
+    /**
+     * @param Card $card
+     * @return Taxon
+     */
+    public function setCard(Card $card): Taxon
+    {
+        $this->card = $card;
+        return $this;
+    }
+
+    /**
+     * @return Image[]
+     */
+    public function getImages(): array
+    {
+        return $this->images;
+    }
+
+    /**
+     * @param Image[] $images
+     * @return Taxon
+     */
+    public function setImages(array $images): Taxon
+    {
+        $this->images = $images;
         return $this;
     }
 }

@@ -16,7 +16,7 @@ class Trail
      *     type="int",
      *     example="146"
      * )
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail"})
      */
     private $id;
 
@@ -26,7 +26,7 @@ class Trail
      *     type="string",
      *     example="Arbres Remarquables"
      * )
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail"})
      * @SerializedName("name")
      */
     private $nom;
@@ -37,7 +37,7 @@ class Trail
      *     type="string",
      *     example="Arbres vraiment remarquables mais genre de ouf tmtc"
      * )
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail"})
      * @SerializedName("display_name")
      */
     private $displayName;
@@ -48,7 +48,7 @@ class Trail
      *     type="string",
      *     example="Tela Botanica"
      * )
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail"})
      * @SerializedName("author")
      */
     private $auteur;
@@ -60,7 +60,7 @@ class Trail
      *     @OA\Items(type="array", @OA\Items(type="float")),
      *     example={"start":{"lat":43.610769, "lon":3.876716}, "end":{"lat":43.610769, "lon":3.876716}}
      * )
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail"})
      */
     private $position;
 
@@ -70,7 +70,7 @@ class Trail
      *     type="array",
      *     @OA\Items(ref=@Model(type=Occurrence::class))
      * )
-     * @Groups ({"show_trail"})
+     * @Groups({"show_trail"})
      */
     private $occurrences;
 
@@ -80,7 +80,7 @@ class Trail
      *     type="int",
      *     example="42"
      * )
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail"})
      */
     private $occurrencesCount;
 
@@ -90,21 +90,21 @@ class Trail
      *     type="string",
      *     example="https://example.com/link+to+trail+details"
      * )
-     * @Groups ({"list_trail"})
+     * @Groups({"list_trail"})
      */
     private $details;
 
     /**
      * @var ?Image
      * @OA\Property(ref=@Model(type=Image::class))
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail"})
      */
     private $image;
 
     /**
      * @var Path
      * @SerializedName("path")
-     * @Groups ({"show_trail"})
+     * @Groups({"show_trail"})
      */
     private $chemin;
 
@@ -114,7 +114,7 @@ class Trail
      *     type="int",
      *     example="420"
      * )
-     * @Groups ({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail"})
      */
     private $pathLength;
 

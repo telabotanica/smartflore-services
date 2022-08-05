@@ -114,6 +114,9 @@ class TrailsService
 
             $trail = $serializer->deserialize($response->getContent(), Trail::class, 'json');
 
+            /**
+             * @var Trail $trail
+             */
             $trail->computeOccurrencesCount();
             $trail->setDisplayName($trail->getNom());
             $trail->setNom($trailName);
@@ -121,6 +124,7 @@ class TrailsService
                 'id' => $trail->getNom()
             ], UrlGeneratorInterface::ABSOLUTE_URL));
 
+            $this->collectOccurrencesTaxonInfos($trail, $refresh);
             $this->collectTrailImages($trail, $refresh);
 
             $trailCache->set($trail);
@@ -251,5 +255,18 @@ class TrailsService
         }
 
         return $trails;
+    }
+
+    /**
+     * Get full taxonomic infos, vernacular names, external links
+     */
+    private function collectOccurrencesTaxonInfos(Trail $trail, bool $refresh)
+    {
+        foreach ($trail->getOccurrences() as $occurrence) {
+            $taxon = $occurrence->getTaxo();
+            $taxon = $this->efloreService->getTaxon(
+                $taxon->getReferentiel(), $taxon->getNumNom(), $refresh);
+            $occurrence->setTaxo($taxon);
+        }
     }
 }
