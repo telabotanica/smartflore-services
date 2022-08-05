@@ -156,7 +156,10 @@ class Trail
 
     public function getDisplayName(): string
     {
-        return $this->displayName;
+        // mb_ucfirst
+        $firstChar = mb_substr($this->displayName, 0, 1);
+        $then = mb_substr($this->displayName, 1);
+        return mb_strtoupper($firstChar) . $then;
     }
 
     public function setDisplayName(string $displayName): self
