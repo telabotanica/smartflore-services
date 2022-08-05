@@ -193,19 +193,18 @@ class TrailsService
     /**
      * Get image collection
      */
-    public function collectTrailImages(Trail $trail, bool $refresh = false)
+    private function collectTrailImages(Trail $trail, bool $refresh = false)
     {
         $occurrencesImages = $this->getTrailSpecieImages($trail->getNom(), $refresh);
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxo();
-            $taxonId = $this->efloreService->getTaxonInfo(
-                $taxon->getReferentiel(), $taxon->getNumNom(), $refresh)['num_taxonomique'];
 
-            $images = $occurrencesImages[$taxon->getReferentiel()][$taxonId] ?? [];
+            $images = $occurrencesImages[$taxon->getReferentiel()][$taxon->getTaxonomicId()] ?? [];
             $images += $this->efloreService->getCardSpeciesImages(
                 $taxon->getReferentiel(), $taxon->getNumNom(), $refresh);
 
-            $coste = $this->efloreService->getCardCosteImage($taxon->getReferentiel(), $taxonId, $refresh);
+            $coste = $this->efloreService->getCardCosteImage(
+                $taxon->getReferentiel(), $taxon->getTaxonomicId(), $refresh);
             if ($coste) {
                 $images[] = $coste;
             }
