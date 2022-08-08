@@ -233,8 +233,12 @@ class EfloreService
 
         $card = new Card();
         $cardSections = $this->getCardText($taxon->getReferentiel(), $taxon->getTaxonomicId(), $refresh);
-        foreach ($cardSections['sections'] as $sectionTitle => $sectionText) {
-            $card->addSection($sectionTitle, $sectionText);
+        if (!isset($cardSections['sections'])) {
+            $card->addSection('Fiche vide', 'Pas de contenu, cette fiche est vide.');
+        } else {
+            foreach ($cardSections['sections'] as $sectionTitle => $sectionText) {
+                $card->addSection($sectionTitle, $sectionText);
+            }
         }
         $taxon->setCard($card);
 
