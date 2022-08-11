@@ -8,52 +8,35 @@ use Symfony\Component\Stopwatch\Stopwatch;
 class CacheService
 {
     private $trails;
-    private $cards;
     private $cache;
     private $stopwatch;
 
     public function __construct(
         TrailsService $trails,
-        EfloreService $cards,
         CacheInterface $trailsCache,
         Stopwatch $stopwatch
     ) {
         $this->trails = $trails;
-        $this->cards = $cards;
         $this->cache = $trailsCache;
         $this->stopwatch = $stopwatch;
     }
 
     /**
-     * Smoke test each cached routes to warmup cache and check for defect
+     * Smoke test each trails and each associated resources
      * All in one solution
      *
-     * for each trails :
+     * for each trail:
      * get occurrences, their taxon and infos
-     * trails -> trail -> occurrence -> taxon
+     * trails -> trail -> occurrence -> taxon -> card
      * @return array of stats
      */
     public function warmup(bool $force): array
     {
         $this->stopwatch->start('warmup-cache');
 
-        $alreadySeenTaxon = [];
         $trails = $this->trails->getTrails($force);
         foreach ($trails as $trail) {
-            $trailDetails = $this->trails->getTrail($trail->getNom(), $force);
-            foreach ($trailDetails->getOccurrences() as $occurrence) {
-                $taxon = $occurrence->getTaxo();
-                $taxonId = $this->cards->getTaxonRawInfo(
-                    $taxon->getReferentiel(), $taxon->getNumNom(), $force)['num_taxonomique'];
-
-                if (!in_array($taxonId, $alreadySeenTaxon)) {
-                    $alreadySeenTaxon[] = $taxonId;
-
-                    $this->cards->getCardText($taxon->getReferentiel(), $taxonId, $force);
-                    $this->cards->getCardSpeciesImages($taxon->getReferentiel(), $taxon->getNumNom(), $force);
-                    $this->cards->getCardCosteImage($taxon->getReferentiel(), $taxonId, $force);
-                }
-            }
+            $this->trails->getTrail($trail->getNom(), $force);
         }
 
         $event = $this->stopwatch->stop('warmup-cache');
@@ -86,7 +69,7 @@ class CacheService
         $cache = $this->cache->getItem('stats');
 
         return [
-            'status' => 'ok',
+            'status' => $cache->isHit() ? 'ok' : 'cold',
             'details' => $cache->isHit() ? $cache->get() : []
         ];
     }

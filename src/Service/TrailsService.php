@@ -260,7 +260,7 @@ class TrailsService
     /**
      * Get full taxonomic infos, vernacular names, external links
      */
-    private function collectOccurrencesTaxonInfos(Trail $trail, bool $refresh)
+    public function collectOccurrencesTaxonInfos(Trail $trail, bool $refresh)
     {
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxo();

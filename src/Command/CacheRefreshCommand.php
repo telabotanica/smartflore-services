@@ -44,17 +44,22 @@ class CacheRefreshCommand extends Command
 
         if ('none' === $resource) {
             $io->note(sprintf('Specify resource to refresh:'));
-            $io->note(sprintf(' - all (trails and cards, can take long)'));
-            $io->note(sprintf(' - trails (trails list)'));
+            $io->note(sprintf(' - all (trails and cards)'));
+            $io->note(sprintf(' - only cards (all cards texts and info)'));
             $io->note(sprintf(' - <trail-name>'));
+
+            return Command::INVALID;
         }
 
         switch ($resource) {
             case 'all':
                 $this->cache->refresh();
                 break;
-            case 'trails':
-                $this->trails->getTrails(true);
+            case 'cards':
+                $trails = $this->trails->getTrails();
+                foreach ($trails as $trail) {
+                    $this->trails->collectOccurrencesTaxonInfos($trail, true);
+                }
                 break;
             default:
                 $this->trails->getTrail($resource, true);
