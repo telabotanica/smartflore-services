@@ -42,6 +42,7 @@ class TrailController extends AbstractController
     ) {
         $list = $trails->getTrails();
 
+        // filter list with given coords bounding box
         if ($bbox = $request->query->get('bbox')) {
             // we need two coordinates to build a bounding box: northEast and southWest
             $coords = explode(',', $bbox);

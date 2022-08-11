@@ -16,7 +16,7 @@ class Trail
      *     type="int",
      *     example="146"
      * )
-     * @Groups({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $id;
 
@@ -26,7 +26,7 @@ class Trail
      *     type="string",
      *     example="Arbres Remarquables"
      * )
-     * @Groups({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      * @SerializedName("name")
      */
     private $nom;
@@ -52,6 +52,21 @@ class Trail
      * @SerializedName("author")
      */
     private $auteur;
+
+    /**
+     * @var int
+     */
+    private $authorId;
+
+    /**
+     * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="draft"
+     * )
+     * @Groups({"user_trail"})
+     */
+    private $status;
 
     /**
      * @var float[]
@@ -183,6 +198,42 @@ class Trail
     public function setAuteur(string $auteur): Trail
     {
         $this->auteur = $auteur;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getAuthorId(): int
+    {
+        return $this->authorId;
+    }
+
+    /**
+     * @param int $authorId
+     * @return Trail
+     */
+    public function setAuthorId(int $authorId): Trail
+    {
+        $this->authorId = $authorId;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    /**
+     * @param string $status
+     * @return Trail
+     */
+    public function setStatus(string $status): Trail
+    {
+        $this->status = $status;
         return $this;
     }
 

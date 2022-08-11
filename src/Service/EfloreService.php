@@ -8,7 +8,6 @@ use App\Model\Taxon;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\NativeHttpClient;
 use Symfony\Contracts\Cache\CacheInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class EfloreService
 {
@@ -33,7 +32,6 @@ class EfloreService
         string $imageCosteApiUrlTemplate,
         string $vernacularNameApiUrlTemplate,
         bool $useNativeHttpClient,
-        HttpClientInterface $httpClient,
         CacheInterface $trailsCache
     ) {
         if ($useNativeHttpClient) {
@@ -194,8 +192,8 @@ class EfloreService
             ->setEspece($taxonInfos['nom_sci'])
             ->setFullScientificName($taxonInfos['nom_complet'])
             ->setHtmlFullScientificName($taxonInfos['nom_sci_html_complet'])
-            ->setGenre($taxonInfos['genre'])
-            ->setFamille($taxonInfos['famille'])
+            ->setGenre($taxonInfos['genre'] ?? '')
+            ->setFamille($taxonInfos['famille'] ?? '')
             ->setReferentiel($taxonRepository)
             ->setNumNom($taxonInfos['id'])
             ->setAcceptedScientificNameId($taxonInfos['nom_retenu.id'])

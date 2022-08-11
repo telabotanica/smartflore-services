@@ -269,4 +269,31 @@ class TrailsService
             $occurrence->setTaxo($taxon);
         }
     }
+
+    /**
+     * Call private route for user's trails list
+     */
+    public function getUserTrails(string $token)
+    {
+        $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentier/', [
+            'headers' => [
+                'Auth' => $token
+            ]
+        ]);
+
+        if (200 !== $response->getStatusCode()) {
+            throw new \Exception('Something went wrong with user sentier list');
+        }
+
+        $userTrailsList = [];
+        foreach (json_decode($response->getContent(), true)['resultats'] as $trail) {
+            $userTrail = new Trail();
+            $userTrail->setId($trail['id'])
+                ->setNom($trail['titre'])
+                ->setStatus($trail['etat'] ?? 'brouillon');
+            $userTrailsList[] = $userTrail;
+        }
+
+        return $userTrailsList;
+    }
 }

@@ -33,3 +33,8 @@ services:
             - '%env(COSTE_IMAGE_URL_TEMPLATE)%'
             - '%env(VERNACULAR_NAME_URL_TEMPLATE)%'
             - '%env(USE_NATIVE_HTTP_CLIENT)%'
+    App\Service\AnnuaireService:
+        arguments:
+            - '%env(ANNUAIRE_LOGIN_BASE_URL)%'
+            - '%env(ANNUAIRE_REGISTER_URL)%'
+            - '%env(ANNUAIRE_COOKIE_NAME)%'
