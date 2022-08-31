@@ -319,7 +319,7 @@ class Taxon
      */
     public function getVernacularNames(): array
     {
-        return $this->vernacularNames;
+        return array_values($this->vernacularNames ?? []);
     }
 
     /**
@@ -335,7 +335,11 @@ class Taxon
     public function addVernacularName(string $vernacularName, int $order = 0)
     {
         if ($order) {
+            $previous = $this->vernacularNames[$order] ?? null;
             $this->vernacularNames[$order] = $vernacularName;
+            if ($previous) {
+                $this->vernacularNames[] = $previous;
+            }
         } else {
             $this->vernacularNames[] = $vernacularName;
         }
