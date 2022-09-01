@@ -54,7 +54,7 @@ class Trail
     private $auteur;
 
     /**
-     * @var int
+     * @var string
      */
     private $authorId;
 
@@ -202,18 +202,18 @@ class Trail
     }
 
     /**
-     * @return int
+     * @return string
      */
-    public function getAuthorId(): int
+    public function getAuthorId(): string
     {
         return $this->authorId;
     }
 
     /**
-     * @param int $authorId
+     * @param string $authorId
      * @return Trail
      */
-    public function setAuthorId(int $authorId): Trail
+    public function setAuthorId(string $authorId): Trail
     {
         $this->authorId = $authorId;
         return $this;

@@ -25,6 +25,7 @@ services:
     App\Service\TrailsService:
         arguments:
             - '%env(SMARTFLORE_LEGACY_API_BASE_URL)%'
+            - '%env(USER_HASH_SECRET)%'
     App\Service\EfloreService:
         arguments:
             - '%env(EFLORE_API_BASE_URL)%'

@@ -22,11 +22,13 @@ class TrailsService
     private $client;
     private $cache;
     private $smartfloreLegacyApiBaseUrl;
+    private $userHashSecret;
     private $router;
     private $efloreService;
 
     public function __construct(
         string $smartfloreLegacyApiBaseUrl,
+        string $userHashSecret,
         CacheInterface $trailsCache,
         UrlGeneratorInterface $router,
         EfloreService $efloreService
@@ -34,6 +36,7 @@ class TrailsService
         $this->client = HttpClient::create();
         $this->cache = $trailsCache;
         $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
+        $this->userHashSecret = $userHashSecret;
         $this->router = $router;
         $this->efloreService = $efloreService;
     }
@@ -197,7 +200,7 @@ class TrailsService
     /**
      * Get image collection
      */
-    private function collectTrailImages(Trail $trail, bool $refresh = false)
+    private function collectTrailImages(Trail $trail, bool $refresh = false): void
     {
         $occurrencesImages = $this->getTrailSpecieImages($trail->getNom(), $refresh);
         foreach ($trail->getOccurrences() as $occurrence) {
@@ -260,7 +263,7 @@ class TrailsService
     /**
      * Get full taxonomic infos, vernacular names, external links
      */
-    public function collectOccurrencesTaxonInfos(Trail $trail, bool $refresh)
+    public function collectOccurrencesTaxonInfos(Trail $trail, bool $refresh): void
     {
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxo();
@@ -273,7 +276,7 @@ class TrailsService
     /**
      * Call private route for user's trails list
      */
-    public function getUserTrails(string $token)
+    public function getAllUserTrails(string $token): array
     {
         $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentier/', [
             'headers' => [
@@ -292,6 +295,24 @@ class TrailsService
                 ->setNom($trail['titre'])
                 ->setStatus($trail['etat'] ?? 'brouillon');
             $userTrailsList[] = $userTrail;
+        }
+
+        return $userTrailsList;
+    }
+
+    /**
+     * Filter trails list to get user trails
+     */
+    public function getPublishedUserTrails(string $email): array
+    {
+        $hash = hash('sha3-224', $email.$this->userHashSecret);
+        $userTrailsList = [];
+
+        $trails = $this->getTrails();
+        foreach ($trails as $trail) {
+            if ($trail->getAuthorId() === $hash) {
+                $userTrailsList[] = $trail;
+            }
         }
 
         return $userTrailsList;
