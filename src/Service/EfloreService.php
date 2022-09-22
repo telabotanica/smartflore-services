@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Model\Card;
+use App\Model\CardTab;
 use App\Model\Image;
 use App\Model\Taxon;
 use Symfony\Component\HttpClient\HttpClient;
@@ -200,27 +201,6 @@ class EfloreService
             ->setTaxonomicId($taxonInfos['num_taxonomique'])
         ;
 
-        // get the main species instead of subsp
-        // maybe should use "nom retenu"?
-        if (isset($taxonInfos['rang.libelle'], $taxonInfos['type_epithete']) && 'Espèce' !== $taxonInfos['rang.libelle']) {
-            $taxon->setWikipediaUrl(
-                'https://fr.wikipedia.org/wiki/'
-                .str_replace(' ', '_',
-                    mb_substr($taxonInfos['nom_sci_complet'], 0,
-                        mb_strpos($taxonInfos['nom_sci_complet'], ' '.$taxonInfos['type_epithete'])))
-            );
-        }
-
-        $taxon->setMapUrl(sprintf(
-            'https://www.tela-botanica.org/widget:cel:cartoPoint?referentiel=%s&num_nom_ret=%s',
-            $taxon->getReferentiel(),
-            $taxon->getAcceptedScientificNameId()
-        ));
-
-        $images = $this->getCardSpeciesImages(
-            $taxon->getReferentiel(), $taxon->getNumNom(), $refresh, 100);
-        $taxon->setImages($images);
-
         $vernacularInfos = $this->getVernacularName(
             $taxon->getReferentiel(), $taxon->getTaxonomicId(), $refresh);
         foreach ($vernacularInfos as $vernacularInfo) {
@@ -229,7 +209,9 @@ class EfloreService
             }
         }
 
-        $card = new Card();
+        $card = new CardTab();
+        $card->setTitle('Fiche Smart’Flore')
+            ->setType('card');
         $cardSections = $this->getCardText($taxon->getReferentiel(), $taxon->getTaxonomicId(), $refresh);
         if (!isset($cardSections['sections'])) {
             $card->addSection('Fiche vide', 'Pas de contenu, cette fiche est vide.');
@@ -238,7 +220,44 @@ class EfloreService
                 $card->addSection($sectionTitle, $sectionText);
             }
         }
-        $taxon->setCard($card);
+        $taxon->addTab($card);
+
+        // gallery
+        $gallery = new CardTab();
+        $images = $this->getCardSpeciesImages(
+            $taxon->getReferentiel(), $taxon->getNumNom(), $refresh, 100);
+        $gallery->setTitle('Galerie')
+            ->setType('gallery')
+            ->setImages($images);
+        $taxon->addTab($gallery);
+
+        // map
+        $map = new CardTab();
+        $mapUrl = sprintf(
+            'https://www.tela-botanica.org/widget:cel:cartoPoint?referentiel=%s&num_nom_ret=%s',
+            $taxon->getReferentiel(),
+            $taxon->getAcceptedScientificNameId()
+        );
+        $map->setTitle('Carte de répartition')
+            ->setType('webview')
+            ->setUrl($mapUrl);
+        $taxon->addTab($map);
+
+        // wikipedia
+        $wikipedia = new CardTab();
+        $wikipediaUrl = 'https://fr.wikipedia.org/wiki/'.str_replace (' ', '_', $taxon->getEspece());
+        // for other rank than 'specie' (eg: subsp) we use specie name for wikipedia page (subsp pages are empty)
+        if (isset($taxonInfos['rang.libelle'], $taxonInfos['type_epithete']) && 'Espèce' !== $taxonInfos['rang.libelle']) {
+            $wikipediaUrl = 'https://fr.wikipedia.org/wiki/'
+                .str_replace(' ', '_',
+                    mb_substr($taxonInfos['nom_sci_complet'], 0,
+                        mb_strpos($taxonInfos['nom_sci_complet'], ' '.$taxonInfos['type_epithete'])))
+            ;
+        }
+        $wikipedia->setTitle('Wikipedia')
+            ->setType('webview')
+            ->setUrl($wikipediaUrl);
+        $taxon->addTab($wikipedia);
 
         return $taxon;
     }

@@ -116,41 +116,14 @@ class Taxon
     private $vernacularNames;
 
     /**
-     * @var string
-     * @OA\Property(
-     *     type="string",
-     *     example="https://fr.wikipedia.org/wiki/Acer_campestre"
-     * )
-     * @Groups({"show_taxon"})
-     */
-    private $wikipediaUrl;
-
-    /**
-     * @var string
-     * @OA\Property(
-     *     type="string",
-     *     example="https://www.tela-botanica.org/widget:cel:cartoPoint?num_nom_ret=141&referentiel=bdtfx"
-     * )
-     * @Groups({"show_taxon"})
-     */
-    private $mapUrl;
-
-    /**
-     * @var Card
-     * @OA\Property(ref=@Model(type=Card::class))
-     * @Groups({"show_taxon"})
-     */
-    private $card;
-
-    /**
-     * @var Image[]
+     * @var CardTab[]
      * @OA\Property(
      *     type="array",
-     *     @OA\Items(ref=@Model(type=Image::class))
+     *     @OA\Items(ref=@Model(type=CardTab::class))
      * )
      * @Groups({"show_taxon"})
      */
-    private $images;
+    private $tabs;
 
     /**
      * @return string
@@ -388,42 +361,30 @@ class Taxon
     }
 
     /**
-     * @return Card
+     * @return CardTab[]
      */
-    public function getCard(): Card
+    public function getTabs(): array
     {
-        if (!$this->card) {
-            $this->card = new Card();
-        }
-
-        return $this->card;
+        return $this->tabs;
     }
 
     /**
-     * @param Card $card
+     * @param CardTab[] $tabs
      * @return Taxon
      */
-    public function setCard(Card $card): Taxon
+    public function setTabs(array $tabs): Taxon
     {
-        $this->card = $card;
+        $this->tabs = $tabs;
         return $this;
     }
 
     /**
-     * @return Image[]
-     */
-    public function getImages(): array
-    {
-        return $this->images;
-    }
-
-    /**
-     * @param Image[] $images
+     * @param CardTab $tab
      * @return Taxon
      */
-    public function setImages(array $images): Taxon
+    public function addTab(CardTab $tab): Taxon
     {
-        $this->images = $images;
+        $this->tabs[] = $tab;
         return $this;
     }
 }
