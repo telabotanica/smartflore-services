@@ -99,7 +99,7 @@ class EfloreService
 
         if ($refresh || !$cardImagesCache->isHit()) {
             // eg. https://api.tela-botanica.org/service:del:0.1/images?navigation.depart=0&navigation.limite=4&masque.standard=1&masque.referentiel=bdtfx&masque.nn=74934&tri=votes&ordre=desc&protocole=3&format=CRS
-            $imagesApiUrl = sprintf($this->imagesApiUrlTemplate, $limit, $taxonRepository, $taxonNameId);
+            $imagesApiUrl = sprintf($this->imagesApiUrlTemplate, 100, $taxonRepository, $taxonNameId);
             $response = $this->client->request('GET', $imagesApiUrl, ['timeout' => 120]);
 
             if (200 !== $response->getStatusCode()) {
