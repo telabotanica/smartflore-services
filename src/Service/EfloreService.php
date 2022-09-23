@@ -219,6 +219,8 @@ class EfloreService
                 $card->addSection($sectionTitle, $sectionText);
             }
         }
+        $card->setImages($this->getCardSpeciesImages(
+            $taxon->getReferentiel(), $taxon->getNumNom(), $refresh, 4));
         $taxon->addTab($card);
 
         // gallery
