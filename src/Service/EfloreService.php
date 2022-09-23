@@ -2,7 +2,6 @@
 
 namespace App\Service;
 
-use App\Model\Card;
 use App\Model\CardTab;
 use App\Model\Image;
 use App\Model\Taxon;
