@@ -164,7 +164,8 @@ class TrailsService
                     $taxonRepo = strtolower($matches[1]);
                     $taxonId = $matches[2];
                     $res[$taxonRepo][$taxonId] = array_map(static function ($img) {
-                        return new Image((int)$img['id'], $img['url']);
+                        // @todo: find a service to get author info by image id
+                        return new Image((int)$img['id'], $img['url'], 'Inconnu');
                     }, $val['illustrations']);
                 }
             }

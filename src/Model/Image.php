@@ -27,10 +27,24 @@ class Image
      */
     private $url;
 
-    public function __construct(int $id, string $url)
-    {
+    /**
+     * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="Jean Michel Photographe"
+     * )
+     * @Groups({"show_trail", "list_trail", "show_taxon"})
+     */
+    private $author;
+
+    public function __construct(
+        int $id,
+        string $url,
+        string $author
+    ) {
         $this->id = $id;
         $this->url = $url;
+        $this->author = $author;
     }
 
     /**
@@ -66,6 +80,24 @@ class Image
     public function setUrl(string $url): Image
     {
         $this->url = $url;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAuthor(): string
+    {
+        return $this->author;
+    }
+
+    /**
+     * @param string $author
+     * @return Image
+     */
+    public function setAuthor(string $author): Image
+    {
+        $this->author = $author;
         return $this;
     }
 }

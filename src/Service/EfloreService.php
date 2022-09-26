@@ -98,7 +98,7 @@ class EfloreService
         $cardImagesCache = $this->cache->getItem('taxon.card.images.'.$taxonNameId);
 
         if ($refresh || !$cardImagesCache->isHit()) {
-            // eg. https://api.tela-botanica.org/service:del:0.1/images?navigation.depart=0&navigation.limite=4&masque.standard=1&masque.referentiel=bdtfx&masque.nn=74934&tri=votes&ordre=desc&protocole=3&format=CRS
+            // eg. https://api.tela-botanica.org/service:del:0.1/images?navigation.depart=0&navigation.limite=100&masque.standard=1&masque.referentiel=bdtfx&masque.nn=74934&tri=votes&ordre=desc&protocole=3&format=M
             $imagesApiUrl = sprintf($this->imagesApiUrlTemplate, 100, $taxonRepository, $taxonNameId);
             $response = $this->client->request('GET', $imagesApiUrl, ['timeout' => 120]);
 
@@ -110,7 +110,7 @@ class EfloreService
 
             $res = [];
             foreach ($images as $image) {
-                $res[] = new Image($image['id_image'], $image['binaire.href']);
+                $res[] = new Image($image['id_image'], $image['binaire.href'], $image['observation']['auteur.nom'] ?? 'Inconnu');
             }
 
             $cardImagesCache->set($res);
@@ -143,7 +143,7 @@ class EfloreService
                 $image = json_decode($response->getContent(), true)['resultats'] ?? [];
                 $image = reset($image) ?: [];
                 if ($image) {
-                    $image = new Image(0, $image['binaire.href']);
+                    $image = new Image(0, $image['binaire.href'], 'Hippolyte Jacques Coste');
                 }
             }
 
