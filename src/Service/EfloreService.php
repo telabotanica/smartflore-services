@@ -210,7 +210,8 @@ class EfloreService
 
         $card = new CardTab();
         $card->setTitle('Fiche Smart’Flore')
-            ->setType('card');
+            ->setType('card')
+            ->setIcon('card');
         $cardSections = $this->getCardText($taxon->getReferentiel(), $taxon->getTaxonomicId(), $refresh);
         if (!isset($cardSections['sections'])) {
             $card->addSection('Fiche vide', 'Pas de contenu, cette fiche est vide.');
@@ -229,6 +230,7 @@ class EfloreService
             $taxon->getReferentiel(), $taxon->getNumNom(), $refresh, 100);
         $gallery->setTitle('Galerie')
             ->setType('gallery')
+            ->setIcon('gallery')
             ->setImages($images);
         $taxon->addTab($gallery);
 
@@ -241,6 +243,7 @@ class EfloreService
         );
         $map->setTitle('Carte de répartition')
             ->setType('webview')
+            ->setIcon('map')
             ->setUrl($mapUrl);
         $taxon->addTab($map);
 
@@ -257,6 +260,7 @@ class EfloreService
         }
         $wikipedia->setTitle('Wikipedia')
             ->setType('webview')
+            ->setIcon('wikipedia')
             ->setUrl($wikipediaUrl);
         $taxon->addTab($wikipedia);
 

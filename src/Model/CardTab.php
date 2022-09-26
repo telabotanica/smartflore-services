@@ -9,6 +9,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class CardTab
 {
     public const CARD_TAB_TYPES = ['card', 'gallery', 'webview'];
+    public const CARD_TAB_ICONS = ['card', 'gallery', 'map', 'wikipedia', 'form', 'webview', 'default'];
 
     /**
      * @var string
@@ -31,6 +32,17 @@ class CardTab
      * @Groups({"show_taxon"})
      */
     private $type;
+
+    /**
+     * @var string
+     * @OA\Property(
+     *     type="string",
+     *     description="tab's icon: card, gallery, map, wikipedia, form, default, webview, etc.",
+     *     example="map"
+     * )
+     * @Groups({"show_taxon"})
+     */
+    private $icon;
 
     /**
      * @var CardSection[]
@@ -96,10 +108,32 @@ class CardTab
     public function setType(string $type): CardTab
     {
         if (!in_array($type, self::CARD_TAB_TYPES)) {
-            throw new \InvalidArgumentException('Given type :"'.$type.'" is not allowed');
+            throw new \InvalidArgumentException('Given card type :"'.$type.'" is not allowed');
         }
 
         $this->type = $type;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getIcon(): string
+    {
+        return $this->icon ?? 'default';
+    }
+
+    /**
+     * @param string $icon
+     * @return CardTab
+     */
+    public function setIcon(string $icon): CardTab
+    {
+        if (!in_array($icon, self::CARD_TAB_ICONS)) {
+            throw new \InvalidArgumentException('Given icon :"'.$icon.'" is not allowed');
+        }
+
+        $this->icon = $icon;
         return $this;
     }
 
