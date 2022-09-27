@@ -220,8 +220,9 @@ class EfloreService
                 $card->addSection($sectionTitle, $sectionText);
             }
         }
-        $card->setImages($this->getCardSpeciesImages(
-            $taxon->getReferentiel(), $taxon->getNumNom(), $refresh, 4));
+        $images = $this->getCardSpeciesImages(
+            $taxon->getReferentiel(), $taxon->getNumNom(), $refresh, 4);
+        $card->setImages($images)->setImagesShort($images);
         $taxon->addTab($card);
 
         // gallery
