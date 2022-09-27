@@ -3,10 +3,11 @@ nelmio_api_doc:
         info:
             title: Smart'Flore services
             description: Trails, card species and other details
-            version: "0.1.1"
+            version: "0.2.0"
     areas: # to filter documented areas
         path_patterns:
             - ^/?!_error
+            - ^/batch
             - ^/trail
             - ^/taxon
             - ^/login
