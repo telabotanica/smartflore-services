@@ -95,5 +95,40 @@ class TrailController extends AbstractController
 
         return new JsonResponse($json, 200, [], true);
     }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="Trail details for batch (includes full taxon info)",
+     *     @OA\JsonContent(
+     *         type="object",
+     *         ref=@Model(type=Trail::class, groups={"show_trail", "show_taxon", "short_images"})
+     *     )
+     * )
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The trail ID (or trail name string)",
+     *     @OA\Schema(type="integer"),
+     *     example="146"
+     * )
+     * @OA\Tag(name="Trails")
+     * @Route("/batch/trail/{id}", name="batch_trail", methods={"GET"})
+     */
+    public function trailDetailsBatch(
+        TrailsService $trails,
+        SerializerInterface $serializer,
+        $id
+    ) {
+        if (is_numeric($id)) {
+            $id = $trails->getTrailName((int) $id);
+        }
+
+        $json = $serializer->serialize(
+            $trails->getTrail($id),
+            'json', ['groups' => ['show_trail', 'show_taxon', 'short_images']]);
+
+        return new JsonResponse($json, 200, [], true);
+    }
 }
 

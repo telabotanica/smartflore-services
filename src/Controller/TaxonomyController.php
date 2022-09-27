@@ -19,7 +19,7 @@ class TaxonomyController extends AbstractController
      *     description="Taxonomic info and more",
      *     @OA\JsonContent(
      *         type="object",
-     *         ref=@Model(type=Taxon::class, groups={"show_taxon"})
+     *         ref=@Model(type=Taxon::class, groups={"show_taxon", "full_images"})
      *     )
      * )
      * @OA\Parameter(
@@ -47,7 +47,7 @@ class TaxonomyController extends AbstractController
     ) {
         $json = $serializer->serialize(
             $eflore->getTaxon($taxonRepository, $taxonNameId),
-            'json', ['groups' => 'show_taxon']);
+            'json', ['groups' => ['show_taxon', 'full_images']]);
 
         return new JsonResponse($json, 200, [], true);
     }

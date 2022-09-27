@@ -231,7 +231,9 @@ class EfloreService
         $gallery->setTitle('Galerie')
             ->setType('gallery')
             ->setIcon('gallery')
-            ->setImages($images);
+            ->setImages($images)
+            ->setImagesShort(array_slice($images, 0, 4))
+        ;
         $taxon->addTab($gallery);
 
         // map

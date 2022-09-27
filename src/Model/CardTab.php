@@ -5,6 +5,7 @@ namespace App\Model;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\SerializedName;
 
 class CardTab
 {
@@ -60,9 +61,20 @@ class CardTab
      *     type="array",
      *     @OA\Items(ref=@Model(type=Image::class))
      * )
-     * @Groups({"show_taxon"})
+     * @Groups({"full_images"})
      */
     private $images;
+
+    /**
+     * @var Image[]
+     * @OA\Property(
+     *     type="array",
+     *     @OA\Items(ref=@Model(type=Image::class))
+     * )
+     * @Groups({"short_images"})
+     * @SerializedName("images")
+     */
+    private $imagesShort;
 
     /**
      * @var string
@@ -181,6 +193,25 @@ class CardTab
     public function setImages(array $images): CardTab
     {
         $this->images = $images;
+        return $this;
+    }
+
+    /**
+     * @return Image[]
+     */
+    public function getImagesShort(): array
+    {
+
+        return $this->imagesShort;
+    }
+
+    /**
+     * @param Image[] $imagesShort
+     * @return CardTab
+     */
+    public function setImagesShort(array $imagesShort): CardTab
+    {
+        $this->imagesShort = $imagesShort;
         return $this;
     }
 
