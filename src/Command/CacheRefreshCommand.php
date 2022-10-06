@@ -56,7 +56,7 @@ class CacheRefreshCommand extends Command
             case 'cards':
                 $trails = $this->trails->getTrails();
                 foreach ($trails as $trail) {
-                    $this->trails->collectOccurrencesTaxonInfos($trail, true);
+                    $this->trails->collectOccurrencesTaxonInfos($trail);
                 }
                 break;
             default:

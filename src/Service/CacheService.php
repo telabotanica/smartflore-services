@@ -35,9 +35,6 @@ class CacheService
         $this->stopwatch->start('warmup-cache');
 
         $trails = $this->trails->getTrails($force);
-        foreach ($trails as $trail) {
-            $this->trails->getTrail($trail->getNom(), $force);
-        }
 
         $event = $this->stopwatch->stop('warmup-cache');
         $time = floor($event->getDuration()/1000);

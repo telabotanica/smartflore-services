@@ -29,12 +29,12 @@ class TrailsService
     public function __construct(
         string $smartfloreLegacyApiBaseUrl,
         string $userHashSecret,
-        CacheInterface $trailsCache,
+        CacheInterface $cache,
         UrlGeneratorInterface $router,
         EfloreService $efloreService
     ) {
         $this->client = HttpClient::create();
-        $this->cache = $trailsCache;
+        $this->cache = $cache;
         $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
         $this->userHashSecret = $userHashSecret;
         $this->router = $router;
@@ -47,46 +47,22 @@ class TrailsService
      */
     public function getTrails(bool $refresh = false)
     {
-        $trailsCache = $this->cache->getItem('trails.list');
-
-        if ($refresh || !$trailsCache->isHit()) {
-            $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentiers/', [
-                'timeout' => 180,
-                'headers' => [
-                    'Accept: application/json',
-                ],
-            ]);
-
-            if (200 !== $response->getStatusCode()) {
-                throw new \Exception('Response status code is different than expected.');
-            }
-
-            $extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
-            $normalizer = [
-                new ArrayDenormalizer(),
-                new ObjectNormalizer(null, null, null, $extractor),
-            ];
-            $serializer = new Serializer($normalizer, [new JsonEncoder()]);
-
-            $trails = $serializer->deserialize($response->getContent(), 'App\Model\Trail[]', 'json', [
-                'remove_empty_tags' => true
-            ]);
-
-            /**
-             * @var $trail Trail
-             */
-            foreach ($trails as &$trail) {
-                $trailName = self::extractTrailName($trail);
-
-                // override reference with more details
-                $trail = $this->getTrail($trailName, $refresh);
-            }
-
-            $trailsCache->set($trails);
-            $this->cache->save($trailsCache);
+        if ($refresh) {
+            $this->buildTrailsListCache();
+            $this->buildAllTrailsCache();
         }
 
-        return $trailsCache->get();
+        $trailsCache = $this->cache->getItem('trails.list');
+        $trailsList = $trailsCache->get();
+
+        $trails = [];
+        foreach ($trailsList as $trail) {
+            $trailName = self::extractTrailName($trail);
+            $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
+            $trails[] = $trailCache->get();
+        }
+
+        return $trails;
     }
 
     public function getTrail(string $trailName, bool $refresh = false)
@@ -94,44 +70,7 @@ class TrailsService
         $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
 
         if ($refresh || !$trailCache->isHit()) {
-            $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentiers/'.urlencode($trailName), [
-                'timeout' => 120,
-                'headers' => [
-                    'Accept: application/json',
-                ],
-            ]);
-
-            if (200 !== $response->getStatusCode()) {
-                if ('Ce sentier n\'existe pas' === $response->getContent(false)) {
-                    throw new TrailNotFoundException('This trail does not exist');
-                }
-                throw new \Exception('Response status code is different than expected.');
-            }
-
-            $extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
-            $normalizer = [
-                new ArrayDenormalizer(),
-                new ObjectNormalizer(null, null, null, $extractor),
-            ];
-            $serializer = new Serializer($normalizer, [new JsonEncoder()]);
-
-            $trail = $serializer->deserialize($response->getContent(), Trail::class, 'json');
-
-            /**
-             * @var Trail $trail
-             */
-            $trail->computeOccurrencesCount();
-            $trail->setDisplayName($trail->getNom());
-            $trail->setNom($trailName);
-            $trail->setDetails($this->router->generate('show_trail', [
-                'id' => $trail->getNom()
-            ], UrlGeneratorInterface::ABSOLUTE_URL));
-
-            $this->collectOccurrencesTaxonInfos($trail, $refresh);
-            $this->collectTrailImages($trail, $refresh);
-
-            $trailCache->set($trail);
-            $this->cache->save($trailCache);
+            $this->buildTrailCache($trailName);
         }
 
         return $trailCache->get();
@@ -264,12 +203,12 @@ class TrailsService
     /**
      * Get full taxonomic infos, vernacular names, external links
      */
-    public function collectOccurrencesTaxonInfos(Trail $trail, bool $refresh): void
+    public function collectOccurrencesTaxonInfos(Trail $trail): void
     {
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxo();
             $taxon = $this->efloreService->getTaxon(
-                $taxon->getReferentiel(), $taxon->getNumNom(), $refresh);
+                $taxon->getReferentiel(), $taxon->getNumNom(), true);
             $occurrence->setTaxo($taxon);
         }
     }
@@ -317,5 +256,96 @@ class TrailsService
         }
 
         return $userTrailsList;
+    }
+
+    public function buildTrailsListCache()
+    {
+        $trailsCache = $this->cache->getItem('trails.list');
+
+        $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentiers/', [
+            'timeout' => 180,
+            'headers' => [
+                'Accept: application/json',
+            ],
+        ]);
+
+        if (200 !== $response->getStatusCode()) {
+            throw new \Exception('Response status code is different than expected.');
+        }
+
+        $extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
+        $normalizer = [
+            new ArrayDenormalizer(),
+            new ObjectNormalizer(null, null, null, $extractor),
+        ];
+        $serializer = new Serializer($normalizer, [new JsonEncoder()]);
+
+        $trails = $serializer->deserialize($response->getContent(), 'App\Model\Trail[]', 'json', [
+            'remove_empty_tags' => true
+        ]);
+
+        $trailsCache->set($trails);
+        $this->cache->save($trailsCache);
+    }
+
+    public function buildAllTrailsCache()
+    {
+        $trailsCache = $this->cache->getItem('trails.list');
+        if (!$trailsCache->isHit()) {
+            $this->buildTrailsListCache();
+        }
+        $trails = $trailsCache->get();
+
+        /**
+         * @var $trail Trail
+         */
+        foreach ($trails as $trail) {
+            $trailName = self::extractTrailName($trail);
+            $this->buildTrailCache($trailName);
+        }
+    }
+
+    public function buildTrailCache(string $trailName)
+    {
+        $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
+
+        $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentiers/'.urlencode($trailName), [
+            'timeout' => 120,
+            'headers' => [
+                'Accept: application/json',
+            ],
+        ]);
+
+        if (200 !== $response->getStatusCode()) {
+            if ('Ce sentier n\'existe pas' === $response->getContent(false)) {
+                throw new TrailNotFoundException('This trail does not exist');
+            }
+            throw new \Exception('Response status code is different than expected.');
+        }
+
+        $extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
+        $normalizer = [
+            new ArrayDenormalizer(),
+            new ObjectNormalizer(null, null, null, $extractor),
+        ];
+        $serializer = new Serializer($normalizer, [new JsonEncoder()]);
+
+        $trail = $serializer->deserialize($response->getContent(), Trail::class, 'json');
+
+        /**
+         * @var Trail $trail
+         */
+        $trail->computeOccurrencesCount();
+        $trail->setDisplayName($trail->getNom());
+        $trail->setNom($trailName);
+        $trail->setDetails($this->router->generate('show_trail', [
+            'id' => $trail->getNom()
+        ], UrlGeneratorInterface::ABSOLUTE_URL));
+
+        $this->collectOccurrencesTaxonInfos($trail);
+        $this->collectTrailImages($trail);
+
+        $trailCache->set($trail);
+        $this->cache->save($trailCache);
     }
 }
