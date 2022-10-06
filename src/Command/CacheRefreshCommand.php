@@ -7,27 +7,25 @@ use App\Service\TrailsService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 class CacheRefreshCommand extends Command
 {
     protected static $defaultName = 'app:cache:refresh';
-    protected static $defaultDescription = 'Add a short description for your command';
+    protected static $defaultDescription = 'Refresh cache, choose one or all at once';
 
     private $cache;
     private $trails;
 
     public function __construct(
-        string $name = null,
         CacheService $cache,
         TrailsService $trails
     ) {
         $this->cache = $cache;
         $this->trails = $trails;
 
-        parent::__construct($name);
+        parent::__construct();
     }
 
     protected function configure(): void
