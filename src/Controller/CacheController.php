@@ -21,9 +21,7 @@ class CacheController extends AbstractController
      */
     public function warmupCache(CacheService $cache, bool $force = false)
     {
-        if ($force) {
-            set_time_limit(0);
-        }
+        set_time_limit(0);
 
         return $this->json($cache->warmup($force));
     }
