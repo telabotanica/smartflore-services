@@ -134,6 +134,11 @@ class Trail
     private $pathLength;
 
     /**
+     * @var int
+     */
+    private $dateModification;
+
+    /**
      * @return int|string
      */
     public function getId()
@@ -402,6 +407,24 @@ class Trail
     public function setPathLength(int $pathLength): Trail
     {
         $this->pathLength = $pathLength;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getDateModification(): int
+    {
+        return $this->dateModification;
+    }
+
+    /**
+     * @param int $dateModification
+     * @return Trail
+     */
+    public function setDateModification(int $dateModification): Trail
+    {
+        $this->dateModification = $dateModification;
         return $this;
     }
 }

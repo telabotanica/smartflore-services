@@ -59,7 +59,10 @@ class TrailsService
         foreach ($trailsList as $trail) {
             $trailName = self::extractTrailName($trail);
             $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
-            $trails[] = $trailCache->get();
+            $trail = $trailCache->get();
+            $this->collectOccurrencesTaxonInfos($trail);
+            $this->collectTrailImages($trail);
+            $trails[] = $trail;
         }
 
         return $trails;
@@ -73,7 +76,11 @@ class TrailsService
             $this->buildTrailCache($trailName);
         }
 
-        return $trailCache->get();
+        $trail = $trailCache->get();
+        $this->collectOccurrencesTaxonInfos($trail);
+        $this->collectTrailImages($trail);
+
+        return $trail;
     }
 
     public function getTrailSpecieImages(string $trailName, bool $refresh = false)
@@ -140,18 +147,42 @@ class TrailsService
     /**
      * Get image collection
      */
-    private function collectTrailImages(Trail $trail, bool $refresh = false): void
+    private function collectTrailImages(Trail $trail): void
     {
-        $occurrencesImages = $this->getTrailSpecieImages($trail->getNom(), $refresh);
+        $occurrencesImages = $this->getTrailSpecieImages($trail->getNom());
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxo();
 
             $images = $occurrencesImages[$taxon->getReferentiel()][$taxon->getTaxonomicId()] ?? [];
             $images += $this->efloreService->getCardSpeciesImages(
-                $taxon->getReferentiel(), $taxon->getNumNom(), $refresh);
+                $taxon->getReferentiel(), $taxon->getNumNom());
 
             $coste = $this->efloreService->getCardCosteImage(
-                $taxon->getReferentiel(), $taxon->getTaxonomicId(), $refresh);
+                $taxon->getReferentiel(), $taxon->getTaxonomicId());
+            if ($coste) {
+                $images[] = $coste;
+            }
+
+            $occurrence->setImages(array_filter($images));
+
+            if (!$trail->getImage() && $occurrence->getFirstImage()) {
+                $trail->setImage($occurrence->getFirstImage());
+            }
+        }
+    }
+
+    private function buildTrailImagesCache(Trail $trail): void
+    {
+        $occurrencesImages = $this->getTrailSpecieImages($trail->getNom(), true);
+        foreach ($trail->getOccurrences() as $occurrence) {
+            $taxon = $occurrence->getTaxo();
+
+            $images = $occurrencesImages[$taxon->getReferentiel()][$taxon->getTaxonomicId()] ?? [];
+            $images += $this->efloreService->getCardSpeciesImages(
+                $taxon->getReferentiel(), $taxon->getNumNom(), true);
+
+            $coste = $this->efloreService->getCardCosteImage(
+                $taxon->getReferentiel(), $taxon->getTaxonomicId(), true);
             if ($coste) {
                 $images[] = $coste;
             }
@@ -204,6 +235,16 @@ class TrailsService
      * Get full taxonomic infos, vernacular names, external links
      */
     public function collectOccurrencesTaxonInfos(Trail $trail): void
+    {
+        foreach ($trail->getOccurrences() as $occurrence) {
+            $taxon = $occurrence->getTaxo();
+            $taxon = $this->efloreService->getTaxon(
+                $taxon->getReferentiel(), $taxon->getNumNom());
+            $occurrence->setTaxo($taxon);
+        }
+    }
+
+    public function buildOccurrencesTaxonInfos(Trail $trail): void
     {
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxo();
@@ -302,6 +343,11 @@ class TrailsService
         foreach ($trails as $trail) {
             $trailName = self::extractTrailName($trail);
             $this->buildTrailCache($trailName);
+
+            $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
+            $trail = $trailCache->get();
+            $this->buildOccurrencesTaxonInfos($trail);
+            $this->buildTrailImagesCache($trail);
         }
     }
 
@@ -341,9 +387,6 @@ class TrailsService
         $trail->setDetails($this->router->generate('show_trail', [
             'id' => $trail->getNom()
         ], UrlGeneratorInterface::ABSOLUTE_URL));
-
-        $this->collectOccurrencesTaxonInfos($trail);
-        $this->collectTrailImages($trail);
 
         $trailCache->set($trail);
         $this->cache->save($trailCache);
