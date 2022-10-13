@@ -73,16 +73,20 @@ class TrailsService
      */
     public function getTrailsList()
     {
-        $trailsCache = $this->cache->getItem('trails.list');
-        $trailsList = $trailsCache->get();
-
         $trails = [];
-        foreach ($trailsList as $trail) {
-            $trailName = self::extractTrailName($trail);
-            $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
-            $trail = $trailCache->get();
-            $this->findOneImagePlease($trail);
-            $trails[] = $trail;
+        $trailsCache = $this->cache->getItem('trails.list');
+        if ($trailsCache->isHit()) {
+            $trailsList = $trailsCache->get();
+
+            foreach ($trailsList as $trail) {
+                $trailName = self::extractTrailName($trail);
+                $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
+                if ($trailCache->isHit()) {
+                    $trail = $trailCache->get();
+                    $this->findOneImagePlease($trail);
+                    $trails[] = $trail;
+                }
+            }
         }
 
         return $trails;
