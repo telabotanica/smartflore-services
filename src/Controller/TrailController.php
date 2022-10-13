@@ -40,7 +40,7 @@ class TrailController extends AbstractController
         Request $request,
         BoundingBoxPolygonFactory $polygonFactory
     ) {
-        $list = $trails->getTrails();
+        $list = $trails->getTrailsList();
 
         // filter list with given coords bounding box
         if ($bbox = $request->query->get('bbox')) {

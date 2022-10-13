@@ -68,6 +68,26 @@ class TrailsService
         return $trails;
     }
 
+    /**
+     * @return Trail[]
+     */
+    public function getTrailsList()
+    {
+        $trailsCache = $this->cache->getItem('trails.list');
+        $trailsList = $trailsCache->get();
+
+        $trails = [];
+        foreach ($trailsList as $trail) {
+            $trailName = self::extractTrailName($trail);
+            $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
+            $trail = $trailCache->get();
+            $this->findOneImagePlease($trail);
+            $trails[] = $trail;
+        }
+
+        return $trails;
+    }
+
     public function getTrail(string $trailName, bool $refresh = false)
     {
         $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
@@ -81,6 +101,19 @@ class TrailsService
         $this->collectTrailImages($trail);
 
         return $trail;
+    }
+
+    public function findOneImagePlease(Trail $trail): void
+    {
+        foreach ($trail->getOccurrences() as $occurrence) {
+            $taxon = $occurrence->getTaxo();
+            $images = $this->efloreService->getCardSpeciesImages(
+                $taxon->getReferentiel(), $taxon->getNumNom()
+            );
+            if (isset($images[0]) && Image::class === get_class($images[0])) {
+                $trail->setImage($images[0]);
+            }
+        }
     }
 
     public function getTrailSpecieImages(string $trailName, bool $refresh = false)
