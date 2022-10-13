@@ -197,6 +197,7 @@ class TrailsService
 
     public static function getTrailLength(Trail $trail): float
     {
+        $geotools = new Geotools();
         $distance = 0;
 
         $points = [];
@@ -204,13 +205,12 @@ class TrailsService
             $points[] = new Coordinate(array_values($point));
         }
 
-        $geotools = new Geotools();
-        array_walk($points, static function($point) use (&$distance, $geotools, $points) {
+        foreach ($points as $point) {
             $next = next($points);
             if ($next) {
                 $distance += $geotools->distance()->setFrom($point)->setTo($next)->flat();
             }
-        });
+        }
 
         return $distance;
     }
