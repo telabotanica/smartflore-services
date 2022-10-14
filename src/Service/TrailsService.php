@@ -109,9 +109,11 @@ class TrailsService
 
     public function findOneImagePlease(Trail $trail): void
     {
+        $occurrencesImages = $this->getTrailSpecieImages($trail->getNom());
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxo();
-            $images = $this->efloreService->getCardSpeciesImages(
+            $images = $occurrencesImages[$taxon->getReferentiel()][$taxon->getTaxonomicId()] ?? [];
+            $images += $this->efloreService->getCardSpeciesImages(
                 $taxon->getReferentiel(), $taxon->getNumNom()
             );
             if (isset($images[0]) && Image::class === get_class($images[0])) {
@@ -413,7 +415,9 @@ class TrailsService
         ];
         $serializer = new Serializer($normalizer, [new JsonEncoder()]);
 
-        $trail = $serializer->deserialize($response->getContent(), Trail::class, 'json');
+        $trail = $serializer->deserialize($response->getContent(), Trail::class, 'json', [
+            \Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true
+        ]);
 
         /**
          * @var Trail $trail
