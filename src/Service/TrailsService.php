@@ -164,7 +164,7 @@ class TrailsService
 
     public function getTrailName(int $id): string
     {
-        $trails = $this->getTrails();
+        $trails = $this->getTrailsList();
         foreach ($trails as $trail) {
             if ($trail->getId() === $id) {
                 return $trail->getNom();
