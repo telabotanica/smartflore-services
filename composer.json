@@ -10,6 +10,9 @@
         "ext-intl": "*",
         "ext-json": "*",
         "doctrine/annotations": "^1.13",
+        "doctrine/doctrine-bundle": "^2.7",
+        "doctrine/doctrine-migrations-bundle": "^3.2",
+        "doctrine/orm": "^2.13",
         "league/geotools": "~1.0.0",
         "nelmio/api-doc-bundle": "^4.9",
         "phpdocumentor/reflection-docblock": "^5.3",
@@ -24,6 +27,7 @@
         "symfony/monolog-bundle": "^3.8",
         "symfony/property-access": "5.4.*",
         "symfony/property-info": "5.4.*",
+        "symfony/proxy-manager-bridge": "5.4.*",
         "symfony/runtime": "5.4.*",
         "symfony/serializer": "5.4.*",
         "symfony/stopwatch": "5.4.*",
@@ -34,7 +38,7 @@
         "phpunit/phpunit": "^9.5",
         "roave/security-advisories": "dev-latest",
         "symfony/css-selector": "5.4.*",
-        "symfony/maker-bundle": "^1.38",
+        "symfony/maker-bundle": "^1.43",
         "symfony/phpunit-bridge": "^6.0"
     },
     "config": {
