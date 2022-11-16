@@ -3,10 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Ping;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,7 +16,7 @@ class PingController extends AbstractController
     /**
      * @OA\Response (
      *     response="200",
-     *     description="xxxxxxxxxxxxxxxxxxx",
+     *     description="Ping saved in database",
      *     @OA\JsonContent(
      *         @OA\Schema(type="string", example="thisisatokenlol")
      *     )
@@ -53,19 +53,36 @@ class PingController extends AbstractController
      *     name="date",
      *     in="query",
      *     description="Date & Time of the ping",
-     *     example="2022-11-14 ",
-     *     @OA\Schema(type="dateTime")
+     *     example="2022-11-16 09:54:22 ",
+     *     @OA\Schema(type="string")
+     *
+     * )* @OA\Parameter(
+     *     name="trail",
+     *     in="query",
+     *     description="Trail id",
+     *     example="25",
+     * @OA\Schema(type="string")
      * )
-     * 
-     * @OA\Tag(name="Ping")     
-     * @Route("/ping", name="app_ping",methods={"POST"})
+     *
+     * @OA\Tag(name="Ping")
+     * @Route("/ping", name="Ping",methods={"POST"})
      */
-    public function ping(Request $request): Response
+    public function ping(Request $request, EntityManagerInterface $entityManager): Response
     {
-        
+        $ping = new Ping();
 
-        // return $this->render('ping/index.html.twig', [
-        //     'controller_name' => 'PingController',
-        // ]);
+        $ping->setIsLogged($request->query->get('isLogged'));
+        $ping->setIsLocated($request->query->get('isLocated'));
+        $ping->setIsOnline($request->query->get('isOnline'));
+        $ping->setIsCloseToTrail($request->query->get('isCloseToTrail'));
+        $ping->setTrail($request->query->get('trail'));
+        $ping->setDate($request->query->get('date'));
+
+        $entityManager->persist($ping);
+        $entityManager->flush();
+
+        $response = new JsonResponse($error ?? $ping, 200,);
+
+        return $response;
     }
 }

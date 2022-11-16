@@ -2,35 +2,51 @@
 
 namespace App\Entity;
 
-use App\Repository\PingRepository;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: PingRepository::class)]
+
+/**
+ * @ORM\Entity(repositoryClass="App\Repository\PingRepository")
+ *
+ */
 class Ping
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    /**
+     * @ORM\Id
+     * @ORM\Column(type="integer")
+     * @ORM\GeneratedValue()
+     */
     private ?int $id = null;
 
-    #[ORM\Column]
-    private ?bool $isLogged = null;
+    /**
+     * @ORM\Column(name="isLogged", type="boolean", nullable=false)
+     */
+    private $isLogged = null;
 
-    #[ORM\Column]
-    private ?bool $isLocated = null;
+    /**
+     * @ORM\Column(name="isLocated", type="boolean", nullable=false)
+     */
+    private  $isLocated = null;
 
-    #[ORM\Column]
-    private ?bool $isCloseToTrail = null;
+    /**
+     * @ORM\Column(name="isCloseToTrail", type="boolean", nullable=false)
+     */
+    private $isCloseToTrail = null;
 
-    #[ORM\Column]
-    private ?bool $isOnline = null;
+    /**
+     * @ORM\Column(name="isOnline", type="boolean", nullable=false)
+     */
+    private $isOnline = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    private ?\DateTimeInterface $Date = null;
+    /**
+     * @ORM\Column(name="date", type="string", length=255, nullable=true)
+     */
+    private $date = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $trail = null;
+    /**
+     * @ORM\Column(name="trail", type="string", length=255, nullable=false)
+     */
+    private $trail = null;
 
     public function getId(): ?int
     {
@@ -85,14 +101,14 @@ class Ping
         return $this;
     }
 
-    public function getDate(): ?\DateTimeInterface
+    public function getDate(): string
     {
-        return $this->Date;
+        return $this->date;
     }
 
-    public function setDate(\DateTimeInterface $Date): self
+    public function setDate(string $date): self
     {
-        $this->Date = $Date;
+        $this->date = $date;
 
         return $this;
     }
