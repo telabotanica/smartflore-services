@@ -4,7 +4,11 @@ namespace App\Controller;
 
 use App\Entity\Ping;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityNotFoundException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Annotations as OA;
@@ -18,7 +22,7 @@ class PingController extends AbstractController
      *     response="200",
      *     description="Ping saved in database",
      *     @OA\JsonContent(
-     *         @OA\Schema(type="string", example="thisisatokenlol")
+     *         @OA\Schema(type="string")
      *     )
      * )
      * @OA\Parameter(
@@ -55,13 +59,13 @@ class PingController extends AbstractController
      *     description="Date & Time of the ping",
      *     example="2022-11-16 09:54:22 ",
      *     @OA\Schema(type="string")
-     *
-     * )* @OA\Parameter(
+     * )
+     * @OA\Parameter(
      *     name="trail",
      *     in="query",
      *     description="Trail id",
      *     example="25",
-     * @OA\Schema(type="string")
+     * @OA\Schema(type="integer")
      * )
      *
      * @OA\Tag(name="Ping")
@@ -70,19 +74,78 @@ class PingController extends AbstractController
     public function ping(Request $request, EntityManagerInterface $entityManager): Response
     {
         $ping = new Ping();
+        $error = false;
 
-        $ping->setIsLogged($request->query->get('isLogged'));
-        $ping->setIsLocated($request->query->get('isLocated'));
-        $ping->setIsOnline($request->query->get('isOnline'));
-        $ping->setIsCloseToTrail($request->query->get('isCloseToTrail'));
-        $ping->setTrail($request->query->get('trail'));
-        $ping->setDate($request->query->get('date'));
+        $isLogged = $request->query->get('isLogged');
+        $isLocated = $request->query->get('isLocated');
+        $isOnline = $request->query->get('isOnline');
+        $isCloseToTrail = $request->query->get('isCloseToTrail');
+        $trail = $request->query->get('trail');
+        $date = $request->query->get('date');
 
-        $entityManager->persist($ping);
-        $entityManager->flush();
+        $requiredValues = [$isLogged, $isLocated, $isOnline, $isCloseToTrail, $trail];
 
-        $response = new JsonResponse($error ?? $ping, 200,);
+        // If one value is missing in the request, there is no need to go further
+        if (in_array(null, $requiredValues)) {
+            error_log('Missing value');
+            return new JsonResponse('Error, Ping not saved in Database', 200);
+        } else {
+            $form = $this->createFormBuilder()
+                ->add('isLogged', CheckboxType::class, [
+                    'required' => true,
+                ])
+                ->add('isLocated', CheckboxType::class, [
+                    'required' => true,
+                ])
+                ->add('isOnline', CheckboxType::class, [
+                    'required' => true,
+                ])
+                ->add('isCloseToTrail', CheckboxType::class, [
+                    'required' => true,
+                ])
+                ->add('trail', IntegerType::class, [
+                    'required' => true,
+                ])
+                ->add('date', TextType::class, [
+                    'required' => false,
+                ])
+                ->getForm();
 
-        return $response;
+            foreach ($request->query as $key => $value) {
+                // Filter to transform request values (string) into boolean or integer
+                if (filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== null) {
+                    $value = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                } elseif (filter_var($value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) !== null) {
+                    $value = filter_var($value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+                }
+
+                // Try to set the transformed value in the form, if the value got the wrong format, an error is thrown
+                try {
+                    $form->get($key)->setData($value);
+                } catch (\Exception $e) {
+                    $error = true;
+                    error_log($e->getMessage());
+                }
+            }
+
+            if (!$error) {
+                $ping->setIsLogged($form->get('isLogged')->getData())
+                    ->setIsLocated($form->get('isLocated')->getData())
+                    ->setIsOnline($form->get('isOnline')->getData())
+                    ->setIsCloseToTrail($form->get('isCloseToTrail')->getData())
+                    ->setTrail($form->get('trail')->getData());
+
+                if ($date) {
+                    $ping->setDate($form->get('date')->getData());
+                }
+
+                $entityManager->persist($ping);
+                $entityManager->flush();
+
+                return new JsonResponse('Ping saved in Database', 200);
+            } else {
+                return new JsonResponse('Error, Ping not saved in Database', 200);
+            }
+        }
     }
 }

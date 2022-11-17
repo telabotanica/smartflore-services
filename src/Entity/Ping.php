@@ -44,7 +44,7 @@ class Ping
     private $date = null;
 
     /**
-     * @ORM\Column(name="trail", type="string", length=255, nullable=false)
+     * @ORM\Column(name="trail", type="integer", nullable=false)
      */
     private $trail = null;
 
@@ -113,12 +113,12 @@ class Ping
         return $this;
     }
 
-    public function getTrail(): ?string
+    public function getTrail(): ?int
     {
         return $this->trail;
     }
 
-    public function setTrail(string $trail): self
+    public function setTrail(int $trail): self
     {
         $this->trail = $trail;
 
