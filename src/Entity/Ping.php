@@ -3,6 +3,10 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use OpenApi\Annotations as OA;
+use Symfony\Component\Validator\Constraints as Assert;
+
+//use Symfony\Component\Validator\Constraints as Assert;
 
 
 /**
@@ -15,38 +19,78 @@ class Ping
      * @ORM\Id
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue()
+     * @OA\Property(
+     *     type="int",
+     *     example=10
+     * )
      */
     private ?int $id = null;
 
     /**
-     * @ORM\Column(name="isLogged", type="boolean", nullable=false)
+     * @ORM\Column(name="is_logged", type="boolean", nullable=false)
+     * @OA\Property(
+     *     type="bool",
+     *     example="false"
+     * )
+     * @Assert\NotNull()
+     * @Assert\Type("bool")
      */
-    private $isLogged = null;
+    private ?bool $isLogged = null;
 
     /**
-     * @ORM\Column(name="isLocated", type="boolean", nullable=false)
+     * @ORM\Column(name="is_located", type="boolean", nullable=false)
+     * @OA\Property(
+     *     type="bool",
+     *     example="true"
+     * )
+     * @Assert\NotNull()
+     * @Assert\Type("bool")
      */
-    private  $isLocated = null;
+    private ?bool $isLocated = null;
 
     /**
-     * @ORM\Column(name="isCloseToTrail", type="boolean", nullable=false)
+     * @ORM\Column(name="is_close_to_trail", type="boolean", nullable=false)
+     * @OA\Property(
+     *     type="bool",
+     *     example="true"
+     * )
+     * @Assert\NotNull()
+     * @Assert\Type("bool")
      */
-    private $isCloseToTrail = null;
+    private ?bool $isCloseToTrail = null;
 
     /**
-     * @ORM\Column(name="isOnline", type="boolean", nullable=false)
+     * @ORM\Column(name="is_online", type="boolean", nullable=false)
+     * @OA\Property(
+     *     type="bool",
+     *     example="false"
+     * )
+     * @Assert\NotNull()
+     * @Assert\Type("bool")
      */
-    private $isOnline = null;
+    private ?bool $isOnline = null;
 
     /**
      * @ORM\Column(name="date", type="string", length=255, nullable=true)
+     * @OA\Property(
+     *     type="string",
+     *     example="2022-11-18 10:52:16"
+     * )
+     * @Assert\Type("string")
      */
-    private $date = null;
+    private ?string $date = null;
 
     /**
      * @ORM\Column(name="trail", type="integer", nullable=false)
+     * @OA\Property(
+     *     type="int",
+     *     example="25"
+     * )
+     * @Assert\NotBlank()
+     * @Assert\NotNull()
+     * @Assert\Type("integer")
      */
-    private $trail = null;
+    private ?int $trail = null;
 
     public function getId(): ?int
     {
