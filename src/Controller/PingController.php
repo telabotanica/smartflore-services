@@ -30,7 +30,7 @@ class PingController extends AbstractController
      *     required=true,
      *     @OA\JsonContent(
      *         type="object",
-     *         ref=@Model(type=Ping::class)
+     *         ref=@Model(type=Ping::class, groups={"create"})
      *     )
      * )
      * @OA\Tag(name="Ping")

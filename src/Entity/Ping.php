@@ -5,6 +5,7 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 //use Symfony\Component\Validator\Constraints as Assert;
 
@@ -19,12 +20,8 @@ class Ping
      * @ORM\Id
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue()
-     * @OA\Property(
-     *     type="int",
-     *     example=10
-     * )
      */
-    private ?int $id = null;
+    private int $id;
 
     /**
      * @ORM\Column(name="is_logged", type="boolean", nullable=false)
@@ -32,6 +29,7 @@ class Ping
      *     type="bool",
      *     example="false"
      * )
+     * @Groups({"create"})
      * @Assert\NotNull()
      * @Assert\Type("bool")
      */
@@ -43,6 +41,7 @@ class Ping
      *     type="bool",
      *     example="true"
      * )
+     * @Groups({"create"})
      * @Assert\NotNull()
      * @Assert\Type("bool")
      */
@@ -54,6 +53,7 @@ class Ping
      *     type="bool",
      *     example="true"
      * )
+     * @Groups({"create"})
      * @Assert\NotNull()
      * @Assert\Type("bool")
      */
@@ -65,6 +65,7 @@ class Ping
      *     type="bool",
      *     example="false"
      * )
+     * @Groups({"create"})
      * @Assert\NotNull()
      * @Assert\Type("bool")
      */
@@ -76,6 +77,7 @@ class Ping
      *     type="string",
      *     example="2022-11-18 10:52:16"
      * )
+     * @Groups({"create"})
      * @Assert\Type("string")
      */
     private ?string $date = null;
@@ -86,6 +88,7 @@ class Ping
      *     type="int",
      *     example="25"
      * )
+     * @Groups({"create"})
      * @Assert\NotBlank()
      * @Assert\NotNull()
      * @Assert\Type("integer")
