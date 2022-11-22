@@ -35,7 +35,7 @@ class Ping
      * @Assert\NotNull()
      * @Assert\Type("bool")
      */
-    private ?bool $isLogged = null;
+    private bool $isLogged;
 
     /**
      * @ORM\Column(name="is_located", type="boolean", nullable=false)
@@ -46,7 +46,7 @@ class Ping
      * @Assert\NotNull()
      * @Assert\Type("bool")
      */
-    private ?bool $isLocated = null;
+    private bool $isLocated;
 
     /**
      * @ORM\Column(name="is_close_to_trail", type="boolean", nullable=false)
@@ -57,7 +57,7 @@ class Ping
      * @Assert\NotNull()
      * @Assert\Type("bool")
      */
-    private ?bool $isCloseToTrail = null;
+    private bool $isCloseToTrail;
 
     /**
      * @ORM\Column(name="is_online", type="boolean", nullable=false)
@@ -68,7 +68,7 @@ class Ping
      * @Assert\NotNull()
      * @Assert\Type("bool")
      */
-    private ?bool $isOnline = null;
+    private bool $isOnline;
 
     /**
      * @ORM\Column(name="date", type="string", length=255, nullable=true)
@@ -90,7 +90,7 @@ class Ping
      * @Assert\NotNull()
      * @Assert\Type("integer")
      */
-    private ?int $trail = null;
+    private int $trail;
 
     public function getId(): ?int
     {
