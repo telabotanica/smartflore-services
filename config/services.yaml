@@ -40,3 +40,6 @@ services:
             - '%env(ANNUAIRE_LOGIN_BASE_URL)%'
             - '%env(ANNUAIRE_REGISTER_URL)%'
             - '%env(ANNUAIRE_COOKIE_NAME)%'
+    App\Service\CreateTrailService:
+        arguments:
+            - '%env(SMARTFLORE_LEGACY_API_BASE_URL)%'

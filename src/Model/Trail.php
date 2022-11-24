@@ -118,6 +118,7 @@ class Trail
 
     /**
      * @var Path
+     * @OA\Property(ref=@Model(type=Path::class))
      * @SerializedName("path")
      * @Groups({"show_trail"})
      */
