@@ -13,7 +13,7 @@ class Path
      *     type="string",
      *     example="LineString"
      * )
-     * @Groups({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail", "create_trail"})
      */
     private $type;
 
@@ -32,7 +32,7 @@ class Path
      *         {"lat":43.610769, "lon":3.876716}
      *     }
      * )
-     * @Groups({"show_trail", "list_trail"})
+     * @Groups({"show_trail", "list_trail", "create_trail"})
      */
     private $coordinates;
 
@@ -62,5 +62,13 @@ class Path
         $this->coordinates = $coordinates;
 
         return $this;
+    }
+
+    public function getGeoJson(): array
+    {
+        return [
+            'type' => $this->getType(),
+            'coordinates' => $this->coordinates
+        ];
     }
 }

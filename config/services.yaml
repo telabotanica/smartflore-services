@@ -18,6 +18,7 @@ services:
         exclude:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
+            - '../src/Model/'
             - '../src/Kernel.php'
 
     # add more service definitions when explicit configuration is needed
@@ -39,3 +40,6 @@ services:
             - '%env(ANNUAIRE_LOGIN_BASE_URL)%'
             - '%env(ANNUAIRE_REGISTER_URL)%'
             - '%env(ANNUAIRE_COOKIE_NAME)%'
+    App\Service\CreateTrailService:
+        arguments:
+            - '%env(SMARTFLORE_LEGACY_API_BASE_URL)%'

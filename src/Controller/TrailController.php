@@ -2,8 +2,10 @@
 
 namespace App\Controller;
 
+use App\Model\CreateTrailDto;
 use App\Model\Trail;
 use App\Service\BoundingBoxPolygonFactory;
+use App\Service\CreateTrailService;
 use App\Service\TrailsService;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
@@ -12,6 +14,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class TrailController extends AbstractController
 {
@@ -21,7 +24,7 @@ class TrailController extends AbstractController
      *     description="Trails list",
      *     @OA\JsonContent(
      *         type="array",
-     *         @OA\Items(ref=@Model(type=Trail::class, groups={"show_trail"}))
+     *         @OA\Items(ref=@Model(type=Trail::class, groups={"list_trail"}))
      *     ),
      * )
      * @OA\Parameter(
@@ -129,6 +132,42 @@ class TrailController extends AbstractController
             'json', ['groups' => ['show_trail', 'show_taxon', 'short_images']]);
 
         return new JsonResponse($json, 200, [], true);
+    }
+
+    /**
+     * @OA\Response(
+     *     response="201",
+     *     description="Created"
+     * )
+     * @OA\RequestBody(
+     *     description="A JSON object containing trail information",
+     *     required=true,
+     *     @OA\JsonContent(
+     *         type="object",
+     *         ref=@Model(type=CreateTrailDto::class, groups={"create_trail"})
+     *     )
+     * )
+     * @OA\Tag(name="Trails")
+     * @Route("/trail", name="post_trail", methods={"POST"})
+     */
+    public function createTrail(
+        CreateTrailService $createTrail,
+        Request $request,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator
+    ) {
+        $newTrail = $serializer->deserialize($request->getContent(),CreateTrailDto::class, 'json');
+        $errors = $validator->validate($newTrail);
+
+        if (count($errors) > 0) {
+            $errorsString = (string)$errors;
+            return new JsonResponse(['error' => $errorsString]);
+        }
+
+        $createTrail->setAuth($request->headers->get('Authorization'));
+        $createTrail->process($newTrail);
+
+        return new JsonResponse(null, 201);
     }
 }
 
