@@ -47,13 +47,13 @@ class CreateTrailService
             $trailName = $this->addRandomIntegerSuffixToAlreadyUsedTrailNameUntilNameIsFreeThisMethodNameIsTooLong($trailName);
         }
 
-        $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier/', [
+        $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier/',
+            [
             'body' => json_encode(['sentierTitre' => $trailName]),
             'headers' => [
-                'Auth: '.$this->getAuth()
-            ],
-        ]);
-
+                'Authorization: '.$this->getAuth()
+            ]
+            ]);
         if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
             throw new \Exception('Response status code is different than expected.');
         }
@@ -67,7 +67,7 @@ class CreateTrailService
                 'pageTag' => $occurrence->getCardTag(),
             ]),
             'headers' => [
-                'Auth: '.$this->getAuth()
+                'Authorization: '.$this->getAuth()
             ],
         ]);
 
@@ -92,19 +92,19 @@ class CreateTrailService
                 /**
                  * @var CreateOccurrenceDto $occurrence
                  */
-                $array['sentierLocalisation']['individus'][$cardTag.'#'.$i] = [
+                $array['sentierLocalisation']['individus'][$occurrence->getCardTag().'#'.$i] = [
                     'ficheTag' => $occurrence->getCardTag(),
-                    'lat' => $occurrence->getPosition()[0],
-                    'lng' => $occurrence->getPosition()[1]
+                    'lat' => $occurrence->getPosition()['lat'],
+                    'lng' => $occurrence->getPosition()['lon']
                 ];
             }
         }
         $array['sentierDessin'] = $trail->getPath()->getGeoJson();
 
-        $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-fiche/', [
+        $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-localisation/', [
             'body' => json_encode($array),
             'headers' => [
-                'Auth: '.$this->getAuth()
+                'Authorization: '.$this->getAuth()
             ],
         ]);
 
@@ -121,7 +121,7 @@ class CreateTrailService
                 'sentierAuteur' => $authorEmail,
             ]),
             'headers' => [
-                'Auth: '.$this->getAuth()
+                'Authorization: '.$this->getAuth()
             ],
         ]);
 
@@ -140,8 +140,7 @@ class CreateTrailService
         // https://beta.tela-botanica.org/smart-form/services/Pages.php?referentiel=BDTFX&referentiel_verna=nvjfl&recherche=Acer+campestre&pages_existantes=false&nom_verna=false&debut=0&limite=1
         // {"pagination":{"total":"11"},"resultats":[{"existe":true,"favoris":false,"tag":"SmartFloreBDTFXnt8522","time":"2015-09-10 11:14:08","owner":"AdelineMoreau","user":"adansonia","nb_revisions":"1","infos_taxon":{"num_taxonomique":"8522","nom_sci":"Acer campestre","nom_sci_complet":"Acer campestre L. [1753, Sp. Pl., 2 : 1055]","retenu":"true","num_nom":"141","referentiel":"BDTFX","noms_vernaculaires":[]},"id":"43415","latest":"Y"}]}
         $url = str_replace('Sentiers', 'Pages', $this->smartfloreLegacyApiBaseUrl);
-
-        $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentier/', [
+        $response = $this->client->request('GET', $url.'sentier/', [
             'query' => [
                 'recherche' => $occurrence->getScientificName(),
                 'referentiel' => $occurrence->getTaxonRepository(),

@@ -47,8 +47,8 @@ class StartEnd
     public function getStart(): array
     {
         return [
-            'lat' => $this->start[1],
-            'lng' => $this->start[0],
+            'lat' => $this->start['lat'],
+            'lng' => $this->start['lon'],
         ];
     }
 
