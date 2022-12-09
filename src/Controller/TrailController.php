@@ -4,17 +4,22 @@ namespace App\Controller;
 
 use App\Model\CreateTrailDto;
 use App\Model\Trail;
+use App\Service\AnnuaireService;
 use App\Service\BoundingBoxPolygonFactory;
 use App\Service\CreateTrailService;
 use App\Service\TrailsService;
+use DateTime;
+use Symfony\Component\HttpFoundation\Response;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\HttpFoundation\Cookie;
 
 class TrailController extends AbstractController
 {
@@ -154,7 +159,8 @@ class TrailController extends AbstractController
         CreateTrailService $createTrail,
         Request $request,
         SerializerInterface $serializer,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        AnnuaireService $annuaire
     ) {
         $newTrail = $serializer->deserialize($request->getContent(),CreateTrailDto::class, 'json');
         $errors = $validator->validate($newTrail);
@@ -163,11 +169,18 @@ class TrailController extends AbstractController
             $errorsString = (string)$errors;
             return new JsonResponse(['error' => $errorsString]);
         }
+        $token = null;
 
-        $createTrail->setAuth($request->headers->get('Authorization'));
+        if ($request->cookies->get($annuaire->getCookieName())){
+            $token = $request->cookies->get($annuaire->getCookieName());
+        } else {
+            $token = $request->headers->get('Authorization');
+        }
+
+        $createTrail->setAuth($token);
         $createTrail->process($newTrail);
 
-        return new JsonResponse(null, 201);
+        return new JsonResponse('Sentier crée', 201);
     }
 }
 
