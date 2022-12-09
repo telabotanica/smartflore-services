@@ -6,6 +6,7 @@ use App\Model\CreateTrailDto;
 use App\Model\Trail;
 use App\Service\AnnuaireService;
 use App\Service\BoundingBoxPolygonFactory;
+use App\Service\CookieAwareClient;
 use App\Service\CreateTrailService;
 use App\Service\TrailsService;
 use DateTime;
@@ -170,9 +171,15 @@ class TrailController extends AbstractController
             return new JsonResponse(['error' => $errorsString]);
         }
         $token = null;
+        $cookie = $request->cookies->all() ?? null;
 
         if ($request->cookies->get($annuaire->getCookieName())){
             $token = $request->cookies->get($annuaire->getCookieName());
+
+            ['token' => $token, 'error' => $error] = $annuaire->refreshToken($token, $cookie);
+            if ($error) {
+                return $error;
+            }
         } else {
             $token = $request->headers->get('Authorization');
         }
