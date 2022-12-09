@@ -51,7 +51,8 @@ class CreateTrailService
             [
             'body' => json_encode(['sentierTitre' => $trailName]),
             'headers' => [
-                'Authorization: '.$this->getAuth()
+                'Authorization: '.$this->getAuth(),
+                'Auth: '.$this->getAuth()
             ]
             ]);
         if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
@@ -67,7 +68,8 @@ class CreateTrailService
                 'pageTag' => $occurrence->getCardTag(),
             ]),
             'headers' => [
-                'Authorization: '.$this->getAuth()
+                'Authorization: '.$this->getAuth(),
+                'Auth: '.$this->getAuth()
             ],
         ]);
 
@@ -104,7 +106,8 @@ class CreateTrailService
         $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-localisation/', [
             'body' => json_encode($array),
             'headers' => [
-                'Authorization: '.$this->getAuth()
+                'Authorization: '.$this->getAuth(),
+                'Auth: '.$this->getAuth()
             ],
         ]);
 
@@ -121,7 +124,8 @@ class CreateTrailService
                 'sentierAuteur' => $authorEmail,
             ]),
             'headers' => [
-                'Authorization: '.$this->getAuth()
+                'Authorization: '.$this->getAuth(),
+                'Auth: '.$this->getAuth()
             ],
         ]);
 
