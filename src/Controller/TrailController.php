@@ -178,7 +178,8 @@ class TrailController extends AbstractController
 
             ['token' => $token, 'error' => $error] = $annuaire->refreshToken($token, $cookie);
             if ($error) {
-                return $error;
+                $token = $request->headers->get('Authorization');
+//                return $error;
             }
         } else {
             $token = $request->headers->get('Authorization');
