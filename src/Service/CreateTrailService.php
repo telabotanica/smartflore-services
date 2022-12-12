@@ -34,6 +34,7 @@ class CreateTrailService
             $this->addSpeciesToTrail($trail, $occurrence);
         }
         $this->addLocation($trail);
+        $this->addPmrAndSeasons($trail);
         if ($this->isTrailEligible($trail)) {
             $email = $this->annuaire->getUser($this->getAuth())->getEmail();
             $this->submitTrailToReview($trail, $email);
@@ -105,6 +106,25 @@ class CreateTrailService
 
         $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-localisation/', [
             'body' => json_encode($array),
+            'headers' => [
+                'Authorization: '.$this->getAuth(),
+                'Auth: '.$this->getAuth()
+            ],
+        ]);
+
+        if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
+            throw new \Exception('Response status code is different than expected.');
+        }
+    }
+
+    public function addPmrAndSeasons(CreateTrailDto $trail): void
+    {
+        $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-pmr-seasons/', [
+            'body' => json_encode([
+                'sentierTitre' => $trail->getName(),
+                'pmr' => $trail->getPrm(),
+                'best_season' => $trail->getBestSeason()
+            ]),
             'headers' => [
                 'Authorization: '.$this->getAuth(),
                 'Auth: '.$this->getAuth()
