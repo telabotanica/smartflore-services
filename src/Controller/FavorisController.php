@@ -47,7 +47,6 @@ class FavorisController extends AbstractController
         $tokenInfos = $annuaire->decodeToken($token);
 
         $list = $favoris->getFavorisList($token, $tokenInfos);
-//        $createTrail->setAuth($token);
 
         $json = $serializer->serialize($list, 'json', ['groups' => 'list_favorite']);
 

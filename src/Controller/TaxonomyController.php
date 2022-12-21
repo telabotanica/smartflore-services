@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Model\Referentiel;
 use App\Model\Taxon;
 use App\Service\EfloreService;
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -48,6 +49,26 @@ class TaxonomyController extends AbstractController
         $json = $serializer->serialize(
             $eflore->getTaxon($taxonRepository, $taxonNameId),
             'json', ['groups' => ['show_taxon', 'full_images']]);
+
+        return new JsonResponse($json, 200, [], true);
+    }
+
+    /**
+     * @OA\Response (
+     *     response="200",
+     *     description="get the taxon repository codes (referentiels)",
+     *     @OA\JsonContent(
+     *         type="array",
+     *         @OA\Items(ref=@Model(type=Referentiel::class, groups={"show_taxon", "list_referentiel"}))
+     *     )
+     * )
+     * @OA\Tag(name="Taxon")
+     * @Route("/taxon/referentiels", name="list_referentiel", methods={"GET"})
+     */
+    public function referentielInfo(SerializerInterface $serializer,EfloreService $eflore){
+        $referentiels= $eflore->getTaxonRepositories();
+
+        $json = $serializer->serialize($referentiels, 'json', ['groups' => 'list_referentiel']);
 
         return new JsonResponse($json, 200, [], true);
     }
