@@ -56,13 +56,15 @@ class TrailsService
         $trailsList = $trailsCache->get();
 
         $trails = [];
-        foreach ($trailsList as $trail) {
-            $trailName = self::extractTrailName($trail);
-            $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
-            $trail = $trailCache->get();
-            $this->collectOccurrencesTaxonInfos($trail);
-            $this->collectTrailImages($trail);
-            $trails[] = $trail;
+        if ($trailsList) {
+            foreach ($trailsList as $trail) {
+                $trailName = self::extractTrailName($trail);
+                $trailCache = $this->cache->getItem('trails.trail.' . $trailName);
+                $trail = $trailCache->get();
+                $this->collectOccurrencesTaxonInfos($trail);
+                $this->collectTrailImages($trail);
+                $trails[] = $trail;
+            }
         }
 
         return $trails;

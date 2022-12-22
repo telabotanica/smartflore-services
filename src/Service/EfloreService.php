@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Model\CardTab;
 use App\Model\Image;
+use App\Model\Referentiel;
 use App\Model\Taxon;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\NativeHttpClient;
@@ -268,5 +269,67 @@ class EfloreService
         $taxon->addTab($wikipedia);
 
         return $taxon;
+    }
+
+    public function getTaxonRepositories(){
+        $referentiels= [];
+
+        $bdtfx = new Referentiel();
+        $bdtfx->setNom("BDTFX");
+        $bdtfx->setLabel("France métropolitaine");
+        $bdtfx->setNomVernaculaire("nvjfl");
+        $bdtfx->setFiltre(null);
+        $bdtfx->setFournisseurFichesEspeces("eflore");
+        $referentiels[]= $bdtfx;
+
+        $bdtxa = new Referentiel();
+        $bdtxa->setNom("BDTXA");
+        $bdtxa->setLabel("Antilles françaises");
+        $bdtxa->setNomVernaculaire("nva");
+        $bdtxa->setFiltre(null);
+        $bdtxa->setFournisseurFichesEspeces("eflore");
+        $referentiels[]= $bdtxa;
+
+        $isfan = new Referentiel();
+        $isfan->setNom("ISFAN");
+        $isfan->setLabel("Afrique du nord");
+        $isfan->setNomVernaculaire(null);
+        $isfan->setFiltre(null);
+        $isfan->setFournisseurFichesEspeces("eflore");
+        $referentiels[]= $isfan;
+
+        $apd = new Referentiel();
+        $apd->setNom("APD");
+        $apd->setLabel("Afrique du centre et de l'ouest");
+        $apd->setNomVernaculaire(null);
+        $apd->setFiltre(null);
+        $apd->setFournisseurFichesEspeces("eflore");
+        $referentiels[]= $apd;
+
+        $taxrefG = new Referentiel();
+        $taxrefG->setNom("TAXREF");
+        $taxrefG->setLabel("Guyane");
+        $taxrefG->setNomVernaculaire(null);
+        $taxrefG->setFiltre("guyane");
+        $taxrefG->setFournisseurFichesEspeces("eflore");
+        $referentiels[]= $taxrefG;
+
+        $taxrefR = new Referentiel();
+        $taxrefR->setNom("TAXREF");
+        $taxrefR->setLabel("La Réunion");
+        $taxrefR->setNomVernaculaire(null);
+        $taxrefR->setFiltre("reunion");
+        $taxrefR->setFournisseurFichesEspeces("eflore");
+        $referentiels[]= $taxrefR;
+
+        $taxrefL = new Referentiel();
+        $taxrefL->setNom("TAXREFLICH");
+        $taxrefL->setLabel("Lichens");
+        $taxrefL->setNomVernaculaire(null);
+        $taxrefL->setFiltre(null);
+        $taxrefL->setFournisseurFichesEspeces("eflore");
+        $referentiels[]= $taxrefL;
+
+        return $referentiels;
     }
 }
