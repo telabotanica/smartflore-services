@@ -48,16 +48,16 @@ class Ping
     private bool $isLocated;
 
     /**
-     * @ORM\Column(name="is_close_to_trail", type="boolean", nullable=false)
+     * @var integer|null
+     * @ORM\Column(name="distance_from_trail", type="integer", nullable=true)
      * @OA\Property(
-     *     type="bool",
-     *     example="true"
+     *     type="int",
+     *     example="500"
      * )
      * @Groups({"create"})
-     * @Assert\NotNull()
-     * @Assert\Type("bool")
+     * @Assert\Type("integer")
      */
-    private bool $isCloseToTrail;
+    private ?int $distanceFromTrail=null;
 
     /**
      * @ORM\Column(name="is_online", type="boolean", nullable=false)
@@ -72,6 +72,7 @@ class Ping
     private bool $isOnline;
 
     /**
+     * @var string|null
      * @ORM\Column(name="date", type="string", length=255, nullable=true)
      * @OA\Property(
      *     type="string",
@@ -124,18 +125,6 @@ class Ping
         return $this;
     }
 
-    public function isIsCloseToTrail(): ?bool
-    {
-        return $this->isCloseToTrail;
-    }
-
-    public function setIsCloseToTrail(bool $isCloseToTrail): self
-    {
-        $this->isCloseToTrail = $isCloseToTrail;
-
-        return $this;
-    }
-
     public function isIsOnline(): ?bool
     {
         return $this->isOnline;
@@ -148,12 +137,12 @@ class Ping
         return $this;
     }
 
-    public function getDate(): string
+    public function getDate(): ?string
     {
         return $this->date;
     }
 
-    public function setDate(string $date): self
+    public function setDate(?string $date): self
     {
         $this->date = $date;
 
@@ -171,4 +160,24 @@ class Ping
 
         return $this;
     }
+
+    /**
+     * @return integer|null
+     */
+    public function getDistanceFromTrail(): ?int
+    {
+        return $this->distanceFromTrail;
+    }
+
+    /**
+     * @param integer|null $distanceFromTrail
+     * @return Ping
+     */
+    public function setDistanceFromTrail(?int $distanceFromTrail): self
+    {
+        $this->distanceFromTrail = $distanceFromTrail;
+
+        return $this;
+    }
+
 }
