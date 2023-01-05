@@ -5,6 +5,7 @@ namespace App\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Annotation\SerializedName;
 
 class CreateOccurrenceDto
 {
@@ -36,6 +37,17 @@ class CreateOccurrenceDto
      * @Groups({"create_trail"})
      */
     private $scientificName;
+
+    /**
+     * @var int
+     * @OA\Property(
+     *     type="int",
+     *     example="141"
+     * )
+     * @SerializedName("name_id")
+     * @Groups({"create_trail"})
+     */
+    private $numNom;
 
     /**
      * @var string
@@ -152,4 +164,24 @@ class CreateOccurrenceDto
         $this->cardTag = $cardTag;
         return $this;
     }
+
+    /**
+     * @return int
+     */
+    public function getNumNom(): int
+    {
+        return $this->numNom;
+    }
+
+    /**
+     * @param int $numNom
+     * @return CreateOccurrenceDto
+     */
+    public function setNumNom(int $numNom): CreateOccurrenceDto
+    {
+        $this->numNom = $numNom;
+        return $this;
+    }
+
+
 }
