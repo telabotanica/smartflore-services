@@ -61,8 +61,10 @@ class TrailsService
                 $trailName = self::extractTrailName($trail);
                 $trailCache = $this->cache->getItem('trails.trail.' . $trailName);
                 $trail = $trailCache->get();
-                $this->collectOccurrencesTaxonInfos($trail);
-                $this->collectTrailImages($trail);
+                if ($trail){
+                    $this->collectOccurrencesTaxonInfos($trail);
+                    $this->collectTrailImages($trail);
+                }
                 $trails[] = $trail;
             }
         }
@@ -97,14 +99,16 @@ class TrailsService
     public function getTrail(string $trailName, bool $refresh = false)
     {
         $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
-
         if ($refresh || !$trailCache->isHit()) {
             $this->buildTrailCache($trailName);
         }
-
         $trail = $trailCache->get();
-        $this->collectOccurrencesTaxonInfos($trail);
-        $this->collectTrailImages($trail);
+        // Si on a pas de trail, on ne recherche pas les infos de taxon sinon -> erreur lors du refresh
+//        print_r($trail);
+        if ($trail){
+            $this->collectOccurrencesTaxonInfos($trail);
+            $this->collectTrailImages($trail);
+        }
 
         return $trail;
     }
@@ -387,8 +391,10 @@ class TrailsService
 
             $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
             $trail = $trailCache->get();
-            $this->buildOccurrencesTaxonInfos($trail);
-            $this->buildTrailImagesCache($trail);
+            if ($trail){
+                $this->buildOccurrencesTaxonInfos($trail);
+                $this->buildTrailImagesCache($trail);
+            }
         }
     }
 
@@ -417,21 +423,29 @@ class TrailsService
         ];
         $serializer = new Serializer($normalizer, [new JsonEncoder()]);
 
-        $trail = $serializer->deserialize($response->getContent(), Trail::class, 'json', [
-            \Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true
-        ]);
-
-        /**
-         * @var Trail $trail
-         */
-        $trail->computeOccurrencesCount();
-        $trail->setDisplayName($trail->getNom());
-        $trail->setNom($trailName);
-        $trail->setDetails($this->router->generate('show_trail', [
-            'id' => $trail->getNom()
-        ], UrlGeneratorInterface::ABSOLUTE_URL));
-
-        $trailCache->set($trail);
-        $this->cache->save($trailCache);
+        $occurrences = json_decode($response->getContent(), true)['occurrences'];
+        $espece = false;
+        foreach ($occurrences as $occurrence){
+            // Vérification si l'espèce est bien renseignée (en cas d'erreur lors de la récupération de fichhes) -> Pour résoudre bug de refresh du cache
+            if (isset($occurrence['taxo']['espece'])){
+                $espece = true;
+            }
+        }
+        if ($espece){
+            $trail = $serializer->deserialize($response->getContent(), Trail::class, 'json', [
+                \Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true
+            ]);
+            /**
+             * @var Trail $trail
+             */
+            $trail->computeOccurrencesCount();
+            $trail->setDisplayName($trail->getNom());
+            $trail->setNom($trailName);
+            $trail->setDetails($this->router->generate('show_trail', [
+                'id' => $trail->getNom()
+            ], UrlGeneratorInterface::ABSOLUTE_URL));
+            $trailCache->set($trail);
+            $this->cache->save($trailCache);
+        }
     }
 }
