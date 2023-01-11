@@ -26,7 +26,7 @@ class Taxon
      *     type="string",
      *     example="Acer campestre L."
      * )
-     * @Groups({"show_trail", "show_taxon"})
+     * @Groups({"show_trail", "show_taxon", "create_photo"})
      */
     private $fullScientificName;
 
@@ -58,7 +58,7 @@ class Taxon
      *     example="Sapindaceae"
      * )
      * @SerializedName("family")
-     * @Groups({"show_taxon"})
+     * @Groups({"show_taxon", "create_photo"})
      */
     private $famille;
 
@@ -69,7 +69,7 @@ class Taxon
      *     example="bdtfx"
      * )
      * @SerializedName("taxon_repository")
-     * @Groups({"show_trail", "show_taxon"})
+     * @Groups({"show_trail", "show_taxon", "create_photo"})
      */
     private $referentiel;
 
@@ -80,7 +80,7 @@ class Taxon
      *     example="141"
      * )
      * @SerializedName("name_id")
-     * @Groups({"show_trail", "show_taxon"})
+     * @Groups({"show_trail", "show_taxon", "create_photo"})
      */
     private $numNom;
 
