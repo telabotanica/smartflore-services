@@ -127,4 +127,19 @@ class AnnuaireService
     {
         return $this->cookieName;
     }
+
+    public function getUserInfos(string $token):array
+    {
+        ['token' => $token, 'error' => $error] = $this->refreshToken($token);
+        $tokenInfos = $this->decodeToken($token);
+
+        $user=[
+            'nom'=>$tokenInfos['nom'],
+            'prenom'=>$tokenInfos['prenom'],
+            'courriel'=>$tokenInfos['sub'],
+            'id_utilisateur'=>$tokenInfos['id']
+        ];
+
+        return $user;
+    }
 }

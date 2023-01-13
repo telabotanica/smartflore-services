@@ -6,9 +6,11 @@ use App\Model\Photo;
 use App\Model\Taxon;
 use App\Model\User;
 use App\Service\AnnuaireService;
+use App\Service\PhotoService;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,13 +28,14 @@ class PhotoController extends AbstractController
      *          @OA\Schema(
      *              @OA\Property(
      *                  property="photo",
-     *                  description="Picture to upload",
+     *                  description="Picture to upload (format JPG)",
      *                  type="file"
      *              ),
      *          ),
-     *      ),
-     *  )
+     *      )
+     * )
      *  @OA\Parameter(
+     *     required=true,
      *     description="Taxon observé",
      *     name="observation",
      *     in="query",
@@ -47,18 +50,53 @@ class PhotoController extends AbstractController
      * @OA\Tag(name="Photo")
      * @Route("/photo", name="create_photo", methods={"POST"})
      */
-    public function uploadPhoto(Request $request,
-                                SerializerInterface $serializer,
-                                ValidatorInterface $validator,
-                                AnnuaireService $annuaire)
+    public function uploadPhoto(
+        Request $request,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator,
+        AnnuaireService $annuaire,
+        PhotoService $addPhoto
+    )
     {
-        // TODO Récupérer les infos du taxon correctement
         // TODO Ne pas oublier de dé-commenter les infos utilisateurs
-        
+
         // TODO Envoyer $data dans CEL_WIDGET_SAISIE puis récupérer l'id de la photo (avec le last index ?)
 
-        /*
+        if (empty($request->files->get('photo'))) throw new \Exception('No file uploaded');
+
+        $file = $request->files->get('photo');
+        $fileName = $file->getClientOriginalName();
+        $fileNameParts = explode('.', $fileName);
+        $fileExtension = end($fileNameParts);
+
+        // Le widget de saisie n'accepte que les images .jpg
+        if ($fileExtension != 'jpg') throw new \Exception('Only .jpg files are allowed');
+
+        // On enregistre l'image en local
+        $uploadPath = $this->getParameter('uploads_directory');
+        try {
+            $file->move($uploadPath,$fileName);
+        } catch (FileException $e){
+            throw new \Exception('erreur durant le téléchargement du fichier');
+        }
+
+        $filePath=$uploadPath.'/'.$fileName;
+
+
+        $photoInfos = $serializer->deserialize($request->get('observation'), Photo::class, 'json');
+        $errors = $validator->validate($photoInfos);
+
+        if (count($errors) > 0) {
+            $errorsString = (string)$errors;
+            return new JsonResponse(['error' => $errorsString]);
+        }
+
+        $token=null;
+        $token = $request->headers->get('Authorization');
+        $user = $annuaire->getUserInfos($token);
+
          // Récupération des infos de l'utilisateur
+        /*
         $token=null;
         $token = $request->headers->get('Authorization');
         ['token' => $token, 'error' => $error] = $annuaire->refreshToken($token);
@@ -70,21 +108,8 @@ class PhotoController extends AbstractController
         $data['id_utilisateur']=$tokenInfos['id'];
         */
 
-        // Récupération des infos de l'observation
-        $photo = $serializer->deserialize($request->get('observation'), Photo::class, 'json');
-        $data['date']=$photo->getDate();
-        $data['latitude']=$photo->getPosition()['lat'];
-        $data['longitude']=$photo->getPosition()['lon'];
+        $addPhoto->process($file, $photoInfos, $user, $filePath);
 
-        // Récupération des infos du taxon
-//        $taxon = $photo->getTaxo();
-
-        // Récupération du nom du fichier uploadé
-        if ($request->files->get('photo')) {
-            $data['image_nom'] = $request->files->get('photo')->getClientOriginalName();
-        }
-        var_dump($data);
-
-        return new JsonResponse('Photo uploadé', 201);
+        return new JsonResponse('photo uploaded', 201);
     }
 }

@@ -5,8 +5,11 @@ namespace App\Model;
 use App\Service\TrailsService;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
+use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
+use Symfony\Component\Validator\Constraints as Assert;
 
 class Photo
 {
@@ -24,13 +27,37 @@ class Photo
      */
     private $imageNom;
 
+//    /**
+//     * @var File
+//     * @Assert\NotBlank(message="Please upload a picture")
+//     * @Assert\File(mimeTypes="image/JPEG")
+//     * @OA\MediaType(
+//     *          mediaType="multipart/form-data",
+//     *          @OA\Schema(
+//     *              @OA\Property(
+//     *                  property="photo",
+//     *                  description="Picture to upload (format JPG)",
+//     *                  type="file"
+//     *              ),
+//     *          ),
+//     *      )
+//     * @Groups({"create_photo", "user_photo"})
+//     */
+//    private $uploadedFile;
+
     /**
-     * @var Taxon
-     * @OA\Property(ref=@Model(type=Taxon::class))
+     * @var string[]|int[]
+     * @OA\Property(
+     *     type="array",
+     *     @OA\Items(type="string"),
+     *     example={"scientific_name":"Acer campestre", "name_id": 141, "taxon_repository": "bdtfx"}
+     * )
+     * @Assert\All(
+     *  @Assert\NotBlank
+     * )
      * @Groups({"create_photo", "user_photo"})
-     * @SerializedName("taxon")
      */
-    private $taxo;
+    private $taxon;
 
     /**
      * @var float[]
@@ -38,6 +65,9 @@ class Photo
      *     type="array",
      *     @OA\Items(type="float"),
      *     example={"lat":43.6082423, "lon":3.8800137}
+     * )
+     * @Assert\All(
+     *  @Assert\NotBlank
      * )
      * @Groups({"create_photo", "user_photo"})
      */
@@ -49,6 +79,7 @@ class Photo
      *     type="string",
      *     example="10/01/2023"
      * )
+     * @Assert\NotBlank
      * @Groups({"create_photo", "user_photo"})
      */
     private $date;
@@ -86,19 +117,19 @@ class Photo
     }
 
     /**
-     * @return Taxon
+     * @return string[]|int[]
      */
-    public function getTaxo(): Taxon
+    public function getTaxon(): array
     {
-        return $this->taxo;
+        return $this->taxon;
     }
 
     /**
-     * @param Taxon $taxo
+     * @param string[]|int[] $taxon
      */
-    public function setTaxo(Taxon $taxo): void
+    public function setTaxon(array $taxon): void
     {
-        $this->taxo = $taxo;
+        $this->taxon = $taxon;
     }
 
     /**
@@ -132,6 +163,23 @@ class Photo
     {
         $this->date = $date;
     }
+//
+//    /**
+//     * @return File
+//     */
+//    public function getUploadedFile(): File
+//    {
+//        return $this->uploadedFile;
+//    }
+//
+//    /**
+//     * @param File $uploadedFile
+//     */
+//    public function setUploadedFile(File $uploadedFile): void
+//    {
+//        $this->uploadedFile = $uploadedFile;
+//    }
+
 
 
 }
