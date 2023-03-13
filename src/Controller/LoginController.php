@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Model\Login;
 use App\Service\AnnuaireService;
+use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Cookie;
@@ -10,6 +12,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class LoginController extends AbstractController
 {
@@ -21,27 +24,22 @@ class LoginController extends AbstractController
      *         @OA\Schema(type="string", example="thisisatokenlol")
      *     )
      * )
-     * @OA\Parameter(
-     *     name="login",
-     *     in="query",
-     *     description="Login (email address)",
-     *     example="login@example.org",
-     *     @OA\Schema(type="string")
-     * )
-     * @OA\Parameter(
-     *     name="password",
-     *     in="query",
-     *     description="Password",
-     *     example="Pa$$W0rd!",
-     *     @OA\Schema(type="string")
-     * )
+	 * @OA\RequestBody(
+	 *     description="A JSON object containing login informations",
+	 *     required=true,
+	 *     @OA\JsonContent(
+	 *         type="object",
+	 *         ref=@Model(type=Login::class)
+	 *     )
+	 * )
      * @OA\Tag(name="Login")
      * @Route("/login", methods={"POST"})
      */
-    public function login(AnnuaireService $annuaire, Request $request)
+    public function login(AnnuaireService $annuaire, Request $request, SerializerInterface $serializer)
     {
-        $login = $request->query->get('login', '');
-        $password = $request->query->get('password', '');
+		$loginInfos = $serializer->deserialize($request->getContent(), Login::class, 'json');
+		$login = $loginInfos->getLogin();
+		$password = $loginInfos->getPassword();
 
         if (!trim($login) || !trim($password)) {
             throw new BadRequestHttpException('Login or Password are empty');

@@ -336,7 +336,7 @@ class TrailsService
 
         $trails = $this->getTrails();
         foreach ($trails as $trail) {
-            if ($trail->getAuthorId() === $hash) {
+            if ($trail && $trail->getAuthorId() === $hash) {
                 $userTrailsList[] = $trail;
             }
         }
