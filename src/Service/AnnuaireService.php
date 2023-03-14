@@ -4,6 +4,8 @@ namespace App\Service;
 
 use App\Model\User;
 use Symfony\Component\BrowserKit\HttpBrowser;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class AnnuaireService
 {
@@ -64,7 +66,7 @@ class AnnuaireService
                 $error = 'failed refresh token, must relogin';
             }
         }
-
+		
         return [
             'token' => json_decode($response->getContent(), true)['token'] ?? null,
             'error' => $error

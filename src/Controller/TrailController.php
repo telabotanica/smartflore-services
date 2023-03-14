@@ -171,19 +171,19 @@ class TrailController extends AbstractController
             return new JsonResponse(['error' => $errorsString]);
         }
         $token = null;
-        $cookie = $request->cookies->all() ?? null;
-
-        if ($request->cookies->get($annuaire->getCookieName())){
-            $token = $request->cookies->get($annuaire->getCookieName());
-
-            ['token' => $token, 'error' => $error] = $annuaire->refreshToken($token, $cookie);
-            if ($error) {
-                $token = $request->headers->get('Authorization');
-//                return $error;
-            }
-        } else {
-            $token = $request->headers->get('Authorization');
-        }
+        $cookie = $request->cookies->get($annuaire->getCookieName()) ?? null;
+		
+		if ($cookie){
+			$token = $request->cookies->get($annuaire->getCookieName());
+		} else {
+			$token = $request->headers->get('Authorization');
+		}
+		
+		$cookie = [
+			$annuaire->getCookieName() => $token
+		];
+	
+		['token' => $token, 'error' => $error] = $annuaire->refreshToken($token, $cookie);
 
         $createTrail->setAuth($token);
         $createTrail->process($newTrail);
