@@ -37,19 +37,29 @@ class MeController extends AbstractController
     public function me(AnnuaireService $annuaire, SerializerInterface $serializer, Request $request)
     {
         $token = $request->query->get('token', '');
-        $cookie = null;
+//        $cookie = null;
         // cookie is optional, used only if token is expired
         // get full cookie values is strange :
         // get(tb_auth) retrieve only cookie[tb_auth] instead of full cookie info
         // so, we need to check if cookie is set to get all its props
         // I wonder how it behaves with multiples cookies, but it shouldn't happen
-        if ($request->cookies->get($annuaire->getCookieName())) {
-            $cookie = $request->cookies->all();
-        }
+//        if ($request->cookies->get($annuaire->getCookieName())) {
+//            $cookie = $request->cookies->all();
+//        }
+	
+		$cookie = $request->cookies->get($annuaire->getCookieName()) ?? null;
+	
+		if ($cookie){
+			$token = $request->cookies->get($annuaire->getCookieName());
+		}
 
         if (!trim($token)) {
             throw new BadRequestHttpException('Token is empty');
         }
+	
+		$cookie = [
+			$annuaire->getCookieName() => $token
+		];
 
         $user = $annuaire->getUser($token, $cookie);
         if (is_string($user)) {

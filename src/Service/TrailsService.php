@@ -304,26 +304,28 @@ class TrailsService
      */
     public function getAllUserTrails(string $token): array
     {
-        $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentier/', [
-            'headers' => [
-                'Auth' => $token
-            ]
-        ]);
-
-        if (200 !== $response->getStatusCode()) {
-            throw new \Exception('Something went wrong with user sentier list');
-        }
-
-        $userTrailsList = [];
-        foreach (json_decode($response->getContent(), true)['resultats'] as $trail) {
-            $userTrail = new Trail();
-            $userTrail->setId($trail['id'])
-                ->setNom($trail['titre'])
-                ->setStatus($trail['etat'] ?? 'brouillon');
-            $userTrailsList[] = $userTrail;
-        }
-
-        return $userTrailsList;
+		$userTrailsList = [];
+		$response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentier/', [
+			'timeout' => 1800,
+			'headers' => [
+				'Authorization' => $token,
+				'Auth' => $token
+			],
+		]);
+	
+		if (200 !== $response->getStatusCode()) {
+			throw new \Exception('Something went wrong with user sentier list.');
+		}
+	
+		foreach (json_decode($response->getContent(), true)['resultats'] as $trail) {
+			$userTrail = new Trail();
+			$userTrail->setId($trail['id'])
+				->setNom($trail['titre'])
+				->setStatus($trail['etat'] ?? 'brouillon');
+			$userTrailsList[] = $userTrail;
+		}
+	
+		return $userTrailsList;
     }
 
     /**
