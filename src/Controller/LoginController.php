@@ -48,14 +48,17 @@ class LoginController extends AbstractController
         ['token' => $token, 'cookie' => $cookie, 'error' => $error] = $annuaire->getToken($login, $password);
 
         $response = new JsonResponse($error ?? $token);
-
+		
         if ($cookie) {
             $response->headers->setCookie(
                 Cookie::fromString((string) $cookie)
             );
-        }
+			
+			return $response;
+        } else {
+			return new JsonResponse($response->getContent(), 401, [], true);
+		}
 
-        return $response;
     }
 
     /**
