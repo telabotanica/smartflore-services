@@ -37,7 +37,7 @@ class Trail
      *     type="string",
      *     example="Arbres vraiment remarquables mais genre de ouf tmtc"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @Groups({"show_trail", "list_trail"})
      * @SerializedName("display_name")
      */
     private $displayName;
@@ -48,7 +48,7 @@ class Trail
      *     type="string",
      *     example="Tela Botanica"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @Groups({"show_trail", "list_trail"})
      * @SerializedName("author")
      */
     private $auteur;
@@ -64,6 +64,7 @@ class Trail
      *     type="string",
      *     example="draft"
      * )
+	 * @Groups({"user_trail"})
      */
     private $status;
 
@@ -74,7 +75,7 @@ class Trail
      *     @OA\Items(type="array", @OA\Items(type="float")),
      *     example={"start":{"lat":43.610769, "lon":3.876716}, "end":{"lat":43.610769, "lon":3.876716}}
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @Groups({"show_trail", "list_trail"})
      */
     private $position;
 
@@ -94,7 +95,7 @@ class Trail
      *     type="int",
      *     example="42"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @Groups({"show_trail", "list_trail"})
      */
     private $occurrencesCount;
 
@@ -104,14 +105,14 @@ class Trail
      *     type="string",
      *     example="https://example.com/link+to+trail+details"
      * )
-     * @Groups({"list_trail", "user_trail"})
+     * @Groups({"list_trail"})
      */
     private $details;
 
     /**
      * @var ?Image
      * @OA\Property(ref=@Model(type=Image::class))
-     * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @Groups({"show_trail", "list_trail"})
      */
     private $image;
 
@@ -129,7 +130,7 @@ class Trail
      *     type="int",
      *     example="420"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @Groups({"show_trail", "list_trail"})
      */
     private $pathLength;
 
@@ -247,16 +248,20 @@ class Trail
      */
     public function getPosition(): array
     {
-        $position = [
-            'lat' => $this->position[1],
-            'lng' => $this->position[0],
-        ];
-
-        // start and end will diverge in the future
-        return [
-            'start' => $position,
-            'end' => $position,
-        ];
+		if ($this->position){
+			$position = [
+				'lat' => $this->position[1],
+				'lng' => $this->position[0],
+			];
+			
+			// start and end will diverge in the future
+			return [
+				'start' => $position,
+				'end' => $position,
+			];
+		} else {
+			return $this->position;
+		}
     }
 
     /**
