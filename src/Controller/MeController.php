@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Model\Trail;
+use App\Model\User;
 use App\Service\AnnuaireService;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
@@ -21,7 +22,7 @@ class MeController extends AbstractController
      *     description="Get user info and trails",
      *     @OA\JsonContent(
      *         type="array",
-     *         @OA\Items(ref=@Model(type=Trail::class, groups={"user_trail"}))
+     *         @OA\Items(ref=@Model(type=User::class, groups={"user_trail"}))
      *     )
      * )
      * @OA\Parameter(

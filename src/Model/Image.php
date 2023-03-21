@@ -13,7 +13,7 @@ class Image
      *     type="int",
      *     example="131269"
      * )
-     * @Groups({"show_trail", "list_trail", "show_taxon"})
+     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail"})
      */
     private $id;
 
@@ -23,7 +23,7 @@ class Image
      *     type="string",
      *     example="https://api.tela-botanica.org/img:002221908M.jpg"
      * )
-     * @Groups({"show_trail", "list_trail", "show_taxon"})
+     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail"})
      */
     private $url;
 
@@ -33,7 +33,7 @@ class Image
      *     type="string",
      *     example="Jean Michel Photographe"
      * )
-     * @Groups({"show_trail", "list_trail", "show_taxon"})
+     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail"})
      */
     private $author;
 

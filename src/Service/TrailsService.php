@@ -7,6 +7,7 @@ use App\Model\Trail;
 use League\Geotools\Coordinate\Coordinate;
 use League\Geotools\Geotools;
 use League\Geotools\Polygon\Polygon;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
@@ -246,18 +247,22 @@ class TrailsService
         $distance = 0;
 
         $points = [];
-        foreach ($trail->getChemin()->getCoordinates() as $point) {
-            $points[] = new Coordinate(array_values($point));
-        }
-
-        foreach ($points as $point) {
-            $next = next($points);
-            if ($next) {
-                $distance += $geotools->distance()->setFrom($point)->setTo($next)->flat();
-            }
-        }
-
-        return $distance;
+		if ($trail->getChemin()){
+			foreach ($trail->getChemin()->getCoordinates() as $point) {
+				$points[] = new Coordinate(array_values($point));
+			}
+			
+			foreach ($points as $point) {
+				$next = next($points);
+				if ($next) {
+					$distance += $geotools->distance()->setFrom($point)->setTo($next)->flat();
+				}
+			}
+			
+			return $distance;
+		} else {
+			return 0;
+		}
     }
 
     /**
@@ -319,14 +324,51 @@ class TrailsService
 	
 		foreach (json_decode($response->getContent(), true)['resultats'] as $trail) {
 			$userTrail = new Trail();
-			$userTrail->setId($trail['id'])
-				->setNom($trail['titre'])
-				->setStatus($trail['etat'] ?? 'brouillon');
-			$userTrailsList[] = $userTrail;
+			
+			$trailDetail = $this->getTrailInCache($trail['titre']);
+			if (!$trailDetail){
+				$userTrail->setId($trail['id'])
+					->setNom($trail['titre'])
+					->setAuteur($trail['auteur'])
+					->setDetails('')
+					->setPathLength(0)
+					->setStatus($trail['etat'] ?? 'brouillon');
+			} else {
+				$userTrail->setId($trailDetail->getId())
+					->setNom($trail['titre'])
+					->setDisplayName($trailDetail->getNom())
+					->setAuteur($trail['auteur'])
+					->setPosition($trailDetail->getPosition())
+					->setOccurrencesCount($trailDetail->getOccurrencesCount())
+					->setDetails($trailDetail->getDetails())
+					->setImage($trailDetail->getImage())
+					->setPathLength($trailDetail->getPathlength())
+					->setStatus($trail['etat'] ?? 'brouillon');
+				
+				if ($trailDetail->getPosition() == null){
+					$userTrail->setPosition(null);
+				}
+			}
+				$userTrailsList[] = $userTrail;
 		}
-	
 		return $userTrailsList;
     }
+	
+	public function getTrailInCache(string $trailName)
+	{
+		$trailCache = $this->cache->getItem('trails.trail.'.$trailName);
+		if (!$trailCache->isHit()) {
+			return null;
+		} else {
+			$trail = $trailCache->get();
+			// Si on a pas de trail, on ne recherche pas les infos de taxon sinon -> erreur lors du refresh
+			if ($trail){
+				$this->collectOccurrencesTaxonInfos($trail);
+				$this->collectTrailImages($trail);
+			}
+			return $trail;
+		}
+	}
 
     /**
      * Filter trails list to get user trails
