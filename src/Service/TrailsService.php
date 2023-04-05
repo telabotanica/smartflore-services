@@ -332,7 +332,8 @@ class TrailsService
 					->setAuteur($trail['auteur'])
 					->setDetails('')
 					->setPathLength(0)
-					->setStatus($trail['etat'] ?? 'brouillon');
+					->setOccurrencesCount(0)
+					->setStatus($trail['etat'] ?? 'draft');
 			} else {
 				$userTrail->setId($trailDetail->getId())
 					->setNom($trail['titre'])
@@ -343,7 +344,7 @@ class TrailsService
 					->setDetails($trailDetail->getDetails())
 					->setImage($trailDetail->getImage())
 					->setPathLength($trailDetail->getPathlength())
-					->setStatus($trail['etat'] ?? 'brouillon');
+					->setStatus($trail['etat'] ?? 'draft');
 				
 				if ($trailDetail->getPosition() == null){
 					$userTrail->setPosition(null);
