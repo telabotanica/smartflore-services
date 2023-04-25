@@ -73,7 +73,7 @@ class Trail
      * @OA\Property(
      *     type="array",
      *     @OA\Items(type="array", @OA\Items(type="float")),
-     *     example={"start":{"lat":43.610769, "lon":3.876716}, "end":{"lat":43.610769, "lon":3.876716}}
+     *     example={"start":{"lat":43.610769, "lng":3.876716}, "end":{"lat":43.610769, "lng":3.876716}}
      * )
      * @Groups({"show_trail", "list_trail", "user_trail"})
      */

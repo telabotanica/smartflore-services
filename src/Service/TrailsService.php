@@ -247,9 +247,12 @@ class TrailsService
         $distance = 0;
 
         $points = [];
+//		dump($trail->getChemin());
 		if ($trail->getChemin()){
 			foreach ($trail->getChemin()->getCoordinates() as $point) {
-				$points[] = new Coordinate(array_values($point));
+				if ($point){
+					$points[] = new Coordinate(array_values($point));
+				}
 			}
 			
 			foreach ($points as $point) {
@@ -325,14 +328,30 @@ class TrailsService
 		foreach (json_decode($response->getContent(), true)['resultats'] as $trail) {
 			$userTrail = new Trail();
 			
+			$occurrencesCount = 0;
+			$pathLength = 0;
+			
 			$trailDetail = $this->getTrailInCache($trail['titre']);
 			if (!$trailDetail){
+				
+				$trailInfos = $this->getDraftTrailInfo($trail['titre']);
+				if ($trailInfos->getOccurrencesCount() > 0){
+					$occurrencesCount = $trailInfos->getOccurrencesCount();
+					$pathLength = $trailInfos->getPathLength();
+				}
+				if ($trailInfos->getOccurrences()){
+					$trailInfos = $this->getImageForMe($trailInfos);
+				}
+				
 				$userTrail->setId($trail['id'])
 					->setNom($trail['titre'])
+					->setDisplayName($trailInfos->getDisplayName())
 					->setAuteur($trail['auteur'])
-					->setDetails('')
-					->setPathLength(0)
-					->setOccurrencesCount(0)
+					->setDetails($trailInfos->getDetails())
+					->setPosition($trailInfos->getPosition())
+					->setImage($trailInfos->getImage())
+					->setPathLength($pathLength)
+					->setOccurrencesCount($occurrencesCount)
 					->setStatus($trail['etat'] ?? 'draft');
 			} else {
 				$userTrail->setId($trailDetail->getId())
@@ -354,6 +373,68 @@ class TrailsService
 		}
 		return $userTrailsList;
     }
+	
+	public function getDraftTrailInfo($trailName){
+		$response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentiers/'.urlencode($trailName), [
+			'timeout' => 120,
+			'headers' => [
+				'Accept: application/json',
+			],
+		]);
+		
+		if (200 !== $response->getStatusCode()) {
+			if ('Ce sentier n\'existe pas' === $response->getContent(false)) {
+				throw new TrailNotFoundException('This trail does not exist');
+			}
+			throw new \Exception('Response status code is different than expected.');
+		}
+		
+		$extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
+		$normalizer = [
+			new ArrayDenormalizer(),
+			new ObjectNormalizer(null, null, null, $extractor),
+		];
+		$serializer = new Serializer($normalizer, [new JsonEncoder()]);
+		
+		$decode = json_decode($response->getContent(), true);
+				$trail = $serializer->deserialize($response->getContent(), Trail::class, 'json', [
+					\Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true
+				]);
+				/**
+				 * @var Trail $trail
+				 */
+//				$trail->computeOccurrencesCount();
+				$trail->setDisplayName($trail->getNom());
+				$trail->setNom($trailName);
+				$trail->setDetails($this->router->generate('show_trail', [
+					'id' => $trail->getNom()
+				], UrlGeneratorInterface::ABSOLUTE_URL));
+		return $trail;
+	}
+	
+	public function getImageForMe($trail){
+		$occurrencesImages = $this->getTrailSpecieImages($trail->getNom(), true);
+		foreach ($trail->getOccurrences() as $occurrence) {
+			$taxon = $occurrence->getTaxo();
+			
+			$images = $occurrencesImages[$taxon->getReferentiel()][$taxon->getTaxonomicId()] ?? [];
+			$images += $this->efloreService->getCardSpeciesImages(
+				$taxon->getReferentiel(), $taxon->getNumNom(), true);
+			
+			$coste = $this->efloreService->getCardCosteImage(
+				$taxon->getReferentiel(), $taxon->getTaxonomicId(), true);
+			if ($coste) {
+				$images[] = $coste;
+			}
+			
+			$occurrence->setImages(array_filter($images));
+			
+			if (!$trail->getImage() && $occurrence->getFirstImage()) {
+				$trail->setImage($occurrence->getFirstImage());
+			}
+		}
+		return $trail;
+	}
 	
 	public function getTrailInCache(string $trailName)
 	{

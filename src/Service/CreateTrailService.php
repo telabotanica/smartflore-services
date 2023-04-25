@@ -98,7 +98,7 @@ class CreateTrailService
                 $array['sentierLocalisation']['individus'][$occurrence->getCardTag().'#'.$i] = [
                     'ficheTag' => $occurrence->getCardTag(),
                     'lat' => $occurrence->getPosition()['lat'],
-                    'lng' => $occurrence->getPosition()['lon']
+                    'lng' => $occurrence->getPosition()['lng']
                 ];
             }
         }
