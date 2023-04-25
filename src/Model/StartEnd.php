@@ -13,7 +13,7 @@ class StartEnd
      * @OA\Property(
      *     type="array",
      *     @OA\Items(type="float"),
-     *     example={"lat":43.610769, "lon":3.876716}
+     *     example={"lat":43.610769, "lng":3.876716}
      * )
      * @Assert\All(
      *     @Assert\Type("float")
