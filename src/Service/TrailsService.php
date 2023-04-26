@@ -310,7 +310,7 @@ class TrailsService
     /**
      * Call private route for user's trails list
      */
-    public function getAllUserTrails(string $token): array
+    public function getAllUserTrails(string $token, $user): array
     {
 		$userTrailsList = [];
 		$response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentier/', [
@@ -326,50 +326,63 @@ class TrailsService
 		}
 	
 		foreach (json_decode($response->getContent(), true)['resultats'] as $trail) {
-			$userTrail = new Trail();
-			
-			$occurrencesCount = 0;
-			$pathLength = 0;
-			
-			$trailDetail = $this->getTrailInCache($trail['titre']);
-			if (!$trailDetail){
+			if ($trail['auteur'] == $user->getEmail()) {
 				
-				$trailInfos = $this->getDraftTrailInfo($trail['titre']);
-				if ($trailInfos->getOccurrencesCount() > 0){
-					$occurrencesCount = $trailInfos->getOccurrencesCount();
-					$pathLength = $trailInfos->getPathLength();
-				}
-				if ($trailInfos->getOccurrences()){
-					$trailInfos = $this->getImageForMe($trailInfos);
-				}
+				$userTrail = new Trail();
 				
-				$userTrail->setId($trail['id'])
-					->setNom($trail['titre'])
-					->setDisplayName($trailInfos->getDisplayName())
-					->setAuteur($trail['auteur'])
-					->setDetails($trailInfos->getDetails())
-					->setPosition($trailInfos->getPosition())
-					->setImage($trailInfos->getImage())
-					->setPathLength($pathLength)
-					->setOccurrencesCount($occurrencesCount)
-					->setStatus($trail['etat'] ?? 'draft');
-			} else {
-				$userTrail->setId($trailDetail->getId())
-					->setNom($trail['titre'])
-					->setDisplayName($trailDetail->getNom())
-					->setAuteur($trail['auteur'])
-					->setPosition($trailDetail->getPosition())
-					->setOccurrencesCount($trailDetail->getOccurrencesCount())
-					->setDetails($trailDetail->getDetails())
-					->setImage($trailDetail->getImage())
-					->setPathLength($trailDetail->getPathlength())
-					->setStatus($trail['etat'] ?? 'draft');
+				$displayName = '';
+				$detail = '';
+				$position = [];
+				$occurrencesCount = 0;
+				$pathLength = 0;
 				
-				if ($trailDetail->getPosition() == null){
-					$userTrail->setPosition(null);
+				$trailDetail = $this->getTrailInCache($trail['titre']);
+				if ( !$trailDetail) {
+					$trailInfos = null;
+					$trailInfos = $this->getDraftTrailInfo($trail['titre']);
+					if ($trailInfos) {
+						if ($trailInfos->getOccurrencesCount() > 0) {
+							$occurrencesCount = $trailInfos->getOccurrencesCount();
+							$pathLength = $trailInfos->getPathLength();
+						}
+						if ($trailInfos->getOccurrences()) {
+							$trailInfos = $this->getImageForMe($trailInfos);
+						} else {
+							$userTrail->setImage(null);
+						}
+						
+						$displayName = $trailInfos->getDisplayName();
+						$detail = $trailInfos->getDetails();
+						$position = $trailInfos->getPosition();
+					}
+					
+					$userTrail->setId($trail['id'])
+						->setNom($trail['titre'])
+						->setDisplayName($displayName)
+						->setAuteur($trail['auteur'])
+						->setDetails($detail)
+						->setPosition($position)
+						->setPathLength($pathLength)
+						->setOccurrencesCount($occurrencesCount)
+						->setStatus($trail['etat'] ?? 'draft');
+				} else {
+					$userTrail->setId($trailDetail->getId())
+						->setNom($trail['titre'])
+						->setDisplayName($trailDetail->getNom())
+						->setAuteur($trail['auteur'])
+						->setPosition($trailDetail->getPosition())
+						->setOccurrencesCount($trailDetail->getOccurrencesCount())
+						->setDetails($trailDetail->getDetails())
+						->setImage($trailDetail->getImage())
+						->setPathLength($trailDetail->getPathlength())
+						->setStatus($trail['etat'] ?? 'draft');
+					
+					if ($trailDetail->getPosition() == null) {
+						$userTrail->setPosition(null);
+					}
 				}
-			}
 				$userTrailsList[] = $userTrail;
+			}
 		}
 		return $userTrailsList;
     }
@@ -384,9 +397,12 @@ class TrailsService
 		
 		if (200 !== $response->getStatusCode()) {
 			if ('Ce sentier n\'existe pas' === $response->getContent(false)) {
-				throw new TrailNotFoundException('This trail does not exist');
+//				throw new TrailNotFoundException('This trail does not exist');
+				return null;
 			}
-			throw new \Exception('Response status code is different than expected.');
+//			dump($trailName);
+//			throw new \Exception('Response status code is different than expected.');
+			return null;
 		}
 		
 		$extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
@@ -395,21 +411,31 @@ class TrailsService
 			new ObjectNormalizer(null, null, null, $extractor),
 		];
 		$serializer = new Serializer($normalizer, [new JsonEncoder()]);
+		$espece = false;
 		
-		$decode = json_decode($response->getContent(), true);
-				$trail = $serializer->deserialize($response->getContent(), Trail::class, 'json', [
-					\Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true
-				]);
-				/**
-				 * @var Trail $trail
-				 */
+		if (isset(json_decode($response->getContent(), true)['occurrences'])){
+			$occurrences = json_decode($response->getContent(), true)['occurrences'];
+			
+			foreach ($occurrences as $occurrence){
+				if (isset($occurrence['taxo']['espece'])){
+					$espece = true;
+				}
+			}
+		}
+		
+		if ($espece) {
+			$trail = $serializer->deserialize($response->getContent(), Trail::class, 'json', [
+				\Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true
+			]);
+			/**
+			 * @var Trail $trail
+			 */
 //				$trail->computeOccurrencesCount();
-				$trail->setDisplayName($trail->getNom());
-				$trail->setNom($trailName);
-				$trail->setDetails($this->router->generate('show_trail', [
-					'id' => $trail->getNom()
-				], UrlGeneratorInterface::ABSOLUTE_URL));
-		return $trail;
+			$trail->setDisplayName($trail->getNom());
+			$trail->setNom($trailName);
+			$trail->setDetails($this->router->generate('show_trail', ['id' => $trail->getNom() ], UrlGeneratorInterface::ABSOLUTE_URL));
+			return $trail;
+		}
 	}
 	
 	public function getImageForMe($trail){

@@ -50,9 +50,11 @@ class Path
     public function getCoordinates(): array
     {
         $coordinates = [];
-        foreach ($this->coordinates as $coordinate) {
-            $coordinates[] = (new Point())->setPosition($coordinate)->getPosition();
-        }
+		if (!empty($this->coordinates)){
+			foreach ($this->coordinates as $coordinate) {
+				$coordinates[] = (new Point())->setPosition($coordinate)->getPosition();
+			}
+		}
 
         return $coordinates;
     }
