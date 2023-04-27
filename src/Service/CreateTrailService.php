@@ -57,7 +57,7 @@ class CreateTrailService
             ]
             ]);
         if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Response status code is different than expected.');
+            throw new \Exception('Erreur lors de la création du sentier.');
         }
     }
 
@@ -75,7 +75,7 @@ class CreateTrailService
         ]);
 
         if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Response status code is different than expected.');
+            throw new \Exception('Erreur lors de l\'ajout d\'espèces au sentier.');
         }
     }
 
@@ -113,7 +113,7 @@ class CreateTrailService
         ]);
 
         if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Response status code is different than expected.');
+            throw new \Exception('Erreur lors de l\'ajout de la localisation.');
         }
     }
 
@@ -132,7 +132,7 @@ class CreateTrailService
         ]);
 
         if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Response status code is different than expected.');
+            throw new \Exception('Erreur lors de l\'ajout pmr et best-seasons.');
         }
     }
 
@@ -150,7 +150,7 @@ class CreateTrailService
         ]);
 
         if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Response status code is different than expected.');
+            throw new \Exception('Erreur lors de l\envoi du sentier en validation.');
         }
     }
 
@@ -173,7 +173,7 @@ class CreateTrailService
         ]);
 
         if (200 !== $response->getStatusCode()) {
-            throw new \Exception('Response status code is different than expected.');
+            throw new \Exception('Erreur lors de la récupération de la card.');
         }
 
         $fiches = json_decode($response->getContent(), true)['resultats'];

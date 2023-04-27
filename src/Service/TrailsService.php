@@ -145,7 +145,7 @@ class TrailsService
             ]);
 
             if (200 !== $response->getStatusCode()) {
-                throw new \Exception('Response status code is different than expected.');
+                throw new \Exception('Erreur lors de la récupération des images espèces.');
             }
             $images = json_decode($response->getContent(), true);
 
@@ -508,7 +508,7 @@ class TrailsService
         ]);
 
         if (200 !== $response->getStatusCode()) {
-            throw new \Exception('Response status code is different than expected.');
+            throw new \Exception('Erreur lors de la creation des sentiers en cache.');
         }
 
         $extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
@@ -565,7 +565,7 @@ class TrailsService
             if ('Ce sentier n\'existe pas' === $response->getContent(false)) {
                 throw new TrailNotFoundException('This trail does not exist');
             }
-            throw new \Exception('Response status code is different than expected.');
+            throw new \Exception('Erreur lors de la mise en cache du sentier '.$trailName);
         }
 
         $extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
