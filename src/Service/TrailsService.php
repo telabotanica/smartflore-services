@@ -332,6 +332,7 @@ class TrailsService
 				
 				$displayName = '';
 				$detail = '';
+				$image = null;
 				$position = [];
 				$occurrencesCount = 0;
 				$pathLength = 0;
@@ -344,11 +345,8 @@ class TrailsService
 						if ($trailInfos->getOccurrencesCount() > 0) {
 							$occurrencesCount = $trailInfos->getOccurrencesCount();
 							$pathLength = $trailInfos->getPathLength();
-						}
-						if ($trailInfos->getOccurrences()) {
 							$trailInfos = $this->getImageForMe($trailInfos);
-						} else {
-							$userTrail->setImage(null);
+							$image = $trailInfos->getOccurrences()[0]->getFirstImage();
 						}
 						
 						$displayName = $trailInfos->getDisplayName();
@@ -364,6 +362,7 @@ class TrailsService
 						->setPosition($position)
 						->setPathLength($pathLength)
 						->setOccurrencesCount($occurrencesCount)
+						->setImage($image)
 						->setStatus($trail['etat'] ?? 'draft');
 				} else {
 					$userTrail->setId($trailDetail->getId())
