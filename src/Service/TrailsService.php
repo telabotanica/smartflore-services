@@ -346,7 +346,19 @@ class TrailsService
 							$occurrencesCount = $trailInfos->getOccurrencesCount();
 							$pathLength = $trailInfos->getPathLength();
 							$trailInfos = $this->getImageForMe($trailInfos);
-							$image = $trailInfos->getOccurrences()[0]->getFirstImage();
+							$hasAnImage = false;
+							foreach ($trailInfos->getOccurrences() as $trailOccurrence){
+								if ($trailOccurrence->getFirstImage()){
+									$hasAnImage = true;
+								}
+								if ($hasAnImage){
+									$image = $trailOccurrence->getFirstImage();
+									break;
+								}
+							}
+							if (!$hasAnImage){
+								$image = null;
+							}
 						}
 						
 						$displayName = $trailInfos->getDisplayName();
