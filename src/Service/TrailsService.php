@@ -247,7 +247,6 @@ class TrailsService
         $distance = 0;
 
         $points = [];
-//		dump($trail->getChemin());
 		if ($trail->getChemin()){
 			foreach ($trail->getChemin()->getCoordinates() as $point) {
 				if ($point){
@@ -408,11 +407,8 @@ class TrailsService
 		
 		if (200 !== $response->getStatusCode()) {
 			if ('Ce sentier n\'existe pas' === $response->getContent(false)) {
-//				throw new TrailNotFoundException('This trail does not exist');
 				return null;
 			}
-//			dump($trailName);
-//			throw new \Exception('Response status code is different than expected.');
 			return null;
 		}
 		
@@ -441,7 +437,6 @@ class TrailsService
 			/**
 			 * @var Trail $trail
 			 */
-//				$trail->computeOccurrencesCount();
 			$trail->setDisplayName($trail->getNom());
 			$trail->setNom($trailName);
 			$trail->setDetails($this->router->generate('show_trail', ['id' => $trail->getNom() ], UrlGeneratorInterface::ABSOLUTE_URL));
