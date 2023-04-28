@@ -550,14 +550,22 @@ class TrailsService
          */
         foreach ($trails as $trail) {
             $trailName = self::extractTrailName($trail);
-            $this->buildTrailCache($trailName);
-
-            $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
-            $trail = $trailCache->get();
-            if ($trail){
-                $this->buildOccurrencesTaxonInfos($trail);
-                $this->buildTrailImagesCache($trail);
-            }
+			try {
+				$this->buildTrailCache($trailName);
+				
+				$trailCache = $this->cache->getItem('trails.trail.'.$trailName);
+				$trail = $trailCache->get();
+				if ($trail){
+					$this->buildOccurrencesTaxonInfos($trail);
+					$this->buildTrailImagesCache($trail);
+				}
+			} catch (\Exception $e){
+				print_r('erreur lors de la création du build trail cache du sentier: ');
+				print_r($trailName);
+				print_r($e->getMessage());
+				continue;
+			}
+        
         }
     }
 
@@ -595,20 +603,20 @@ class TrailsService
             }
         }
         if ($espece){
-            $trail = $serializer->deserialize($response->getContent(), Trail::class, 'json', [
-                \Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true
-            ]);
-            /**
-             * @var Trail $trail
-             */
-            $trail->computeOccurrencesCount();
-            $trail->setDisplayName($trail->getNom());
-            $trail->setNom($trailName);
-            $trail->setDetails($this->router->generate('show_trail', [
-                'id' => $trail->getNom()
-            ], UrlGeneratorInterface::ABSOLUTE_URL));
-            $trailCache->set($trail);
-            $this->cache->save($trailCache);
+				$trail = $serializer->deserialize($response->getContent(), Trail::class, 'json', [
+					\Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true
+				]);
+				/**
+				 * @var Trail $trail
+				 */
+				$trail->computeOccurrencesCount();
+				$trail->setDisplayName($trail->getNom());
+				$trail->setNom($trailName);
+				$trail->setDetails($this->router->generate('show_trail', [
+					'id' => $trail->getNom()
+				], UrlGeneratorInterface::ABSOLUTE_URL));
+				$trailCache->set($trail);
+				$this->cache->save($trailCache);
         }
     }
 }
