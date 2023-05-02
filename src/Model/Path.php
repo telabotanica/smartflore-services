@@ -26,10 +26,10 @@ class Path
      *         @OA\Items(type="float"),
      *     ),
      *     example={
-     *         {"lat":43.610769, "lon":3.876716},
-     *         {"lat":43.610769, "lon":3.876716},
-     *         {"lat":43.610769, "lon":3.876716},
-     *         {"lat":43.610769, "lon":3.876716}
+     *         {"lat":43.610769, "lng":3.876716},
+     *         {"lat":43.610769, "lng":3.876716},
+     *         {"lat":43.610769, "lng":3.876716},
+     *         {"lat":43.610769, "lng":3.876716}
      *     }
      * )
      * @Groups({"show_trail", "list_trail", "create_trail"})
@@ -50,9 +50,11 @@ class Path
     public function getCoordinates(): array
     {
         $coordinates = [];
-        foreach ($this->coordinates as $coordinate) {
-            $coordinates[] = (new Point())->setPosition($coordinate)->getPosition();
-        }
+		if (!empty($this->coordinates)){
+			foreach ($this->coordinates as $coordinate) {
+				$coordinates[] = (new Point())->setPosition($coordinate)->getPosition();
+			}
+		}
 
         return $coordinates;
     }

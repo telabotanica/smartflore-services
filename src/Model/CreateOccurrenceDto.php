@@ -14,7 +14,7 @@ class CreateOccurrenceDto
      * @OA\Property(
      *     type="array",
      *     @OA\Items(type="float"),
-     *     example={"lat":43.610769, "lon":3.876716}
+     *     example={"lat":43.610769, "lng":3.876716}
      * )
      * @Assert\All(
      *     @Assert\Type("float")
@@ -61,7 +61,7 @@ class CreateOccurrenceDto
     private $taxonRepository;
 
     /**
-     * @var int
+     * @var int|null
      * @OA\Property(
      *     type="int",
      *     example="131269"
@@ -132,7 +132,7 @@ class CreateOccurrenceDto
     /**
      * @return int
      */
-    public function getImageId(): int
+    public function getImageId(): ?int
     {
         return $this->imageId;
     }
@@ -141,9 +141,9 @@ class CreateOccurrenceDto
      * @param int $imageId
      * @return CreateOccurrenceDto
      */
-    public function setImageId(int $imageId): CreateOccurrenceDto
+    public function setImageId(?int $imageId): CreateOccurrenceDto
     {
-        $this->imageId = $imageId;
+        $this->imageId = $imageId ;
         return $this;
     }
 

@@ -13,7 +13,7 @@ class StartEnd
      * @OA\Property(
      *     type="array",
      *     @OA\Items(type="float"),
-     *     example={"lat":43.610769, "lon":3.876716}
+     *     example={"lat":43.610769, "lng":3.876716}
      * )
      * @Assert\All(
      *     @Assert\Type("float")
@@ -31,7 +31,7 @@ class StartEnd
      * @OA\Property(
      *     type="array",
      *     @OA\Items(type="float"),
-     *     example={"lat":43.610769, "lon":3.876716}
+     *     example={"lat":43.610769, "lng":3.876716}
      * )
      * @Assert\All(
      *     @Assert\Type("float")
@@ -48,7 +48,7 @@ class StartEnd
     {
         return [
             'lat' => $this->start['lat'],
-            'lng' => $this->start['lon'],
+            'lng' => $this->start['lng'],
         ];
     }
 
@@ -61,8 +61,8 @@ class StartEnd
     public function getEnd(): array
     {
         return [
-            'lat' => $this->end[1],
-            'lng' => $this->end[0],
+            'lat' => $this->end['lat'],
+            'lng' => $this->end['lng'],
         ];
     }
 

@@ -89,7 +89,7 @@ class AnnuaireService
             ->setName($tokenInfos['intitule'])
             ->setAvatar(($tokenInfos['avatar'] ?? ''));
 
-        $userTrails = $this->trails->getAllUserTrails($token);
+        $userTrails = $this->trails->getAllUserTrails($token, $user);
         $user->setTrails($userTrails);
 
         return $user;
