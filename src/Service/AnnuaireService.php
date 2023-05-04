@@ -39,7 +39,7 @@ class AnnuaireService
         if (200 !== $response->getStatusCode()) {
             $error = 'error';
             if (401 === $response->getStatusCode()) {
-                $error = 'failed authentication with given login and password';
+                $error = "Erreur d'indentification. Mauvais login ou mot de passe";
             }
         }
 
@@ -63,7 +63,7 @@ class AnnuaireService
         if (200 !== $response->getStatusCode()) {
             $error = 'error';
             if (400 === $response->getStatusCode()) {
-                $error = 'failed refresh token, must relogin';
+                $error = 'Erreur lors du rafraichissement du token. Veuillez vous reconnecter';
             }
         }
 		
