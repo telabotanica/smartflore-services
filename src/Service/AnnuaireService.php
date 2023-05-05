@@ -39,7 +39,7 @@ class AnnuaireService
         if (200 !== $response->getStatusCode()) {
             $error = 'error';
             if (401 === $response->getStatusCode()) {
-                $error = "Erreur d'indentification. Mauvais login ou mot de passe";
+                $error = "Erreur. Mauvais login ou mot de passe";
             }
         }
 
