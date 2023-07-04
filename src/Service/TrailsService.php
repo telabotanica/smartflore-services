@@ -88,8 +88,10 @@ class TrailsService
                 $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
                 if ($trailCache->isHit()) {
                     $trail = $trailCache->get();
-                    $this->findOneImagePlease($trail);
-                    $trails[] = $trail;
+					if (strpos($trail->getNom(), '_deleted_at_') === false){
+						$this->findOneImagePlease($trail);
+						$trails[] = $trail;
+					}
                 }
             }
         }
@@ -307,7 +309,7 @@ class TrailsService
     }
 
     /**
-     * Call private route for user's trails list
+     * Call private route for user's trails list (for /me route)
      */
     public function getAllUserTrails(string $token, $user): array
     {
@@ -566,7 +568,6 @@ class TrailsService
     public function buildTrailCache(string $trailName)
     {
         $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
-
         $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentiers/'.urlencode($trailName), [
             'timeout' => 120,
             'headers' => [
