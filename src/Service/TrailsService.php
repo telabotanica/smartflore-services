@@ -383,15 +383,14 @@ class TrailsService
 						->setNom($trail['titre'])
 						->setDisplayName($trailDetail->getNom())
 						->setAuteur($trail['auteur'])
-						->setPosition($trailDetail->getPosition())
 						->setOccurrencesCount($trailDetail->getOccurrencesCount())
 						->setDetails($trailDetail->getDetails())
 						->setImage($trailDetail->getImage())
 						->setPathLength($trailDetail->getPathlength())
 						->setStatus($trail['etat'] ?? 'draft');
 					
-					if ($trailDetail->getPosition() == null) {
-						$userTrail->setPosition(null);
+					if ($trailDetail->getPosition() != null) {
+						$userTrail->setPosition($trailDetail->getPosition());
 					}
 				}
 				$userTrailsList[] = $userTrail;
