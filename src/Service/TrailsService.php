@@ -333,7 +333,7 @@ class TrailsService
 				$displayName = '';
 				$detail = '';
 				$image = null;
-				$position = [];
+				$position = null;
 				$occurrencesCount = 0;
 				$pathLength = 0;
 				
@@ -371,11 +371,13 @@ class TrailsService
 						->setDisplayName($displayName)
 						->setAuteur($trail['auteur'])
 						->setDetails($detail)
-						->setPosition($position)
 						->setPathLength($pathLength)
 						->setOccurrencesCount($occurrencesCount)
 						->setImage($image)
 						->setStatus($trail['etat'] ?? 'draft');
+					if ($position){
+						$userTrail->setPosition($position);
+					}
 				} else {
 					$userTrail->setId($trailDetail->getId())
 						->setNom($trail['titre'])
