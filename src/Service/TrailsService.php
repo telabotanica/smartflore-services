@@ -327,7 +327,7 @@ class TrailsService
 		}
 	
 		foreach (json_decode($response->getContent(), true)['resultats'] as $trail) {
-			if ($trail['auteur'] && $trail['auteur'] == $user->getEmail() && !$trail['dateSuppression']) {
+			if (isset($trail['auteur']) && $trail['auteur'] == $user->getEmail() && !$trail['dateSuppression']) {
 				$userTrail = new Trail();
 				
 				$displayName = '';
