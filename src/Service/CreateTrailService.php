@@ -29,16 +29,18 @@ class CreateTrailService
     public function process(CreateTrailDto $trail): void
     {
         $this->createTrail($trail);
-        foreach ($trail->getOccurrences() as $occurrence) {
-            $this->getCardTag($occurrence);
-            $this->addSpeciesToTrail($trail, $occurrence);
-        }
-        $this->addLocation($trail);
+		if ($trail->getOccurrences()){
+			foreach ($trail->getOccurrences() as $occurrence) {
+				$this->getCardTag($occurrence);
+				$this->addSpeciesToTrail($trail, $occurrence);
+			}
+			$this->addLocation($trail);
+			if ($this->isTrailEligible($trail)) {
+				$email = $this->annuaire->getUser($this->getAuth())->getEmail();
+				$this->submitTrailToReview($trail, $email);
+			}
+		}
         $this->addPmrAndSeasons($trail);
-        if ($this->isTrailEligible($trail)) {
-            $email = $this->annuaire->getUser($this->getAuth())->getEmail();
-            $this->submitTrailToReview($trail, $email);
-        }
     }
 
     public function createTrail(CreateTrailDto $trail): void
