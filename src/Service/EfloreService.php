@@ -192,7 +192,7 @@ class EfloreService
         $taxon
             ->setEspece($taxonInfos['nom_sci'])
             ->setFullScientificName($taxonInfos['nom_complet'])
-            ->setHtmlFullScientificName($taxonInfos['nom_sci_html_complet'])
+            ->setHtmlFullScientificName($taxonInfos['nom_sci_html_complet'] ?? '')
             ->setGenre($taxonInfos['genre'] ?? '')
             ->setFamille($taxonInfos['famille'] ?? '')
             ->setReferentiel($taxonRepository)
