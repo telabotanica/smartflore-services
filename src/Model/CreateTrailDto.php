@@ -23,7 +23,7 @@ class CreateTrailDto
      *     example="Arbres Remarquables"
      * )
      * @Assert\NotBlank
-     * @Assert\Length(max={255})
+     * @Assert\Length(max=255)
      * @Groups({"create_trail"})
      */
     private $name;

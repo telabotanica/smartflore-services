@@ -8,7 +8,8 @@ when@dev:
             main:
                 type: stream
                 path: "%kernel.logs_dir%/%kernel.environment%.log"
-                level: debug
+                level: warning
+                action_level: warning
                 channels: ["!event"]
             # uncomment to get logging in your browser
             # you may have to allow bigger header sizes in your Web server configuration
@@ -22,7 +23,11 @@ when@dev:
                 type: console
                 process_psr_3_messages: false
                 channels: ["!event", "!doctrine", "!console"]
-
+            deprecation:
+                type: rotating_file
+                channels: [ deprecation ]
+                path: '%kernel.project_dir%/var/log/deprecation.log'
+                max_files: 5
 when@test:
     monolog:
         handlers:
@@ -33,10 +38,11 @@ when@test:
                 excluded_http_codes: [404, 405]
                 channels: ["!event"]
             nested:
-                type: stream
-                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                type: rotating_file
+                path: "%kernel.logs_dir%/var/log/error_test.log"
                 level: debug
-
+                formatter: monolog.formatter.json
+                max_files: 5
 when@prod:
     monolog:
         handlers:
@@ -47,17 +53,18 @@ when@prod:
                 excluded_http_codes: [404, 405]
                 buffer_size: 50 # How many messages should be saved? Prevent memory leaks
             nested:
-                type: stream
-#                path: php://stderr
-                path: '%kernel.project_dir%/var/log/prod.log'
+                type: rotating_file
+                path: '%kernel.project_dir%/var/log/error_prod.log'
                 level: debug
                 formatter: monolog.formatter.json
+                max_files: 10
             console:
                 type: console
                 process_psr_3_messages: false
                 channels: ["!event", "!doctrine"]
             deprecation:
-                type: stream
+                type: rotating_file
                 channels: [deprecation]
 #                path: php://stderr
-                path: '%kernel.project_dir%/var/log/depreciation.log'
+                path: '%kernel.project_dir%/var/log/depreciation_prod.log'
+                max_files: 5
