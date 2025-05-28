@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\Sentier;
 use App\Model\Image;
 use App\Model\Trail;
 use League\Geotools\Coordinate\Coordinate;
@@ -243,7 +244,7 @@ class TrailsService
         }
     }
 
-    public static function getTrailLength(Trail $trail): float
+    public static function getTrailLength(Sentier $trail): float
     {
         $geotools = new Geotools();
         $distance = 0;

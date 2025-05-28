@@ -76,7 +76,7 @@ class AnnuaireService
     /**
      * @return User|string
      */
-    public function getUser(string $token, ?array $cookie = null)
+    public function getUser(string $token, ?array $cookie = null): User
     {
         ['token' => $token, 'error' => $error] = $this->refreshToken($token, $cookie);
         if ($error) {
@@ -91,6 +91,23 @@ class AnnuaireService
 
         $userTrails = $this->trails->getAllUserTrails($token, $user);
         $user->setTrails($userTrails);
+
+        return $user;
+    }
+
+    public function getUserInfos(string $token, ?array $cookie = null): User
+    {
+        ['token' => $token, 'error' => $error] = $this->refreshToken($token, $cookie);
+        if ($error) {
+            return $error;
+        }
+
+        $tokenInfos = $this->decodeToken($token);
+        $user = new User();
+        $user->setEmail($tokenInfos['sub'])
+            ->setId($tokenInfos['id'])
+            ->setName($tokenInfos['intitule'])
+            ->setAvatar(($tokenInfos['avatar'] ?? ''));
 
         return $user;
     }

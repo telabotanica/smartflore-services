@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Sentier;
 use App\Model\CreateTrailDto;
 use App\Model\Trail;
 use App\Service\AnnuaireService;
@@ -150,7 +151,7 @@ class TrailController extends AbstractController
      *     required=true,
      *     @OA\JsonContent(
      *         type="object",
-     *         ref=@Model(type=CreateTrailDto::class, groups={"create_trail"})
+     *         ref=@Model(type=Sentier::class, groups={"create_trail"})
      *     )
      * )
      * @OA\Tag(name="Trails")
@@ -163,13 +164,15 @@ class TrailController extends AbstractController
         ValidatorInterface $validator,
         AnnuaireService $annuaire
     ) {
-        $newTrail = $serializer->deserialize($request->getContent(),CreateTrailDto::class, 'json');
+        $newTrail = $serializer->deserialize($request->getContent(), Sentier::class, 'json', ['groups' => ['create_trail']]);
+
         $errors = $validator->validate($newTrail);
 
         if (count($errors) > 0) {
             $errorsString = (string)$errors;
-            return new JsonResponse(['error' => $errorsString]);
+            return new JsonResponse(['error' => $errorsString], Response::HTTP_BAD_REQUEST);
         }
+
         $token = null;
         $cookie = $request->cookies->get($annuaire->getCookieName()) ?? null;
 		
@@ -188,7 +191,7 @@ class TrailController extends AbstractController
         $createTrail->setAuth($token);
         $createTrail->process($newTrail);
 
-        return new JsonResponse('Sentier crée', 201);
+        return new JsonResponse('Sentier crée', Response::HTTP_CREATED);
     }
 }
 

@@ -2,8 +2,11 @@
 
 namespace App\Service;
 
+use App\Entity\Sentier;
 use App\Model\CreateOccurrenceDto;
 use App\Model\CreateTrailDto;
+use App\Model\User;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -13,10 +16,12 @@ class CreateTrailService
     private $smartfloreLegacyApiBaseUrl;
     private $authorizeToken;
     private $annuaire;
+    private EntityManagerInterface $em;
 
     public function __construct(
         string $smartfloreLegacyApiBaseUrl,
-        AnnuaireService $annuaire
+        AnnuaireService $annuaire,
+        EntityManagerInterface $em
     ) {
         /**
          * @var $client HttpClientInterface
@@ -24,46 +29,48 @@ class CreateTrailService
         $this->client = HttpClient::create();
         $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
         $this->annuaire = $annuaire;
+        $this->em = $em;
     }
 
-    public function process(CreateTrailDto $trail): void
+    public function process(Sentier $trail): void
     {
         $this->createTrail($trail);
-		if ($trail->getOccurrences()){
-			foreach ($trail->getOccurrences() as $occurrence) {
-				$this->getCardTag($occurrence);
-				$this->addSpeciesToTrail($trail, $occurrence);
-			}
-			$this->addLocation($trail);
-			if ($this->isTrailEligible($trail)) {
-				$email = $this->annuaire->getUser($this->getAuth())->getEmail();
-				$this->submitTrailToReview($trail, $email);
-			}
-		}
-        $this->addPmrAndSeasons($trail);
+        //TODO
+//		if ($trail->getOccurrences()){
+//			foreach ($trail->getOccurrences() as $occurrence) {
+//				$this->getCardTag($occurrence);
+//				$this->addSpeciesToTrail($trail, $occurrence);
+//			}
+//			$this->addLocation($trail);
+//			if ($this->isTrailEligible($trail)) {
+//				$email = $this->annuaire->getUser($this->getAuth())->getEmail();
+//				$this->submitTrailToReview($trail, $email);
+//			}
+//		}
     }
 
-    public function createTrail(CreateTrailDto $trail): void
+    public function createTrail(Sentier $trail): void
     {
-        $trailName = $trail->getName();
+        $trailName = $trail->getNom();
+
         if (!$this->isTrailNameAvailable($trailName)) {
             $trailName = $this->addRandomIntegerSuffixToAlreadyUsedTrailNameUntilNameIsFreeThisMethodNameIsTooLong($trailName);
         }
 
-        $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier/',
-            [
-            'body' => json_encode(['sentierTitre' => $trailName]),
-            'headers' => [
-                'Authorization: '.$this->getAuth(),
-                'Auth: '.$this->getAuth()
-            ]
-            ]);
-        if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Erreur lors de la création du sentier.');
-        }
+        $user = $this->annuaire->getUserInfos($this->getAuth());
+        $auteur = $user->getName() ? $user->getName() : $user->getEmail();
+
+        $trail->setPathLength(round(TrailsService::getTrailLength($trail)));
+        $trail->setAuteur($auteur);
+        $trail->setNom($trailName);
+        $trail->setAuthorId($user->getId());
+        $trail->setDateCreation(new \DateTime());
+
+        $this->em->persist($trail);
+        $this->em->flush();
     }
 
-    public function addSpeciesToTrail(CreateTrailDto $trail, CreateOccurrenceDto $occurrence): void
+    public function addSpeciesToTrail(Sentier $trail, CreateOccurrenceDto $occurrence): void
     {
         $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-fiche/', [
             'body' => json_encode([
@@ -81,8 +88,7 @@ class CreateTrailService
         }
     }
 
-
-    public function addLocation(CreateTrailDto $trail): void
+    public function addLocation(Sentier $trail): void
     {
         // it's messy, sorry
         $array = [];
@@ -119,26 +125,7 @@ class CreateTrailService
         }
     }
 
-    public function addPmrAndSeasons(CreateTrailDto $trail): void
-    {
-        $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-pmr-seasons/', [
-            'body' => json_encode([
-                'sentierTitre' => $trail->getName(),
-                'pmr' => $trail->getPrm(),
-                'best_season' => $trail->getBestSeason()
-            ]),
-            'headers' => [
-                'Authorization: '.$this->getAuth(),
-                'Auth: '.$this->getAuth()
-            ],
-        ]);
-
-        if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Erreur lors de l\'ajout pmr et best-seasons.');
-        }
-    }
-
-    public function submitTrailToReview(CreateTrailDto $trail, string $authorEmail): void
+    public function submitTrailToReview(Sentier $trail, string $authorEmail): void
     {
         $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-validation/', [
             'body' => json_encode([
@@ -156,7 +143,7 @@ class CreateTrailService
         }
     }
 
-    public function isTrailEligible(CreateTrailDto $trail): bool
+    public function isTrailEligible(Sentier $trail): bool
     {
         return (10 <= count($trail->getOccurrences()));
     }
@@ -188,24 +175,14 @@ class CreateTrailService
 
     public function isTrailNameAvailable(string $trailName): bool
     {
-        $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentier-informations/?sentierTitre='.$trailName);
-        $statusCode = $response->getStatusCode();
-
-
-        switch ($statusCode) {
-            case 200:
-                return false; // trail name already used
-            case 404:
-                return true; // trail not found (or wrong service url... thx shitty status code)
-            default:
-                throw new \Exception("Unattended status code: $statusCode (instead of 200 or 404)");
-        }
+        $existingTrail = $this->em->getRepository(Sentier::class)->findBy(['nom' => $trailName]);
+        return !$existingTrail;
     }
 
     public function addRandomIntegerSuffixToAlreadyUsedTrailNameUntilNameIsFreeThisMethodNameIsTooLong(string $trailName): string
     {
         do {
-            $trailName.=random_int(1,10);
+            $trailName.=random_int(1,100);
         } while (!$this->isTrailNameAvailable($trailName));
 
         return $trailName;
