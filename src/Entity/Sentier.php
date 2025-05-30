@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\Entity\Path;
 use App\Repository\SentierRepository;
 use App\Service\TrailsService;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
@@ -42,6 +44,7 @@ class Sentier
      *     example="Arbres Remarquables"
      * )
      * @Groups({"create_trail"})
+     * @SerializedName("name")
      */
     private $nom;
 
@@ -159,6 +162,7 @@ class Sentier
      *     max = 1
      * )
      * @Groups({"show_trail", "list_trail", "user_trail","create_trail"})
+     * @SerializedName("prm")
      * values : // -1 = don't know // 0 = no // 1 = yes
      */
     private $pmr;
@@ -179,7 +183,7 @@ class Sentier
      *     max=4,
      *     exactMessage="Vous devez spécifier exactement 4 saisons"
      * )
-     * @SerializedName("meilleures_saisons")
+     * @SerializedName("best_season")
      * @Groups({"show_trail", "list_trail", "user_trail","create_trail"})
      */
     private $meilleures_saisons = [];
@@ -208,6 +212,21 @@ class Sentier
      * @ORM\Column(type="integer", nullable=true)
      */
     private $nb_taxons;
+
+    /**
+     * @ORM\OneToMany(targetEntity=Occurrence::class, mappedBy="sentier", cascade={"persist"})
+     * @OA\Property(
+     *     type="array",
+     *     @OA\Items(ref=@Model(type=Occurrence::class)),
+     * )
+     * @Groups({"show_trail", "list_trail", "create_trail"})
+     */
+    private $occurrences;
+
+    public function __construct()
+    {
+        $this->occurrences = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -348,12 +367,12 @@ class Sentier
 
     public function getOccurrencesCount(): ?int
     {
-        return $this->nb_individus;
+        return $this->occurrencesCount;
     }
 
     public function setOccurrencesCount(?int $occurrencesCount): self
     {
-        $this->nb_individus = $occurrencesCount;
+        $this->occurrencesCount = $occurrencesCount;
 
         return $this;
     }
@@ -466,6 +485,36 @@ class Sentier
     public function setNbTaxons(?int $nb_taxons): self
     {
         $this->nb_taxons = $nb_taxons;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Occurrence>
+     */
+    public function getOccurrences(): Collection
+    {
+        return $this->occurrences;
+    }
+
+    public function addOccurrence(Occurrence $occurrence): self
+    {
+        if (!$this->occurrences->contains($occurrence)) {
+            $this->occurrences[] = $occurrence;
+            $occurrence->setSentier($this);
+        }
+
+        return $this;
+    }
+
+    public function removeOccurrence(Occurrence $occurrence): self
+    {
+        if ($this->occurrences->removeElement($occurrence)) {
+            // set the owning side to null (unless already changed)
+            if ($occurrence->getSentier() === $this) {
+                $occurrence->setSentier(null);
+            }
+        }
 
         return $this;
     }

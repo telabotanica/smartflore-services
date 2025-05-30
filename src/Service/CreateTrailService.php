@@ -2,51 +2,83 @@
 
 namespace App\Service;
 
+use App\Entity\Occurrence;
 use App\Entity\Sentier;
 use App\Model\CreateOccurrenceDto;
 use App\Model\CreateTrailDto;
+use App\Model\Taxon;
 use App\Model\User;
+use App\Repository\FicheRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class CreateTrailService
 {
     private $client;
     private $smartfloreLegacyApiBaseUrl;
+    private $efloreApiBaseUrl;
+    private $infosTaxonsUrl;
     private $authorizeToken;
     private $annuaire;
     private EntityManagerInterface $em;
+    private EfloreService $eflore;
+    private SerializerInterface $serializer;
+    private FicheRepository $ficheRepository;
 
     public function __construct(
         string $smartfloreLegacyApiBaseUrl,
+        string $efloreApiBaseUrl,
+        string $infosTaxonsUrl,
         AnnuaireService $annuaire,
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        EfloreService $eflore,
+        FicheRepository $ficheRepository
     ) {
         /**
          * @var $client HttpClientInterface
          */
         $this->client = HttpClient::create();
         $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
+        $this->efloreApiBaseUrl = $efloreApiBaseUrl;
+        $this->infosTaxonsUrl = $infosTaxonsUrl;
         $this->annuaire = $annuaire;
         $this->em = $em;
+        $this->eflore = $eflore;
+        $this->ficheRepository = $ficheRepository;
     }
 
     public function process(Sentier $trail): void
     {
         $this->createTrail($trail);
-        //TODO
-//		if ($trail->getOccurrences()){
-//			foreach ($trail->getOccurrences() as $occurrence) {
-//				$this->getCardTag($occurrence);
+
+        $nb_taxons = 0;
+
+		if ($trail->getOccurrences()){
+            $uniqueCardTags = [];
+
+			foreach ($trail->getOccurrences() as $occurrence) {
+				$this->getCardTag($occurrence);
+                $occurrence->setUserId(($trail->getAuthorId()));
+
+                $uniqueCardTags = $this->getUniqueCardTags($uniqueCardTags, $occurrence);
+
 //				$this->addSpeciesToTrail($trail, $occurrence);
-//			}
+			}
+            $nb_taxons = count($uniqueCardTags);
 //			$this->addLocation($trail);
 //			if ($this->isTrailEligible($trail)) {
 //				$email = $this->annuaire->getUser($this->getAuth())->getEmail();
 //				$this->submitTrailToReview($trail, $email);
 //			}
-//		}
+		}
+
+        $trail->setOccurrencesCount(count($trail->getOccurrences()));
+        $trail->setNbTaxons($nb_taxons);
+
+        $this->em->persist($trail);
+        $this->em->flush();
     }
 
     public function createTrail(Sentier $trail): void
@@ -65,9 +97,6 @@ class CreateTrailService
         $trail->setNom($trailName);
         $trail->setAuthorId($user->getId());
         $trail->setDateCreation(new \DateTime());
-
-        $this->em->persist($trail);
-        $this->em->flush();
     }
 
     public function addSpeciesToTrail(Sentier $trail, CreateOccurrenceDto $occurrence): void
@@ -148,29 +177,62 @@ class CreateTrailService
         return (10 <= count($trail->getOccurrences()));
     }
 
-    public function getCardTag(CreateOccurrenceDto $occurrence): void
+    public function getCardTag(Occurrence $occurrence): void
     {
-        // https://beta.tela-botanica.org/smart-form/services/Pages.php?referentiel=BDTFX&referentiel_verna=nvjfl&recherche=Acer+campestre&pages_existantes=false&nom_verna=false&debut=0&limite=1
-        // {"pagination":{"total":"11"},"resultats":[{"existe":true,"favoris":false,"tag":"SmartFloreBDTFXnt8522","time":"2015-09-10 11:14:08","owner":"AdelineMoreau","user":"adansonia","nb_revisions":"1","infos_taxon":{"num_taxonomique":"8522","nom_sci":"Acer campestre","nom_sci_complet":"Acer campestre L. [1753, Sp. Pl., 2 : 1055]","retenu":"true","num_nom":"141","referentiel":"BDTFX","noms_vernaculaires":[]},"id":"43415","latest":"Y"}]}
-        $url = str_replace('Sentiers', 'Pages', $this->smartfloreLegacyApiBaseUrl);
-        $response = $this->client->request('GET', $url.'sentier/', [
-            'query' => [
-                'recherche' => $occurrence->getScientificName(),
-                'referentiel' => $occurrence->getTaxonRepository(),
-                'limite' => 1,
-            ],
-        ]);
+        $taxonRepository = $occurrence->getTaxon()['taxon_repository'];
+        $taxon = new Taxon();
 
-        if (200 !== $response->getStatusCode()) {
-            throw new \Exception('Erreur lors de la récupération de la card.');
+        try {
+            //-espece: "Acer campestre"
+            //  -fullScientificName: "Acer campestre L."
+            //  -htmlFullScientificName: "<span class="sci"><span class="gen">Acer</span> <span class="sp">campestre</span></span> <span class="auteur">L.</span> [<span class="annee">1753</span>, <span class="biblio">Sp. Pl., 2 : 1055</span>]"
+            //  -genre: "Acer"
+            //  -famille: "Sapindaceae"
+            //  -referentiel: "bdtfx"
+            //  -numNom: 141
+            //  -acceptedScientificNameId: 141
+            //  -taxonomicId: 8522
+            //  -vernacularNames: array:7 [
+            //    1 => "Érable champêtre"
+            //    2 => "Petit Érable"
+            //    3 => "Acéraille"
+            //    4 => "Auzerole"
+            //    5 => "Azeraille"
+            //    6 => "Bois de poule"
+            //    7 => "Bois-chaud"
+            //  ]
+            //  -tabs: null
+           $taxonInfos = $this->eflore->getTaxonRawInfo($taxonRepository, $occurrence->getTaxon()['name_id']);
+
+            $taxon
+                ->setEspece($taxonInfos['nom_sci'])
+                ->setFullScientificName($taxonInfos['nom_complet'])
+                ->setHtmlFullScientificName($taxonInfos['nom_sci_html_complet'] ?? '')
+                ->setGenre($taxonInfos['genre'] ?? '')
+                ->setFamille($taxonInfos['famille'] ?? '')
+                ->setReferentiel($taxonRepository)
+                ->setNumNom($taxonInfos['id'])
+                ->setAcceptedScientificNameId($taxonInfos['nom_retenu.id'])
+                ->setTaxonomicId($taxonInfos['num_taxonomique'])
+            ;
+
+            $vernacularInfos = $this->eflore->getVernacularName(
+                $taxon->getReferentiel(), $taxon->getTaxonomicId());
+            foreach ($vernacularInfos as $vernacularInfo) {
+                if ('fra' === ($vernacularInfo['code_langue'] ?? '')) {
+                    $taxon->addVernacularName($vernacularInfo['nom'], $vernacularInfo['num_statut'] ?? 0);
+                }
+            }
+        } catch (\Exception $e) {
+            throw new \Exception('Erreur lors de la récupération de la taxon.');
         }
 
-        $fiches = json_decode($response->getContent(), true)['resultats'];
-        if (!count($fiches)) {
-            throw new \Exception('No card tag found for '.$occurrence->getTaxonRepository().':'.$occurrence->getScientificName());
-        }
+        $nomFiche = 'SmartFlore'.strtoupper($taxonRepository).'nt'.$taxon->getTaxonomicId();
+        $fiche = $this->ficheRepository->findOneBy(['tag' => $nomFiche, 'derniere_version' => true]);
 
-        $occurrence->setCardTag($fiches[0]['tag']);
+        if ($fiche) {
+            $occurrence->setCardTag($nomFiche);
+        }
     }
 
     public function isTrailNameAvailable(string $trailName): bool
@@ -199,5 +261,14 @@ class CreateTrailService
             throw new \Exception('Missing authorize token, please set before using this service');
         }
         return $this->authorizeToken;
+    }
+
+    private function getUniqueCardTags(array $uniqueCardTags, Occurrence $occurrence): array
+    {
+        $cardTag = $occurrence->getCardTag();
+        if ($cardTag && !in_array($cardTag, $uniqueCardTags, true)) {
+            $uniqueCardTags[] = $cardTag;
+        }
+        return $uniqueCardTags;
     }
 }
