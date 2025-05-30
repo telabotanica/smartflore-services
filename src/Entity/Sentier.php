@@ -122,7 +122,7 @@ class Sentier
      *     type="int",
      *     example="420"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail", "create_trail"})
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $pathLength;
 
