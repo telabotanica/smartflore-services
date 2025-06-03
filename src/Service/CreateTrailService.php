@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\Image;
 use App\Entity\Occurrence;
 use App\Entity\Sentier;
 use App\Model\CreateOccurrenceDto;
@@ -20,6 +21,9 @@ class CreateTrailService
     private $smartfloreLegacyApiBaseUrl;
     private $efloreApiBaseUrl;
     private $infosTaxonsUrl;
+    private $imageUrl;
+    private $imageMiniatureUrl;
+    private $ipApiV2Image;
     private $authorizeToken;
     private $annuaire;
     private EntityManagerInterface $em;
@@ -31,6 +35,9 @@ class CreateTrailService
         string $smartfloreLegacyApiBaseUrl,
         string $efloreApiBaseUrl,
         string $infosTaxonsUrl,
+        string $imageUrl,
+        string $imageMiniatureUrl,
+        string $ipApiV2Image,
         AnnuaireService $annuaire,
         EntityManagerInterface $em,
         EfloreService $eflore,
@@ -43,6 +50,9 @@ class CreateTrailService
         $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
         $this->efloreApiBaseUrl = $efloreApiBaseUrl;
         $this->infosTaxonsUrl = $infosTaxonsUrl;
+        $this->imageUrl = $imageUrl;
+        $this->imageMiniatureUrl = $imageMiniatureUrl;
+        $this->ipApiV2Image = $ipApiV2Image;
         $this->annuaire = $annuaire;
         $this->em = $em;
         $this->eflore = $eflore;
@@ -63,8 +73,6 @@ class CreateTrailService
                 $occurrence->setUserId(($trail->getAuthorId()));
 
                 $uniqueCardTags = $this->getUniqueCardTags($uniqueCardTags, $occurrence);
-
-//				$this->addSpeciesToTrail($trail, $occurrence);
 			}
             $nb_taxons = count($uniqueCardTags);
 //			$this->addLocation($trail);
@@ -98,7 +106,7 @@ class CreateTrailService
         $trail->setAuthorId($user->getId());
         $trail->setDateCreation(new \DateTime());
     }
-
+/*
     public function addSpeciesToTrail(Sentier $trail, CreateOccurrenceDto $occurrence): void
     {
         $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-fiche/', [
@@ -116,7 +124,7 @@ class CreateTrailService
             throw new \Exception('Erreur lors de l\'ajout d\'espèces au sentier.');
         }
     }
-
+*/
     public function addLocation(Sentier $trail): void
     {
         // it's messy, sorry
@@ -181,7 +189,7 @@ class CreateTrailService
     {
         $taxonRepository = $occurrence->getTaxon()['taxon_repository'];
         $taxon = new Taxon();
-
+        $taxonArray = [];
         try {
             //-espece: "Acer campestre"
             //  -fullScientificName: "Acer campestre L."
@@ -223,6 +231,18 @@ class CreateTrailService
                     $taxon->addVernacularName($vernacularInfo['nom'], $vernacularInfo['num_statut'] ?? 0);
                 }
             }
+
+            $taxonArray = [
+                'name_id' => $taxon->getNumNom() ?? null,
+                'scientific_name' => $taxon->getFullScientificName() ?? null,
+                'html_full_scientific_name' => $taxon->getHtmlFullScientificName() ?? null,
+                'genus' => $taxon->getGenre() ?? null,
+                'family' => $taxon->getFamille() ?? null,
+                'taxon_repository' => $taxon->getReferentiel() ?? null,
+                'accepted_scientific_name_id' => $taxon->getAcceptedScientificNameId() ?? null,
+                'taxonomic_id' => $taxon->getTaxonomicId() ?? null,
+                'vernacular_names' => $taxon->getVernacularNames() ?? []
+            ];
         } catch (\Exception $e) {
             throw new \Exception('Erreur lors de la récupération de la taxon.');
         }
@@ -231,8 +251,10 @@ class CreateTrailService
         $fiche = $this->ficheRepository->findOneBy(['tag' => $nomFiche, 'derniere_version' => true]);
 
         if ($fiche) {
+            $taxonArray['tabs'] = $nomFiche;
             $occurrence->setCardTag($nomFiche);
         }
+        $occurrence->setTaxon($taxonArray);
     }
 
     public function isTrailNameAvailable(string $trailName): bool
@@ -270,5 +292,52 @@ class CreateTrailService
             $uniqueCardTags[] = $cardTag;
         }
         return $uniqueCardTags;
+    }
+
+    public function setTaxonToOccurrence(Occurrence $occurrence, $content) {
+        $taxon = new Taxon();
+        if (isset($content->taxon)) {
+            $taxon->setFullScientificName($content->taxon->scientific_name);
+            $taxon->setReferentiel($content->taxon->taxon_repository);
+            $taxon->setNumNom($content->taxon->name_id);
+            unset($content->taxon);
+        } elseif (isset($content->scientific_name) && isset($content->taxon_repository) && isset($content->name_id)) {
+            $taxon->setFullScientificName($content->scientific_name);
+            $taxon->setReferentiel($content->taxon_repository);
+            $taxon->setNumNom($content->name_id);
+
+            unset($content->scientific_name);
+            unset($content->taxon_repository);
+            unset($content->name_id);
+        }
+        $occurrence->setTaxon([
+            'scientific_name' => $taxon->getFullScientificName(),
+            'taxon_repository' => $taxon->getReferentiel(),
+            'name_id' => $taxon->getNumNom()
+        ]);
+
+        return $occurrence;
+    }
+
+    public function setImagesToOccurrence(Occurrence $occurrence, $content) {
+        $image = new Image();
+        $image->setCelImageId($content->image_id);
+
+        $image_api_id = str_pad($content->image_id, 9, '0', STR_PAD_LEFT);
+        $image->setMini(sprintf($this->imageMiniatureUrl, $image_api_id));
+        $image->setUrl(sprintf($this->imageUrl, $image_api_id));
+
+        // On récupère les infos de l'image
+        $response = $this->client->request('GET', sprintf($this->ipApiV2Image, $content->image_id), []);
+        if (200 == $response->getStatusCode()) {
+            $image_data = json_decode($response->getContent());
+            $author = $image_data->observation->{'auteur.nom'};
+            $image->setAuthor($author);
+        }
+
+        $image->setOccurrence($occurrence);
+        $occurrence->addImage($image);
+
+        return $occurrence;
     }
 }

@@ -77,6 +77,11 @@ class Occurrence
 
     /**
      * @ORM\OneToMany(targetEntity=Image::class, mappedBy="occurrence", cascade={"persist"})
+     * @OA\Property(
+     *     property="image_id",
+     *     type="integer",
+     *     example=131269
+     * )
      * @Groups({"show_trail", "list_trail", "create_trail"})
      */
     private $images;

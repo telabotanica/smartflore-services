@@ -45,3 +45,6 @@ services:
             - '%env(SMARTFLORE_LEGACY_API_BASE_URL)%'
             - '%env(EFLORE_API_BASE_URL)%'
             - '%env(INFOS_TAXONS_URL)%'
+            - '%env(IMAGE_URL)%'
+            - '%env(IMAGE_MINIATURE_URL)%'
+            - '%env(IP_API_V2_IMAGE)%'

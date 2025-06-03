@@ -2,8 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\Image;
 use App\Entity\Sentier;
 use App\Model\CreateTrailDto;
+use App\Model\Taxon;
 use App\Model\Trail;
 use App\Service\AnnuaireService;
 use App\Service\BoundingBoxPolygonFactory;
@@ -164,7 +166,18 @@ class TrailController extends AbstractController
         ValidatorInterface $validator,
         AnnuaireService $annuaire
     ) {
+        $content = json_decode($request->getContent());
         $newTrail = $serializer->deserialize($request->getContent(), Sentier::class, 'json', ['groups' => ['create_trail']]);
+
+        // On map les taxons et imaes aux occurrences
+        if (count($newTrail->getOccurrences()) > 0) {
+            foreach ($newTrail->getOccurrences() as $key => $occurrence) {
+                $createTrail->setTaxonToOccurrence($occurrence, $content->occurrences[$key]);
+                if (isset($content->occurrences[$key]->image_id)) {
+                    $createTrail->setImagesToOccurrence($occurrence, $content->occurrences[$key]);
+                }
+            }
+        }
 
         $errors = $validator->validate($newTrail);
 

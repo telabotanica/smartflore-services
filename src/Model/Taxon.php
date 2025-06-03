@@ -15,7 +15,6 @@ class Taxon
      *     type="string",
      *     example="Acer campestre"
      * )
-     * @SerializedName("scientific_name",  "create_trail")
      * @Groups({"show_trail", "show_taxon"})
      */
     private $espece;
@@ -26,6 +25,7 @@ class Taxon
      *     type="string",
      *     example="Acer campestre L."
      * )
+     * @SerializedName("scientific_name",  "create_trail")
      * @Groups({"show_trail", "show_taxon",  "create_trail"})
      */
     private $fullScientificName;

@@ -23,7 +23,6 @@ class Image
      *     type="int",
      *     example="131269"
      * )
-     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail", "create_trail"})
      */
     private $id;
 
@@ -33,7 +32,7 @@ class Image
      *     type="string",
      *     example="https://api.tela-botanica.org/img:002221908M.jpg"
      * )
-     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail"})
+     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail", "create_trail"})
      */
     private $url;
 
@@ -43,19 +42,30 @@ class Image
      *     type="string",
      *     example="Jean Michel Photographe"
      * )
-     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail"})
+     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail", "create_trail"})
      */
     private $author;
-
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
-    private $user_id;
 
     /**
      * @ORM\ManyToOne(targetEntity=Occurrence::class, inversedBy="images")
      */
     private $occurrence;
+
+    /**
+     * @ORM\Column(type="integer", length=255, nullable=true)
+     * @OA\Property(
+     *     type="integer",
+     *     example=131269
+     * )
+     * @SerializedName("id")
+     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail", "create_trail"})
+     */
+    private $cel_image_id;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $mini;
 
     public function getId(): ?int
     {
@@ -86,18 +96,6 @@ class Image
         return $this;
     }
 
-    public function getUserId(): ?string
-    {
-        return $this->user_id;
-    }
-
-    public function setUserId(?string $user_id): self
-    {
-        $this->user_id = $user_id;
-
-        return $this;
-    }
-
     public function getOccurrence(): ?Occurrence
     {
         return $this->occurrence;
@@ -106,6 +104,38 @@ class Image
     public function setOccurrence(?Occurrence $occurrence): self
     {
         $this->occurrence = $occurrence;
+
+        return $this;
+    }
+
+    /**
+     * @OA\Property(
+     *     type="integer",
+     *     example=131269
+     * )
+     * @SerializedName("image_id")
+     * @Groups({"create_trail"})
+     */
+    public function getCelImageId(): ?int
+    {
+        return $this->cel_image_id;
+    }
+
+    public function setCelImageId(?int $cel_image_id): self
+    {
+        $this->cel_image_id = $cel_image_id;
+
+        return $this;
+    }
+
+    public function getMini(): ?string
+    {
+        return $this->mini;
+    }
+
+    public function setMini(?string $mini): self
+    {
+        $this->mini = $mini;
 
         return $this;
     }

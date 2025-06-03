@@ -408,6 +408,24 @@ class Sentier
         return $this;
     }
 
+    /**
+     * @OA\Property(
+     *     type="array",
+     *     @OA\Items(type="boolean"),
+     *     example={true, false, false, true},
+     *     description="Which seasons are the best to visit this sentier? 4 booleans: spring, summer, autumn, winter"
+     * )
+     * @Assert\All({
+     *     @Assert\Type("bool")
+     * })
+     * @Assert\Count(
+     *     min=4,
+     *     max=4,
+     *     exactMessage="Vous devez spécifier exactement 4 saisons"
+     * )
+     * @SerializedName("best_season")
+     * @Groups({"show_trail", "list_trail", "user_trail","create_trail"})
+     */
     public function getMeilleuresSaisons(): ?array
     {
         return $this->meilleures_saisons;
@@ -496,6 +514,12 @@ class Sentier
     {
         return $this->occurrences;
     }
+
+//    public function setOccurrences(array $occurrences): self
+//    {
+//        $this->occurrences = new ArrayCollection($occurrences);
+//        return $this;
+//    }
 
     public function addOccurrence(Occurrence $occurrence): self
     {
