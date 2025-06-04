@@ -59,7 +59,7 @@ class CreateTrailService
         $this->ficheRepository = $ficheRepository;
     }
 
-    public function process(Sentier $trail): void
+    public function process(Sentier $trail): Sentier
     {
         $this->createTrail($trail);
 
@@ -87,6 +87,8 @@ class CreateTrailService
 
         $this->em->persist($trail);
         $this->em->flush();
+
+        return $trail;
     }
 
     public function createTrail(Sentier $trail): void

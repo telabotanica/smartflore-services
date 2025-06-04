@@ -202,9 +202,15 @@ class TrailController extends AbstractController
 		['token' => $token, 'error' => $error] = $annuaire->refreshToken($token, $cookie);
 
         $createTrail->setAuth($token);
-        $createTrail->process($newTrail);
+        try {
+            $trail = $createTrail->process($newTrail);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur lors de la création du sentier: '. $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
 
-        return new JsonResponse('Sentier crée', Response::HTTP_CREATED);
+        return new JsonResponse($serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_CREATED, [], true);
+
+//        return new JsonResponse('Sentier crée', Response::HTTP_CREATED);
     }
 }
 
