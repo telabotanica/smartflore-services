@@ -63,27 +63,19 @@ class CreateTrailService
     {
         $this->createTrail($trail);
 
-        $nb_taxons = 0;
-
-		if ($trail->getOccurrences()){
-            $uniqueCardTags = [];
-
-			foreach ($trail->getOccurrences() as $occurrence) {
-				$this->getCardTag($occurrence);
+        if ($trail->getOccurrences()){
+            foreach ($trail->getOccurrences() as $occurrence) {
+                $this->getCardTag($occurrence);
                 $occurrence->setUserId(($trail->getAuthorId()));
+            }
 
-                $uniqueCardTags = $this->getUniqueCardTags($uniqueCardTags, $occurrence);
-			}
-            $nb_taxons = count($uniqueCardTags);
-//			$this->addLocation($trail);
+            //			$this->addLocation($trail);
 //			if ($this->isTrailEligible($trail)) {
 //				$email = $this->annuaire->getUser($this->getAuth())->getEmail();
 //				$this->submitTrailToReview($trail, $email);
 //			}
-		}
-
-        $trail->setOccurrencesCount(count($trail->getOccurrences()));
-        $trail->setNbTaxons($nb_taxons);
+        }
+        $this->addNbTaxonsToTrail($trail);
 
         $this->em->persist($trail);
         $this->em->flush();
@@ -108,25 +100,7 @@ class CreateTrailService
         $trail->setAuthorId($user->getId());
         $trail->setDateCreation(new \DateTime());
     }
-/*
-    public function addSpeciesToTrail(Sentier $trail, CreateOccurrenceDto $occurrence): void
-    {
-        $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-fiche/', [
-            'body' => json_encode([
-                'sentierTitre' => $trail->getName(),
-                'pageTag' => $occurrence->getCardTag(),
-            ]),
-            'headers' => [
-                'Authorization: '.$this->getAuth(),
-                'Auth: '.$this->getAuth()
-            ],
-        ]);
 
-        if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Erreur lors de l\'ajout d\'espèces au sentier.');
-        }
-    }
-*/
     public function addLocation(Sentier $trail): void
     {
         // it's messy, sorry
@@ -287,7 +261,7 @@ class CreateTrailService
         return $this->authorizeToken;
     }
 
-    private function getUniqueCardTags(array $uniqueCardTags, Occurrence $occurrence): array
+    public function getUniqueCardTags(array $uniqueCardTags, Occurrence $occurrence): array
     {
         $cardTag = $occurrence->getCardTag();
         if ($cardTag && !in_array($cardTag, $uniqueCardTags, true)) {
@@ -342,4 +316,20 @@ class CreateTrailService
 
         return $occurrence;
     }
+
+    public function addNbTaxonsToTrail(Sentier $trail): void
+    {
+        $nb_taxons = 0;
+        if ($trail->getOccurrences()) {
+            $uniqueCardTags = [];
+            foreach ($trail->getOccurrences() as $occurrence) {
+                $uniqueCardTags = $this->getUniqueCardTags($uniqueCardTags, $occurrence);
+            }
+            $nb_taxons = count($uniqueCardTags);
+        }
+
+        $trail->setOccurrencesCount(count($trail->getOccurrences()));
+        $trail->setNbTaxons($nb_taxons);
+    }
+
 }

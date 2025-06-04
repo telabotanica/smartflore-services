@@ -43,7 +43,7 @@ class Sentier
      *     type="string",
      *     example="Arbres Remarquables"
      * )
-     * @Groups({"create_trail"})
+     * @Groups({"create_trail", "update_trail"})
      * @SerializedName("name")
      */
     private $nom;
@@ -106,7 +106,7 @@ class Sentier
      *         "end": {"lat": 43.610769, "lng": 3.876716}
      *     }
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail", "create_trail"})
+     * @Groups({"show_trail", "list_trail", "user_trail", "create_trail", "update_trail"})
      */
     private $position = [];
 
@@ -114,7 +114,7 @@ class Sentier
      * @ORM\OneToOne(targetEntity=Path::class, cascade={"persist", "remove"})
      * @ORM\JoinColumn(nullable=true)
      * @SerializedName("path")
-     * @Groups({"show_trail", "create_trail"})
+     * @Groups({"show_trail", "create_trail", "update_trail"})
      * @OA\Property(ref=@Model(type=Path::class))
      */
     private $chemin;
@@ -161,7 +161,7 @@ class Sentier
      *     min = -1,
      *     max = 1
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail","create_trail"})
+     * @Groups({"show_trail", "list_trail", "user_trail","create_trail", "update_trail"})
      * @SerializedName("prm")
      * values : // -1 = don't know // 0 = no // 1 = yes
      */
@@ -184,7 +184,7 @@ class Sentier
      *     exactMessage="Vous devez spécifier exactement 4 saisons"
      * )
      * @SerializedName("best_season")
-     * @Groups({"show_trail", "list_trail", "user_trail","create_trail"})
+     * @Groups({"show_trail", "list_trail", "user_trail","create_trail", "update_trail"})
      */
     private $meilleures_saisons = [];
 
@@ -424,7 +424,7 @@ class Sentier
      *     exactMessage="Vous devez spécifier exactement 4 saisons"
      * )
      * @SerializedName("best_season")
-     * @Groups({"show_trail", "list_trail", "user_trail","create_trail"})
+     * @Groups({"show_trail", "list_trail", "user_trail","create_trail", "update_trail"})
      */
     public function getMeilleuresSaisons(): ?array
     {

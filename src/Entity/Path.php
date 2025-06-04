@@ -21,14 +21,14 @@ class Path
 
     /**
      * @ORM\Column(type="string", length=255)
-     * @Groups({"show_trail", "list_trail", "create_trail"})
+     * @Groups({"show_trail", "list_trail", "create_trail", "update_trail"})
      * @OA\Property(type="string", example="LineString")
      */
     private $type;
 
     /**
      * @ORM\Column(type="json")
-     * @Groups({"show_trail", "list_trail", "create_trail"})
+     * @Groups({"show_trail", "list_trail", "create_trail", "update_trail"})
      * @OA\Property(
      *     type="array",
      *     @OA\Items(type="array", @OA\Items(type="float")),

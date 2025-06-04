@@ -7,12 +7,14 @@ use App\Entity\Sentier;
 use App\Model\CreateTrailDto;
 use App\Model\Taxon;
 use App\Model\Trail;
+use App\Repository\SentierRepository;
 use App\Service\AnnuaireService;
 use App\Service\BoundingBoxPolygonFactory;
 use App\Service\CookieAwareClient;
 use App\Service\CreateTrailService;
 use App\Service\TrailsService;
 use DateTime;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
@@ -27,6 +29,23 @@ use Symfony\Component\HttpFoundation\Cookie;
 
 class TrailController extends AbstractController
 {
+    private SerializerInterface $serializer;
+    private ValidatorInterface $validator;
+    private AnnuaireService $annuaire;
+    private SentierRepository $sentierRepository;
+    private CreateTrailService $createTrail;
+    private EntityManagerInterface $em;
+
+    public function __construct(SerializerInterface $serializer, ValidatorInterface $validator, AnnuaireService $annuaire, SentierRepository $sentierRepository, CreateTrailService $createTrail, EntityManagerInterface $em)
+    {
+        $this->serializer = $serializer;
+        $this->validator = $validator;
+        $this->annuaire = $annuaire;
+        $this->sentierRepository = $sentierRepository;
+        $this->createTrail = $createTrail;
+        $this->em = $em;
+    }
+
     /**
      * @OA\Response(
      *     response="200",
@@ -146,7 +165,8 @@ class TrailController extends AbstractController
     /**
      * @OA\Response(
      *     response="201",
-     *     description="Created"
+     *     description="Created",
+     *     @Model(type=Sentier::class, groups={"show_trail"})
      * )
      * @OA\RequestBody(
      *     description="A JSON object containing trail information",
@@ -159,58 +179,130 @@ class TrailController extends AbstractController
      * @OA\Tag(name="Trails")
      * @Route("/trail", name="post_trail", methods={"POST"})
      */
-    public function createTrail(
-        CreateTrailService $createTrail,
-        Request $request,
-        SerializerInterface $serializer,
-        ValidatorInterface $validator,
-        AnnuaireService $annuaire
-    ) {
+    public function createTrail(Request $request): Response
+    {
         $content = json_decode($request->getContent());
-        $newTrail = $serializer->deserialize($request->getContent(), Sentier::class, 'json', ['groups' => ['create_trail']]);
+        $newTrail = $this->serializer->deserialize($request->getContent(), Sentier::class, 'json', ['groups' => ['create_trail']]);
 
         // On map les taxons et imaes aux occurrences
         if (count($newTrail->getOccurrences()) > 0) {
             foreach ($newTrail->getOccurrences() as $key => $occurrence) {
-                $createTrail->setTaxonToOccurrence($occurrence, $content->occurrences[$key]);
+                $this->createTrail->setTaxonToOccurrence($occurrence, $content->occurrences[$key]);
                 if (isset($content->occurrences[$key]->image_id)) {
-                    $createTrail->setImagesToOccurrence($occurrence, $content->occurrences[$key]);
+                    $this->createTrail->setImagesToOccurrence($occurrence, $content->occurrences[$key]);
                 }
             }
         }
 
-        $errors = $validator->validate($newTrail);
+        $errors = $this->validator->validate($newTrail);
 
         if (count($errors) > 0) {
             $errorsString = (string)$errors;
             return new JsonResponse(['error' => $errorsString], Response::HTTP_BAD_REQUEST);
         }
 
-        $token = null;
-        $cookie = $request->cookies->get($annuaire->getCookieName()) ?? null;
-		
-		if ($cookie){
-			$token = $request->cookies->get($annuaire->getCookieName());
-		} else {
-			$token = $request->headers->get('Authorization');
-		}
-		
-		$cookie = [
-			$annuaire->getCookieName() => $token
-		];
-	
-		['token' => $token, 'error' => $error] = $annuaire->refreshToken($token, $cookie);
+        $token = $this->annuaire->getRequestToken($request);
+        $this->createTrail->setAuth($token);
 
-        $createTrail->setAuth($token);
         try {
-            $trail = $createTrail->process($newTrail);
+            $trail = $this->createTrail->process($newTrail);
         } catch (\Exception $e) {
             return new JsonResponse(['error' => 'Erreur lors de la création du sentier: '. $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
 
-        return new JsonResponse($serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_CREATED, [], true);
+        return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_CREATED, [], true);
+    }
 
-//        return new JsonResponse('Sentier crée', Response::HTTP_CREATED);
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="updated",
+     *      @Model(type=Sentier::class, groups={"show_trail"})
+     * )
+     * @OA\RequestBody(
+     *     description="A JSON object containing trail information",
+     *     required=true,
+     *     @OA\JsonContent(
+     *         type="object",
+     *         ref=@Model(type=Sentier::class, groups={"update_trail"})
+     *     )
+     * )
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The trail ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Trails")
+     * @Route("/trail/{id}", name="update_trail", methods={"PUT"})
+     */
+    public function updateTrail(Request $request, $id): Response
+    {
+        try {
+            $token = $this->annuaire->getRequestToken($request);
+            $this->createTrail->setAuth($token);
+            $user = $this->annuaire->getUserInfos($token);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        if (!$trail) {
+            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (!$this->annuaire->canUpdateTrail($user, $trail)) {
+            return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        // On empêche les modification d'un sentier une fois celui-ci publié
+        if ($trail->getDatePublication() != null) {
+            return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        $content = json_decode($request->getContent());
+        if (!$request->getContent()) {
+            return new JsonResponse(['error' => 'No update requested on trail (id: '. $id .')'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $existingOccurrences = $trail->getOccurrences(); // TODO: A voir si on ne bouge pas ceci dans une autre route
+        $trail = $this->serializer->deserialize(json_encode($content), Sentier::class, 'json', ['groups' => 'update_trail', 'object_to_populate' => $trail]);
+
+//TODO: A voir si on ne bouge pas ceci dans une autre route
+        // On récupère les occurrences existantes
+        if (count($existingOccurrences) > 0) {
+            foreach ($existingOccurrences as $occurrence) {
+                $trail->addOccurrence($occurrence);
+            }
+        }
+
+//TODO si occurrences -> on ajoute les occurrences
+//TODO: A voir si on ne bouge pas ceci dans une autre route
+        $newTrail = $this->serializer->deserialize($request->getContent(), Sentier::class, 'json', ['groups' => ['create_trail']]);
+        if (count($newTrail->getOccurrences()) > 0) {
+            foreach ($newTrail->getOccurrences() as $key => $occurrence) {
+                $this->createTrail->setTaxonToOccurrence($occurrence, $content->occurrences[$key]);
+
+                if (isset($content->occurrences[$key]->image_id)) {
+                    $this->createTrail->setImagesToOccurrence($occurrence, $content->occurrences[$key]);
+                }
+                $this->createTrail->getCardTag($occurrence);
+                $occurrence->setUserId(($trail->getAuthorId()));
+
+                $trail->addOccurrence($occurrence);
+            }
+        }
+
+        $this->createTrail->addNbTaxonsToTrail($trail); // TODO: A voir si on ne bouge pas ceci dans une autre route
+
+        $trail->setPathLength(round(TrailsService::getTrailLength($trail)));
+        $trail->setDateModification(new \DateTime());
+
+        $this->em->persist($trail);
+        $this->em->flush();
+
+        return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }
 }
 

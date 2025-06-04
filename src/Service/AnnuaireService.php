@@ -2,9 +2,11 @@
 
 namespace App\Service;
 
+use App\Entity\Sentier;
 use App\Model\User;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class AnnuaireService
@@ -12,17 +14,20 @@ class AnnuaireService
     private $loginBaseUrl;
     private $registerUrl;
     private $cookieName;
+    private $admins;
     private $trails;
 
     public function __construct(
         string $annuaireLoginBaseUrl,
         string $annuaireRegisterUrl,
         string $annuaireCookieName,
+        string $admins,
         TrailsService $trailsService
     ) {
         $this->loginBaseUrl = $annuaireLoginBaseUrl;
         $this->registerUrl = $annuaireRegisterUrl;
         $this->cookieName = $annuaireCookieName;
+        $this->admins = $admins;
         $this->trails = $trailsService;
     }
 
@@ -145,5 +150,45 @@ class AnnuaireService
     public function getCookieName(): string
     {
         return $this->cookieName;
+    }
+
+    public function getRequestToken(Request $request): string
+    {
+        $token = null;
+        $cookie = $request->cookies->get($this->getCookieName()) ?? null;
+
+        if ($cookie){
+            $token = $request->cookies->get($this->getCookieName());
+        } else {
+            $token = $request->headers->get('Authorization');
+        }
+
+        $cookie = [
+            $this->getCookieName() => $token
+        ];
+        if ($token) {
+            ['token' => $token, 'error' => $error] = $this->refreshToken($token, $cookie);
+        } else {
+            $error = 'No token found, veuillez vous reconnecter';
+            throw new \Exception($error);
+        }
+
+        return $token;
+    }
+
+    public function isAdmin(User $user): bool
+    {
+        $listeAdmins = explode(',',  $this->admins);
+        return in_array($user->getEmail(), $listeAdmins);
+    }
+
+    public function canUpdateTrail(User $user, Sentier $trail): bool
+    {
+        $isAdmin = $this->isAdmin($user);
+        if ($isAdmin) {
+            return true;
+        }
+
+        return $trail->getAuthorId() === $user->getId();
     }
 }
