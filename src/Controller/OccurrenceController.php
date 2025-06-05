@@ -42,7 +42,7 @@ class OccurrenceController extends AbstractController
 
     /**
      * @OA\Response(
-     *     response="200",
+     *     response="201",
      *     description="created",
      *      @Model(type=Sentier::class, groups={"show_trail"})
      * )
@@ -201,5 +201,58 @@ class OccurrenceController extends AbstractController
         $this->em->flush();
 
         return new JsonResponse($this->serializer->serialize($occurrence, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
+    }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="deleted",
+     *      @OA\JsonContent(
+     *          type="string",
+     *          example="Occurrence deleted (id: 146)"
+     *      )
+     * )
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The occurrence ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Occurrences")
+     * @OA\Delete(
+     *     summary="Remove an occurrence from a trail"
+     * )
+     * @Route("/occurrence/{id}", name="delete_occurrence", methods={"DELETE"})
+     */
+    public function deleteOccurrence(Request $request, $id): Response
+    {
+        try {
+            $token = $this->annuaire->getRequestToken($request);
+            $this->createTrail->setAuth($token);
+            $user = $this->annuaire->getUserInfos($token);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $occurrence = $this->occurrenceRepository->findOneBy(['id' => $id]);
+        if (!$occurrence) {
+            return new JsonResponse(['error' => 'Occurrence not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (!$this->annuaire->canUpdateOccurrence($user, $occurrence)) {
+            return new JsonResponse(['error' => 'You are not allowed to update this occurrence (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        $occurrence->setDateSuppression(new \DateTime());
+        $trail = $occurrence->getSentier();
+        $trail->setDateModification(new \DateTime());
+        $trail->removeOccurrence($occurrence);
+        $this->createTrail->addNbTaxonsToTrail($trail);
+
+        $this->em->persist($trail);
+        $this->em->flush();
+
+        return new JsonResponse( 'Occurrence deleted (id: '. $id .')', Response::HTTP_OK);
     }
 }
