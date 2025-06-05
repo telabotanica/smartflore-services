@@ -190,11 +190,13 @@ class Sentier
 
     /**
      * @ORM\Column(type="datetime")
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $date_creation;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $date_modification;
 
@@ -205,11 +207,13 @@ class Sentier
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $date_publication;
 
      /**
      * @ORM\Column(type="integer", nullable=true)
+      * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $nb_taxons;
 

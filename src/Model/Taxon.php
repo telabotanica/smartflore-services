@@ -69,7 +69,7 @@ class Taxon
      *     example="bdtfx"
      * )
      * @SerializedName("taxon_repository")
-     * @Groups({"show_trail", "show_taxon", "create_trail"})
+     * @Groups({"show_trail", "show_taxon", "create_trail", "add_occurrence"})
      */
     private $referentiel;
 
@@ -80,7 +80,7 @@ class Taxon
      *     example="141"
      * )
      * @SerializedName("name_id")
-     * @Groups({"show_trail", "show_taxon",  "create_trail"})
+     * @Groups({"show_trail", "show_taxon",  "create_trail", "add_occurrence"})
      */
     private $numNom;
 

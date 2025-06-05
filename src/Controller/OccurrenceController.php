@@ -3,8 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Occurrence;
+use App\Entity\Sentier;
 use App\Repository\ImageRepository;
 use App\Repository\OccurrenceRepository;
+use App\Repository\SentierRepository;
 use App\Service\AnnuaireService;
 use App\Service\CreateTrailService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,8 +27,9 @@ class OccurrenceController extends AbstractController
     private EntityManagerInterface $em;
     private OccurrenceRepository $occurrenceRepository;
     private ImageRepository $imageRepository;
+    private SentierRepository $sentierRepository;
 
-    public function __construct(SerializerInterface $serializer, AnnuaireService $annuaire, CreateTrailService $createTrail, EntityManagerInterface $em, OccurrenceRepository $occurrenceRepository, ImageRepository $imageRepository)
+    public function __construct(SerializerInterface $serializer, AnnuaireService $annuaire, CreateTrailService $createTrail, EntityManagerInterface $em, OccurrenceRepository $occurrenceRepository, ImageRepository $imageRepository, SentierRepository $sentierRepository)
     {
         $this->serializer = $serializer;
         $this->annuaire = $annuaire;
@@ -34,6 +37,89 @@ class OccurrenceController extends AbstractController
         $this->em = $em;
         $this->occurrenceRepository = $occurrenceRepository;
         $this->imageRepository = $imageRepository;
+        $this->sentierRepository = $sentierRepository;
+    }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="created",
+     *      @Model(type=Sentier::class, groups={"show_trail"})
+     * )
+     * @OA\RequestBody(
+     *     description="A JSON object containing occurrence information",
+     *     required=true,
+     *     @OA\JsonContent(
+     *         type="object",
+     *         ref=@Model(type=Occurrence::class, groups={"create_trail"})
+     *     )
+     * )
+     * @OA\Parameter(
+     *     name="sentier_id",
+     *     in="path",
+     *     description="The trail ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Occurrences")
+     * @OA\Post(
+     *     summary="Add an occurrence to a trail"
+     * )
+     * @Route("/occurrence/{sentier_id}", name="post_occurrence", methods={"POST"})
+     */
+    public function addOccurrence(Request $request, int $sentier_id): Response
+    {
+        try {
+            $token = $this->annuaire->getRequestToken($request);
+            $this->createTrail->setAuth($token);
+            $user = $this->annuaire->getUserInfos($token);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $trail = $this->sentierRepository->findOneBy(['id' => $sentier_id]);
+        if (!$trail) {
+            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (!$this->annuaire->canUpdateTrail($user, $trail)) {
+            return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        // On empêche les modification d'un sentier une fois celui-ci publié
+        if ($trail->getDatePublication() != null) {
+            return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        $content = json_decode($request->getContent());
+        if (!$request->getContent()) {
+            return new JsonResponse(['error' => 'No data available in order to add occurrence to trail (id: '. $id .')'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $occurrence = $this->serializer->deserialize($request->getContent(), Occurrence::class, 'json', [
+            'groups' => ['add_occurrence']
+        ]);
+
+        $occurrence = $this->createTrail->setTaxonToOccurrence($occurrence, $content);
+        if (isset($content->image_id)) {
+            $occurrence = $this->createTrail->setImagesToOccurrence($occurrence, $content->image_id);
+        }
+        if (isset($content->images)) {
+            foreach ($content->images as $image) {
+                $this->createTrail->setImagesToOccurrence($occurrence, $image->id);
+            }
+        }
+        $this->createTrail->getCardTag($occurrence);
+        $occurrence->setUserId(($trail->getAuthorId()));
+
+        $trail->addOccurrence($occurrence);
+        $trail->setDateModification(new \DateTime());
+        $this->createTrail->addNbTaxonsToTrail($trail);
+
+        $this->em->persist($trail);
+        $this->em->flush();
+
+        return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_CREATED, [], true);
     }
 
     /**
