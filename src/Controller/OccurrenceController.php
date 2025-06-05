@@ -240,12 +240,18 @@ class OccurrenceController extends AbstractController
             return new JsonResponse(['error' => 'Occurrence not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
         }
 
-        if (!$this->annuaire->canUpdateOccurrence($user, $occurrence)) {
-            return new JsonResponse(['error' => 'You are not allowed to update this occurrence (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        $trail = $occurrence->getSentier();
+
+        if (!$this->annuaire->canUpdateTrail($user, $trail)) {
+            return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        // On empêche les modification d'un sentier une fois celui-ci publié
+        if ($trail->getDatePublication() != null) {
+            return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
         $occurrence->setDateSuppression(new \DateTime());
-        $trail = $occurrence->getSentier();
         $trail->setDateModification(new \DateTime());
         $trail->removeOccurrence($occurrence);
         $this->createTrail->addNbTaxonsToTrail($trail);
@@ -255,4 +261,6 @@ class OccurrenceController extends AbstractController
 
         return new JsonResponse( 'Occurrence deleted (id: '. $id .')', Response::HTTP_OK);
     }
+
+    //TODO: Supprimer une image d'une occurrence
 }
