@@ -189,7 +189,7 @@ class TrailController extends AbstractController
             foreach ($newTrail->getOccurrences() as $key => $occurrence) {
                 $this->createTrail->setTaxonToOccurrence($occurrence, $content->occurrences[$key]);
                 if (isset($content->occurrences[$key]->image_id)) {
-                    $this->createTrail->setImagesToOccurrence($occurrence, $content->occurrences[$key]);
+                    $this->createTrail->setImagesToOccurrence($occurrence, $content->occurrences[$key]->image_id);
                 }
             }
         }
@@ -265,10 +265,11 @@ class TrailController extends AbstractController
         if (!$request->getContent()) {
             return new JsonResponse(['error' => 'No update requested on trail (id: '. $id .')'], Response::HTTP_BAD_REQUEST);
         }
-
+/*
         $existingOccurrences = $trail->getOccurrences(); // TODO: A voir si on ne bouge pas ceci dans une autre route
+        */
         $trail = $this->serializer->deserialize(json_encode($content), Sentier::class, 'json', ['groups' => 'update_trail', 'object_to_populate' => $trail]);
-
+/*
 //TODO: A voir si on ne bouge pas ceci dans une autre route
         // On récupère les occurrences existantes
         if (count($existingOccurrences) > 0) {
@@ -285,7 +286,7 @@ class TrailController extends AbstractController
                 $this->createTrail->setTaxonToOccurrence($occurrence, $content->occurrences[$key]);
 
                 if (isset($content->occurrences[$key]->image_id)) {
-                    $this->createTrail->setImagesToOccurrence($occurrence, $content->occurrences[$key]);
+                    $this->createTrail->setImagesToOccurrence($occurrence, $content->occurrences[$key]->image_id);
                 }
                 $this->createTrail->getCardTag($occurrence);
                 $occurrence->setUserId(($trail->getAuthorId()));
@@ -295,7 +296,7 @@ class TrailController extends AbstractController
         }
 
         $this->createTrail->addNbTaxonsToTrail($trail); // TODO: A voir si on ne bouge pas ceci dans une autre route
-
+*/
         $trail->setPathLength(round(TrailsService::getTrailLength($trail)));
         $trail->setDateModification(new \DateTime());
 

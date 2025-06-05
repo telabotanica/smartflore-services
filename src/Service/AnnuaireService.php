@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\Occurrence;
 use App\Entity\Sentier;
 use App\Model\User;
 use Symfony\Component\BrowserKit\HttpBrowser;
@@ -190,5 +191,15 @@ class AnnuaireService
         }
 
         return $trail->getAuthorId() === $user->getId();
+    }
+
+    public function canUpdateOccurrence(User $user, Occurrence $occurrence): bool
+    {
+        $isAdmin = $this->isAdmin($user);
+        if ($isAdmin) {
+            return true;
+        }
+
+        return $occurrence->getUserId() === $user->getId();
     }
 }
