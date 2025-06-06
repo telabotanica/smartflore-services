@@ -235,6 +235,9 @@ class TrailController extends AbstractController
      *     example=146
      * )
      * @OA\Tag(name="Trails")
+     * @OA\Put(
+     *     summary="update a trail localisation, name, path, prm access or best seasons information"
+     * )
      * @Route("/trail/{id}", name="update_trail", methods={"PUT"})
      */
     public function updateTrail(Request $request, $id): Response

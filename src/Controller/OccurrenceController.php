@@ -74,10 +74,12 @@ class OccurrenceController extends AbstractController
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de l\'ajout de l\'occurrence: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
+        $content = json_decode($request->getContent());
         $trail = $this->sentierRepository->findOneBy(['id' => $sentier_id]);
+
         if (!$trail) {
             return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
         }
@@ -91,7 +93,6 @@ class OccurrenceController extends AbstractController
             return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
-        $content = json_decode($request->getContent());
         if (!$request->getContent()) {
             return new JsonResponse(['error' => 'No data available in order to add occurrence to trail (id: '. $id .')'], Response::HTTP_BAD_REQUEST);
         }
@@ -144,6 +145,9 @@ class OccurrenceController extends AbstractController
      *     example=146
      * )
      * @OA\Tag(name="Occurrences")
+     * @OA\Put(
+     *     summary="update an occurrence localisation, anecdote, or add an image"
+     * )
      * @Route("/occurrence/{id}", name="update_occurrence", methods={"PUT"})
      */
     public function updateOccurrence(Request $request, $id): Response
@@ -153,10 +157,12 @@ class OccurrenceController extends AbstractController
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour de l\'occurrence: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
         $occurrence = $this->occurrenceRepository->findOneBy(['id' => $id]);
+        $content = json_decode($request->getContent());
+
         if (!$occurrence) {
             return new JsonResponse(['error' => 'Occurrence not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
         }
@@ -165,7 +171,6 @@ class OccurrenceController extends AbstractController
             return new JsonResponse(['error' => 'You are not allowed to update this occurrence (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
-        $content = json_decode($request->getContent());
         if (!$request->getContent()) {
             return new JsonResponse(['error' => 'No update requested on occurrence (id: '. $id .')'], Response::HTTP_BAD_REQUEST);
         }
@@ -232,7 +237,7 @@ class OccurrenceController extends AbstractController
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la suppressionde l\'occurrence: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
         $occurrence = $this->occurrenceRepository->findOneBy(['id' => $id]);
@@ -262,5 +267,48 @@ class OccurrenceController extends AbstractController
         return new JsonResponse( 'Occurrence deleted (id: '. $id .')', Response::HTTP_OK);
     }
 
-    //TODO: Supprimer une image d'une occurrence
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="deleted",
+     *      @Model(type=Occurrence::class, groups={"show_trail"})
+     * )
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The image ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Occurrences")
+     * @OA\Delete(
+     *     summary="Remove an image from occurreence"
+     * )
+     * @Route("/occurrence/image/{id}", name="delete_image", methods={"DELETE"})
+     */
+    public function deleteImage(Request $request, $id): Response
+    {
+        try {
+            $token = $this->annuaire->getRequestToken($request);
+            $this->createTrail->setAuth($token);
+            $user = $this->annuaire->getUserInfos($token);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la suppressionde l\'occurrence: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $image = $this->imageRepository->findOneBy(['id' => $id]);
+        if (!$image) {
+            return new JsonResponse(['error' => 'Image not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        $occurrence = $image->getOccurrence();
+        if (!$this->annuaire->canUpdateOccurrence($user, $occurrence)) {
+            return new JsonResponse(['error' => 'You are not allowed to update this occurrence (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        $this->em->remove($image);
+        $this->em->flush();
+
+        return new JsonResponse($this->serializer->serialize($occurrence, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
+    }
 }
