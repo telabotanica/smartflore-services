@@ -52,7 +52,7 @@ class TrailController extends AbstractController
      *     description="Trails list",
      *     @OA\JsonContent(
      *         type="array",
-     *         @OA\Items(ref=@Model(type=Trail::class, groups={"list_trail"}))
+     *         @OA\Items(ref=@Model(type=Sentier::class, groups={"list_trail"}))
      *     ),
      * )
      * @OA\Parameter(
@@ -72,26 +72,27 @@ class TrailController extends AbstractController
         BoundingBoxPolygonFactory $polygonFactory
     ) {
         $list = $trails->getTrailsList();
+        if (!$list){
+            $list = $this->sentierRepository->findBy(['status' => 'Validé', 'date_suppression' => null], ['nom' => 'ASC']);
+        }
 
         // filter list with given coords bounding box
         if ($bbox = $request->query->get('bbox')) {
             // we need two coordinates to build a bounding box: northEast and southWest
             $coords = explode(',', $bbox);
-
             $list = $trails->getTrailsInsideBoundaries(
-                $polygonFactory->createBoundingBoxPolygon($coords)
+                $polygonFactory->createBoundingBoxPolygon($coords), $list
             );
-        }
 
-        // alphabetical sort
-        $coll = collator_create('fr_FR');
-        usort($list, static function(Trail $a, Trail $b) use ($coll) {
-            return collator_compare($coll, mb_strtolower($a->getDisplayName()), mb_strtolower($b->getDisplayName()));
-        });
+            // fallback si rien trouvé dans la bbox
+            if (!$list) {
+                $list = [];
+            }
+        }
 
         $json = $serializer->serialize($list, 'json', ['groups' => 'list_trail']);
 
-        return new JsonResponse($json, 200, [], true);
+        return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 
     /**
@@ -100,13 +101,13 @@ class TrailController extends AbstractController
      *     description="Trail details",
      *     @OA\JsonContent(
      *         type="object",
-     *         ref=@Model(type=Trail::class, groups={"show_trail"})
+     *         ref=@Model(type=Sentier::class, groups={"show_trail"})
      *     )
      * )
      * @OA\Parameter(
      *     name="id",
      *     in="path",
-     *     description="The trail ID (or trail name string)",
+     *     description="The trail ID",
      *     @OA\Schema(type="integer"),
      *     example="146"
      * )
@@ -118,13 +119,16 @@ class TrailController extends AbstractController
         SerializerInterface $serializer,
         $id
     ) {
-        if (is_numeric($id)) {
-            $id = $trails->getTrailName((int) $id);
+        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        if (!$trail) {
+            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
         }
 
-        $json = $serializer->serialize($trails->getTrail($id), 'json', ['groups' => 'show_trail']);
+//        $json = $serializer->serialize($trails->getTrail($id), 'json', ['groups' => 'show_trail']);
 
-        return new JsonResponse($json, 200, [], true);
+        $json = $serializer->serialize($trail, 'json', ['groups' => 'show_trail']);
+
+        return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 
     /**
@@ -133,13 +137,13 @@ class TrailController extends AbstractController
      *     description="Trail details for batch (includes full taxon info)",
      *     @OA\JsonContent(
      *         type="object",
-     *         ref=@Model(type=Trail::class, groups={"show_trail", "show_taxon", "short_images"})
+     *         ref=@Model(type=Sentier::class, groups={"show_trail", "show_taxon", "short_images"})
      *     )
      * )
      * @OA\Parameter(
      *     name="id",
      *     in="path",
-     *     description="The trail ID (or trail name string)",
+     *     description="The trail ID",
      *     @OA\Schema(type="integer"),
      *     example="146"
      * )
@@ -151,15 +155,14 @@ class TrailController extends AbstractController
         SerializerInterface $serializer,
         $id
     ) {
-        if (is_numeric($id)) {
-            $id = $trails->getTrailName((int) $id);
+        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        if (!$trail) {
+            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
         }
 
-        $json = $serializer->serialize(
-            $trails->getTrail($id),
-            'json', ['groups' => ['show_trail', 'show_taxon', 'short_images']]);
+        $json = $serializer->serialize($trail, 'json', ['groups' => ['show_trail', 'show_taxon', 'short_images']]);
 
-        return new JsonResponse($json, 200, [], true);
+        return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 
     /**

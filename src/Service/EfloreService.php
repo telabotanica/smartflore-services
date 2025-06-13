@@ -3,7 +3,8 @@
 namespace App\Service;
 
 use App\Model\CardTab;
-use App\Model\Image;
+use App\Entity\Image;
+//use App\Model\Image;
 use App\Model\Referentiel;
 use App\Model\Taxon;
 use Symfony\Component\HttpClient\HttpClient;
@@ -72,11 +73,13 @@ class EfloreService
         return $taxonCache->get();
     }
 
+    //TODO: a updater
     public function getCardText(string $taxonRepository, string $taxonId, bool $refresh = false)
     {
         $cardCache = $this->cache->getItem('taxon.card.SmartFlore'.strtoupper($taxonRepository).'nt'.$taxonId);
 
         if ($refresh || !$cardCache->isHit()) {
+            //TODO: a updater ou à supprimer?
             // eg. https://www.tela-botanica.org/wikini/eFloreRedaction/api/rest/0.5/pages/SmartFloreBDTFXnt6293?txt.format=text/html&txt.section.titre=Description%2CUsages%2C%C3%89cologie+%26+habitat%2CSources
             $cardApiUrl = $this->cardApiBaseUrl.'SmartFlore'.strtoupper($taxonRepository).'nt'.$taxonId
                 .'?txt.format=text/html&txt.section.titre='.urlencode('Description,Usages,Écologie & habitat,Sources');
@@ -111,7 +114,11 @@ class EfloreService
 
             $res = [];
             foreach ($images as $image) {
-                $res[] = new Image($image['id_image'], $image['binaire.href'], $image['observation']['auteur.nom'] ?? 'Inconnu');
+                $newImae = new Image();
+                $newImae->setCelImageId($image['id_image']);
+                $newImae->setUrl($image['binaire.href']);
+                $newImae->setAuthor($image['observation']['auteur.nom'] ?? 'Inconnu');
+                $res[] = $newImae;
             }
 
             $cardImagesCache->set($res);
@@ -183,6 +190,7 @@ class EfloreService
         return $vernacularNameCache->get();
     }
 
+    //TODO: a updater
     public function getTaxon(string $taxonRepository, string $taxonNameId, bool $refresh = false)
     {
         $taxonInfos = $this->getTaxonRawInfo(

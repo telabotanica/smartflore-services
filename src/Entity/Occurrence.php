@@ -76,7 +76,7 @@ class Occurrence
     private $taxon = [];
 
     /**
-     * @ORM\OneToMany(targetEntity=Image::class, mappedBy="occurrence", cascade={"persist"})
+     * @ORM\OneToMany(targetEntity=Image::class, mappedBy="occurrence", cascade={"persist"}, fetch="EAGER")
      * @OA\Property(
      *     property="image_id",
      *     type="integer",

@@ -12,6 +12,7 @@ use App\Model\User;
 use App\Repository\FicheRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -30,6 +31,7 @@ class CreateTrailService
     private EfloreService $eflore;
     private SerializerInterface $serializer;
     private FicheRepository $ficheRepository;
+    private UrlGeneratorInterface $router;
 
     public function __construct(
         string $smartfloreLegacyApiBaseUrl,
@@ -41,7 +43,8 @@ class CreateTrailService
         AnnuaireService $annuaire,
         EntityManagerInterface $em,
         EfloreService $eflore,
-        FicheRepository $ficheRepository
+        FicheRepository $ficheRepository,
+        UrlGeneratorInterface $router
     ) {
         /**
          * @var $client HttpClientInterface
@@ -57,6 +60,7 @@ class CreateTrailService
         $this->em = $em;
         $this->eflore = $eflore;
         $this->ficheRepository = $ficheRepository;
+        $this->router = $router;
     }
 
     public function process(Sentier $trail): Sentier
@@ -76,6 +80,13 @@ class CreateTrailService
 //			}
         }
         $this->addNbTaxonsToTrail($trail);
+
+        $this->em->persist($trail);
+        $this->em->flush();
+
+        $trail->setDetails($this->router->generate('show_trail', [
+            'id' => $trail->getId()
+        ], UrlGeneratorInterface::ABSOLUTE_URL));
 
         $this->em->persist($trail);
         $this->em->flush();

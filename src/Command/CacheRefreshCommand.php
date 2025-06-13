@@ -42,9 +42,9 @@ class CacheRefreshCommand extends Command
 
         if ('none' === $resource) {
             $io->note(sprintf('Specify resource to refresh:'));
-            $io->note(sprintf(' - all (trails and cards)'));
-            $io->note(sprintf(' - cards (only cards = taxon info)'));
-            $io->note(sprintf(' - <trail-name>'));
+            $io->note(sprintf(' all (trails and cards)'));
+            $io->note(sprintf(' cards (only cards = taxon info)'));
+            $io->note(sprintf(' <trail-name>'));
 
             return Command::INVALID;
         }

@@ -3,13 +3,18 @@
 namespace App\Service;
 
 use App\Entity\Sentier;
-use App\Model\Image;
+//use App\Model\Image;
+use App\Entity\Image;
 use App\Model\Trail;
+use App\Service\ImageService;
+use App\Repository\SentierRepository;
 use League\Geotools\Coordinate\Coordinate;
 use League\Geotools\Geotools;
 use League\Geotools\Polygon\Polygon;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -17,6 +22,7 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 
 class TrailsService
@@ -27,13 +33,19 @@ class TrailsService
     private $userHashSecret;
     private $router;
     private $efloreService;
+    private SentierRepository $sentierRepository;
+    private ImageService $imageService;
+    private SerializerInterface $serializer;
 
     public function __construct(
         string $smartfloreLegacyApiBaseUrl,
         string $userHashSecret,
         CacheInterface $cache,
         UrlGeneratorInterface $router,
-        EfloreService $efloreService
+        EfloreService $efloreService,
+        SentierRepository $sentierRepository,
+        ImageService $imageService,
+        SerializerInterface $serializer
     ) {
         $this->client = HttpClient::create();
         $this->cache = $cache;
@@ -41,11 +53,15 @@ class TrailsService
         $this->userHashSecret = $userHashSecret;
         $this->router = $router;
         $this->efloreService = $efloreService;
+        $this->sentierRepository = $sentierRepository;
+        $this->imageService = $imageService;
+        $this->serializer = $serializer;
     }
 
     /**
      * @param bool $refresh
-     * @return Trail[]
+     * @return Sentier[]
+     * encore dans cacheRefreshCommand et cacheService
      */
     public function getTrails(bool $refresh = false)
     {
@@ -58,15 +74,18 @@ class TrailsService
         $trailsList = $trailsCache->get();
 
         $trails = [];
+
         if ($trailsList) {
             foreach ($trailsList as $trail) {
-                $trailName = self::extractTrailName($trail);
+//                $trailName = self::extractTrailName($trail);
+                $trailName = $trail->getNom();
                 $trailCache = $this->cache->getItem('trails.trail.' . $trailName);
                 $trail = $trailCache->get();
-                if ($trail){
-                    $this->collectOccurrencesTaxonInfos($trail);
-                    $this->collectTrailImages($trail);
-                }
+//                if ($trail){
+//                    //TODO c'est un doublon si c'est lors de la création ?
+////                    $this->collectOccurrencesTaxonInfos($trail);
+//                    $this->collectTrailImages($trail);
+//                }
                 $trails[] = $trail;
             }
         }
@@ -75,24 +94,25 @@ class TrailsService
     }
 
     /**
-     * @return Trail[]
+     * @return Sentier[]
+     * Description: get trail list from cache
+     * TODO
      */
     public function getTrailsList()
     {
         $trails = [];
         $trailsCache = $this->cache->getItem('trails.list');
+
         if ($trailsCache->isHit()) {
             $trailsList = $trailsCache->get();
-
             foreach ($trailsList as $trail) {
-                $trailName = self::extractTrailName($trail);
+                $trailName = $trail->getNom();
                 $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
+
                 if ($trailCache->isHit()) {
                     $trail = $trailCache->get();
-					if (strpos($trail->getNom(), '_deleted_at_') === false){
-						$this->findOneImagePlease($trail);
+						$this->imageService->findOneImagePlease($trail);
 						$trails[] = $trail;
-					}
                 }
             }
         }
@@ -100,6 +120,7 @@ class TrailsService
         return $trails;
     }
 
+    //TODO: encore utile? -> encore dans cacheRefreshCommand
     public function getTrail(string $trailName, bool $refresh = false)
     {
         $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
@@ -109,69 +130,15 @@ class TrailsService
         $trail = $trailCache->get();
         // Si on a pas de trail, on ne recherche pas les infos de taxon sinon -> erreur lors du refresh
 //        print_r($trail);
-        if ($trail){
-            $this->collectOccurrencesTaxonInfos($trail);
-            $this->collectTrailImages($trail);
-        }
+//        if ($trail){
+////            $this->collectOccurrencesTaxonInfos($trail);
+//            $this->imageService->collectTrailImages($trail);
+//        }
 
         return $trail;
     }
 
-    public function findOneImagePlease(Trail $trail): void
-    {
-        $occurrencesImages = $this->getTrailSpecieImages($trail->getNom());
-        foreach ($trail->getOccurrences() as $occurrence) {
-            $taxon = $occurrence->getTaxo();
-            $images = $occurrencesImages[$taxon->getReferentiel()][$taxon->getTaxonomicId()] ?? [];
-            $images += $this->efloreService->getCardSpeciesImages(
-                $taxon->getReferentiel(), $taxon->getNumNom()
-            );
-            if (isset($images[0]) && Image::class === get_class($images[0])) {
-                $trail->setImage($images[0]);
-            }
-        }
-    }
-
-    public function getTrailSpecieImages(string $trailName, bool $refresh = false)
-    {
-        $trailSpecieImagesCache = $this->cache->getItem('trails.trail.'.$trailName.'.images');
-
-        if ($refresh || !$trailSpecieImagesCache->isHit()) {
-            // https://www.tela-botanica.org/smart-form/services/Sentiers.php/sentier-illustration-fiche/?sentierTitre=Sentier%20botanique%20de%20la%20r%C3%A9serve%20naturelle%20Tr%C3%A9sor
-            $url = $this->smartfloreLegacyApiBaseUrl
-                .'sentier-illustration-fiche/?sentierTitre='.urlencode($trailName);
-            $response = $this->client->request('GET', $url, [
-                'timeout' => 120,
-                'headers' => [
-                    'Accept: application/json',
-                ],
-            ]);
-
-            if (200 !== $response->getStatusCode()) {
-                throw new \Exception('Erreur lors de la récupération des images espèces.');
-            }
-            $images = json_decode($response->getContent(), true);
-
-            $res = [];
-            foreach ($images as $key => $val) {
-                $matches = [];
-                if (preg_match('@SmartFlore(\w+)nt(\d+)@', $key, $matches)) {
-                    $taxonRepo = strtolower($matches[1]);
-                    $taxonId = $matches[2];
-                    $res[$taxonRepo][$taxonId] = array_map(static function ($img) {
-                        // @todo: find a service to get author info by image id
-                        return new Image((int)$img['id'], $img['url'], 'Inconnu');
-                    }, $val['illustrations']);
-                }
-            }
-
-            $trailSpecieImagesCache->set($res);
-            $this->cache->save($trailSpecieImagesCache);
-        }
-
-        return $trailSpecieImagesCache->get();
-    }
-
+/* //TODO: Inutile dorénavant ?
     public function getTrailName(int $id): string
     {
         $trails = $this->getTrailsList();
@@ -182,8 +149,9 @@ class TrailsService
         }
         return '';
     }
-
-    public static function extractTrailName(Trail $trail): string
+*/
+    public static function extractTrailName(Sentier $trail): string
+//    public static function extractTrailName(Trail $trail): string
     {
         if ($trail->getDetails()) {
             $parts = explode('/', $trail->getDetails());
@@ -191,57 +159,6 @@ class TrailsService
         }
 
         throw new \Exception('missing trail name');
-    }
-
-    /**
-     * Get image collection
-     */
-    private function collectTrailImages(Trail $trail): void
-    {
-        $occurrencesImages = $this->getTrailSpecieImages($trail->getNom());
-        foreach ($trail->getOccurrences() as $occurrence) {
-            $taxon = $occurrence->getTaxo();
-
-            $images = $occurrencesImages[$taxon->getReferentiel()][$taxon->getTaxonomicId()] ?? [];
-            $images += $this->efloreService->getCardSpeciesImages(
-                $taxon->getReferentiel(), $taxon->getNumNom());
-
-            $coste = $this->efloreService->getCardCosteImage(
-                $taxon->getReferentiel(), $taxon->getTaxonomicId());
-            if ($coste) {
-                $images[] = $coste;
-            }
-
-            $occurrence->setImages(array_filter($images));
-
-            if (!$trail->getImage() && $occurrence->getFirstImage()) {
-                $trail->setImage($occurrence->getFirstImage());
-            }
-        }
-    }
-
-    private function buildTrailImagesCache(Trail $trail): void
-    {
-        $occurrencesImages = $this->getTrailSpecieImages($trail->getNom(), true);
-        foreach ($trail->getOccurrences() as $occurrence) {
-            $taxon = $occurrence->getTaxo();
-
-            $images = $occurrencesImages[$taxon->getReferentiel()][$taxon->getTaxonomicId()] ?? [];
-            $images += $this->efloreService->getCardSpeciesImages(
-                $taxon->getReferentiel(), $taxon->getNumNom(), true);
-
-            $coste = $this->efloreService->getCardCosteImage(
-                $taxon->getReferentiel(), $taxon->getTaxonomicId(), true);
-            if ($coste) {
-                $images[] = $coste;
-            }
-
-            $occurrence->setImages(array_filter($images));
-
-            if (!$trail->getImage() && $occurrence->getFirstImage()) {
-                $trail->setImage($occurrence->getFirstImage());
-            }
-        }
     }
 
     public static function getTrailLength(Sentier $trail): float
@@ -273,10 +190,10 @@ class TrailsService
     /**
      * @return Trail[]
      */
-    public function getTrailsInsideBoundaries(Polygon $polygon): array
+    public function getTrailsInsideBoundaries(Polygon $polygon, array $list): array
     {
         $trails = [];
-        foreach ($this->getTrails() as $trail) {
+        foreach ($list as $trail) {
             $coordinate = new Coordinate(array_values($trail->getStartPosition()));
             if ($polygon->pointInPolygon($coordinate)) {
                 $trails[] = $trail;
@@ -288,24 +205,30 @@ class TrailsService
 
     /**
      * Get full taxonomic infos, vernacular names, external links
+     * TODO: encore utile?
      */
-    public function collectOccurrencesTaxonInfos(Trail $trail): void
+    /*
+    public function collectOccurrencesTaxonInfos(Sentier $trail): void
+//    public function collectOccurrencesTaxonInfos(Trail $trail): void
     {
         foreach ($trail->getOccurrences() as $occurrence) {
-            $taxon = $occurrence->getTaxo();
+//            $taxon = $occurrence->getTaxo();
+            $taxon = $occurrence->getTaxon();
             $taxon = $this->efloreService->getTaxon(
                 $taxon->getReferentiel(), $taxon->getNumNom());
-            $occurrence->setTaxo($taxon);
+//            $occurrence->setTaxo($taxon);
+            $occurrence->setTaxon($taxon);
         }
     }
-
-    public function buildOccurrencesTaxonInfos(Trail $trail): void
+*/
+    //utilisé en cas de refresh des cards?
+    public function buildOccurrencesTaxonInfos(Sentier $trail): void
     {
         foreach ($trail->getOccurrences() as $occurrence) {
-            $taxon = $occurrence->getTaxo();
+            $taxon = $occurrence->getTaxon();
             $taxon = $this->efloreService->getTaxon(
-                $taxon->getReferentiel(), $taxon->getNumNom(), true);
-            $occurrence->setTaxo($taxon);
+                $taxon->getReferentiel(), $taxon->getNumNom(), true); //TODO à uppdater
+            $occurrence->setTaxon($taxon);
         }
     }
 
@@ -400,53 +323,20 @@ class TrailsService
 		return $userTrailsList;
     }
 	
-	public function getDraftTrailInfo($trailName){
-		$response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentiers/'.urlencode($trailName), [
-			'timeout' => 120,
-			'headers' => [
-				'Accept: application/json',
-			],
-		]);
-		
-		if (200 !== $response->getStatusCode()) {
-			if ('Ce sentier n\'existe pas' === $response->getContent(false)) {
-				return null;
-			}
-			return null;
-		}
-		
-		$extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
-		$normalizer = [
-			new ArrayDenormalizer(),
-			new ObjectNormalizer(null, null, null, $extractor),
-		];
-		$serializer = new Serializer($normalizer, [new JsonEncoder()]);
-		$espece = false;
-		
-		if (isset(json_decode($response->getContent(), true)['occurrences'])){
-			$occurrences = json_decode($response->getContent(), true)['occurrences'];
-			
-			foreach ($occurrences as $occurrence){
-				if (isset($occurrence['taxo']['espece'])){
-					$espece = true;
-				}
-			}
-		}
-		
-		if ($espece) {
-			$trail = $serializer->deserialize($response->getContent(), Trail::class, 'json', [
-				\Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true
-			]);
-			/**
-			 * @var Trail $trail
-			 */
-			$trail->setDisplayName($trail->getNom());
-			$trail->setNom($trailName);
-			$trail->setDetails($this->router->generate('show_trail', ['id' => $trail->getNom() ], UrlGeneratorInterface::ABSOLUTE_URL));
-			return $trail;
-		}
+	public function getDraftTrailInfo($id){
+        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        if (!$trail) {
+           return null;
+        }
+
+        if (!$trail->getDetails()){
+            $trail->setDetails($this->router->generate('show_trail', ['id' => $trail->getNom() ], UrlGeneratorInterface::ABSOLUTE_URL));
+        }
+
+        return $trail;
 	}
-	
+
+    //TODO: a updater
 	public function getImageForMe($trail){
 		$occurrencesImages = $this->getTrailSpecieImages($trail->getNom(), true);
 		foreach ($trail->getOccurrences() as $occurrence) {
@@ -479,10 +369,10 @@ class TrailsService
 		} else {
 			$trail = $trailCache->get();
 			// Si on a pas de trail, on ne recherche pas les infos de taxon sinon -> erreur lors du refresh
-			if ($trail){
-				$this->collectOccurrencesTaxonInfos($trail);
-				$this->collectTrailImages($trail);
-			}
+//			if ($trail){
+//				$this->collectOccurrencesTaxonInfos($trail);
+//				$this->collectTrailImages($trail);
+//			}
 			return $trail;
 		}
 	}
@@ -509,27 +399,7 @@ class TrailsService
     {
         $trailsCache = $this->cache->getItem('trails.list');
 
-        $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentiers/', [
-            'timeout' => 180,
-            'headers' => [
-                'Accept: application/json',
-            ],
-        ]);
-
-        if (200 !== $response->getStatusCode()) {
-            throw new \Exception('Erreur lors de la creation des sentiers en cache.');
-        }
-
-        $extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
-        $normalizer = [
-            new ArrayDenormalizer(),
-            new ObjectNormalizer(null, null, null, $extractor),
-        ];
-        $serializer = new Serializer($normalizer, [new JsonEncoder()]);
-
-        $trails = $serializer->deserialize($response->getContent(), 'App\Model\Trail[]', 'json', [
-            'remove_empty_tags' => true
-        ]);
+        $trails = $this->sentierRepository->findBy(['status' => 'Validé', 'date_suppression' => null], ['nom' => 'ASC']);
 
         $trailsCache->set($trails);
         $this->cache->save($trailsCache);
@@ -538,29 +408,33 @@ class TrailsService
     public function buildAllTrailsCache()
     {
         $trailsCache = $this->cache->getItem('trails.list');
+
         if (!$trailsCache->isHit()) {
             $this->buildTrailsListCache();
         }
         $trails = $trailsCache->get();
-
+//dd($trails);
         /**
-         * @var $trail Trail
+         * @var $trail Sentier
+//         * @var $trail Trail
          */
         foreach ($trails as $trail) {
-            $trailName = self::extractTrailName($trail);
+//            $trailName = self::extractTrailName($trail);
+            $trailName = $trail->getNom();
+
 			try {
 				$this->buildTrailCache($trailName);
 				
 				$trailCache = $this->cache->getItem('trails.trail.'.$trailName);
 				$trail = $trailCache->get();
-				if ($trail){
-					$this->buildOccurrencesTaxonInfos($trail);
-					$this->buildTrailImagesCache($trail);
-				}
+//				if ($trail){
+////					$this->buildOccurrencesTaxonInfos($trail);
+//					$this->imageService->buildTrailImagesCache($trail);
+//				}
 			} catch (\Exception $e){
-				print_r('erreur lors de la création du build trail cache du sentier: ');
+				print_r(' Erreur lors de la création du build trail cache du sentier: ');
 				print_r($trailName);
-				print_r($e->getMessage());
+				print_r(' '. $e->getMessage() . '/////');
 				continue;
 			}
         
@@ -570,50 +444,17 @@ class TrailsService
     public function buildTrailCache(string $trailName)
     {
         $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
-        $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentiers/'.urlencode($trailName), [
-            'timeout' => 120,
-            'headers' => [
-                'Accept: application/json',
-            ],
-        ]);
-
-        if (200 !== $response->getStatusCode()) {
-            if ('Ce sentier n\'existe pas' === $response->getContent(false)) {
-                throw new TrailNotFoundException('This trail does not exist');
-            }
-            throw new \Exception('Erreur lors de la mise en cache du sentier '.$trailName);
+        $trail = $this->sentierRepository->findOneBy(['nom' => $trailName]);
+        if (!$trail){
+            throw new TrailNotFoundException('The trail'. $trailName .' does not exist');
         }
 
-        $extractor = new PropertyInfoExtractor([], [new ReflectionExtractor()]);
-        $normalizer = [
-            new ArrayDenormalizer(),
-            new ObjectNormalizer(null, null, null, $extractor),
-        ];
-        $serializer = new Serializer($normalizer, [new JsonEncoder()]);
-
-        $occurrences = json_decode($response->getContent(), true)['occurrences'];
-        $espece = false;
-        foreach ($occurrences as $occurrence){
-            // Vérification si l'espèce est bien renseignée (en cas d'erreur lors de la récupération de fichhes) -> Pour résoudre bug de refresh du cache
-            if (isset($occurrence['taxo']['espece'])){
-                $espece = true;
-            }
+        if (!$trail->getDetails()){
+            $trail->setDetails($this->router->generate('show_trail', [
+                'id' => $trail->getNom()
+            ], UrlGeneratorInterface::ABSOLUTE_URL));
         }
-        if ($espece){
-				$trail = $serializer->deserialize($response->getContent(), Trail::class, 'json', [
-					\Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true
-				]);
-				/**
-				 * @var Trail $trail
-				 */
-				$trail->computeOccurrencesCount();
-				$trail->setDisplayName($trail->getNom());
-				$trail->setNom($trailName);
-				$trail->setDetails($this->router->generate('show_trail', [
-					'id' => $trail->getNom()
-				], UrlGeneratorInterface::ABSOLUTE_URL));
-				$trailCache->set($trail);
-				$this->cache->save($trailCache);
-        }
+        $trailCache->set($trail);
+        $this->cache->save($trailCache);
     }
 }

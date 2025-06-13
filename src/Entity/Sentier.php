@@ -43,7 +43,7 @@ class Sentier
      *     type="string",
      *     example="Arbres Remarquables"
      * )
-     * @Groups({"create_trail", "update_trail"})
+     * @Groups({"create_trail", "update_trail", "list_trail"})
      * @SerializedName("name")
      */
     private $nom;
@@ -61,6 +61,7 @@ class Sentier
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $authorId;
 
@@ -81,7 +82,7 @@ class Sentier
      *     type="string",
      *     example="draft"
      * )
-     * @Groups({"user_trail"})
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $status;
 
@@ -111,10 +112,10 @@ class Sentier
     private $position = [];
 
     /**
-     * @ORM\OneToOne(targetEntity=Path::class, cascade={"persist", "remove"})
+     * @ORM\OneToOne(targetEntity=Path::class, cascade={"persist", "remove"}, fetch="EAGER")
      * @ORM\JoinColumn(nullable=true)
      * @SerializedName("path")
-     * @Groups({"show_trail", "create_trail", "update_trail"})
+     * @Groups({"show_trail", "create_trail", "update_trail", "list_trail"})
      * @OA\Property(ref=@Model(type=Path::class))
      */
     private $chemin;
@@ -145,7 +146,7 @@ class Sentier
      *     type="string",
      *     example="https://example.com/link+to+trail+details"
      * )
-     * @Groups({"list_trail", "user_trail"})
+     * @Groups({"list_trail", "user_trail", "show_trail"})
      */
     private $details;
 
@@ -218,7 +219,7 @@ class Sentier
     private $nb_taxons;
 
     /**
-     * @ORM\OneToMany(targetEntity=Occurrence::class, mappedBy="sentier", cascade={"persist"})
+     * @ORM\OneToMany(targetEntity=Occurrence::class, mappedBy="sentier", cascade={"persist"}, fetch="EAGER")
      * @OA\Property(
      *     type="array",
      *     @OA\Items(ref=@Model(type=Occurrence::class)),
@@ -251,6 +252,7 @@ class Sentier
 
     public function getDisplayName(): string
     {
+        $this->displayName = $this->displayName ?: $this->getNom();
         // mb_ucfirst
         $firstChar = mb_substr($this->displayName, 0, 1);
         $then = mb_substr($this->displayName, 1);
@@ -318,8 +320,8 @@ class Sentier
     public function getStartPosition(): array
     {
         return [
-            'lat' => $this->position[1],
-            'lng' => $this->position[0],
+            'lat' => $this->position["start"]['lat'],
+            'lng' => $this->position["start"]['lng']
         ];
     }
 
