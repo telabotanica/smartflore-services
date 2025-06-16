@@ -282,5 +282,53 @@ class TrailController extends AbstractController
 
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="deleted",
+     *      @OA\JsonContent(
+     *         type="string",
+     *        example="Trail id: 146 deleted"
+     *     )
+     * )
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The trail ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Trails")
+     * @OA\Delete(
+     *     summary="Delete a trail",
+     * )
+     * @Route("/trail/{id}", name="delete_trail", methods={"DELETE"})
+     */
+    public function deleteTrail(Request $request, $id): Response
+    {
+        try {
+            $token = $this->annuaire->getRequestToken($request);
+            $this->createTrail->setAuth($token);
+            $user = $this->annuaire->getUserInfos($token);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        if (!$trail) {
+            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (!$this->annuaire->canUpdateTrail($user, $trail)) {
+            return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        $trail->setDateSuppression(new \DateTime());
+        $this->em->persist($trail);
+        $this->em->flush();
+
+        return new JsonResponse('Trail id: '.$id.' deleted', Response::HTTP_ACCEPTED);
+    }
 }
 
