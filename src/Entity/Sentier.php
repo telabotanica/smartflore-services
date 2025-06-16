@@ -388,7 +388,7 @@ class Sentier
 //        $this->setOccurrencesCount(count($this->getOccurrences()));
 //    }
 
-    public function getDetails(): string
+    public function getDetails(): ?string
     {
         return $this->details;
     }

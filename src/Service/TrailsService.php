@@ -444,7 +444,7 @@ class TrailsService
     public function buildTrailCache(string $trailName)
     {
         $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
-        $trail = $this->sentierRepository->findOneBy(['nom' => $trailName]);
+        $trail = $this->sentierRepository->findOneBy(['nom' => $trailName, 'date_suppression' => null]);
         if (!$trail){
             throw new TrailNotFoundException('The trail'. $trailName .' does not exist');
         }

@@ -119,9 +119,9 @@ class TrailController extends AbstractController
         SerializerInterface $serializer,
         $id
     ) {
-        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        $trail = $this->sentierRepository->findOneBy(['id' => $id, 'date_suppression' => null]);
         if (!$trail) {
-            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['error' => 'Trail not found or deleted (id: '. $id .')'], Response::HTTP_NOT_FOUND);
         }
 
 //        $json = $serializer->serialize($trails->getTrail($id), 'json', ['groups' => 'show_trail']);
