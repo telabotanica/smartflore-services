@@ -26,6 +26,9 @@ class EfloreService
     private $imagesApiUrlTemplate;
     private $imageCosteApiUrlTemplate;
     private $vernacularNameApiUrlTemplate;
+    private $rechercheNomsVernaEfloreUrl;
+    private $rechercheNomUrl;
+    private $infosTaxonsUrl;
 
     public function __construct(
         string $taxonApiBaseUrl,
@@ -34,6 +37,9 @@ class EfloreService
         string $imageCosteApiUrlTemplate,
         string $vernacularNameApiUrlTemplate,
         bool $useNativeHttpClient,
+        string $rechercheNomsVernaEfloreUrl,
+        string $rechercheNomUrl,
+        string $infosTaxonsUrl,
         CacheInterface $trailsCache
     ) {
         if ($useNativeHttpClient) {
@@ -48,6 +54,9 @@ class EfloreService
         $this->imagesApiUrlTemplate = $imagesApiUrlTemplate;
         $this->imageCosteApiUrlTemplate = $imageCosteApiUrlTemplate;
         $this->vernacularNameApiUrlTemplate = $vernacularNameApiUrlTemplate;
+        $this->rechercheNomsVernaEfloreUrl = $rechercheNomsVernaEfloreUrl;
+        $this->rechercheNomUrl = $rechercheNomUrl;
+        $this->infosTaxonsUrl = $infosTaxonsUrl;
     }
 
     public function getTaxonRawInfo(string $taxonRepository, int $taxonNameId, bool $refresh = false)
@@ -73,7 +82,7 @@ class EfloreService
         return $taxonCache->get();
     }
 
-    //TODO: a updater
+    //TODO: a updater (utiliser pour la route /taxon/{taxonRepository}/{taxonNameId}))
     public function getCardText(string $taxonRepository, string $taxonId, bool $refresh = false)
     {
         $cardCache = $this->cache->getItem('taxon.card.SmartFlore'.strtoupper($taxonRepository).'nt'.$taxonId);
@@ -190,7 +199,81 @@ class EfloreService
         return $vernacularNameCache->get();
     }
 
-    //TODO: a updater
+    public function consulterRechercheNomsVernaEflore($filtres) {
+        $vernacularReferential = $this::REFERENTIALS[$filtres['referentiel']] ?? null;
+        $vernacularNames = [];
+
+        $url_eflore_verna_tpl = $this->taxonApiBaseUrl . $this->rechercheNomsVernaEfloreUrl;
+
+        if ($vernacularReferential) {
+            // eg. https://api.tela-botanica.org/service:eflore:0.1/nvjfl/noms-vernaculaires?masque=erable%25&recherche=etendue&retour.champs=num_taxon&masque.lg=fra&navigation.depart=10&navigation.limite=10
+            $vernacularNameApiUrl = sprintf($url_eflore_verna_tpl, $vernacularReferential, urlencode($filtres['recherche'].'%'), $filtres['debut'], $filtres['limite']);
+
+            $response = $this->client->request('GET', $vernacularNameApiUrl);
+
+            if (200 !== $response->getStatusCode() && !(
+                    404 === $response->getStatusCode()
+                    && 'Les données recherchées sont introuvables.' === $response->getContent(false)
+                )) {
+                throw new \Exception('Response status code is different than expected.');
+            }
+            $vernacularNames = json_decode($response->getContent(false), true) ?? [];
+        }
+
+        return $vernacularNames;
+    }
+
+    public function consulterRechercheNomsSciEflore($filtres) {
+        $url_eflore_tpl = $this->taxonApiBaseUrl . $this->rechercheNomUrl;
+        $url = sprintf($url_eflore_tpl , strtolower($filtres['referentiel']), 'etendue', urlencode($filtres['recherche'].'%'), $filtres['debut'], $filtres['limite']);
+
+        if (isset($filtres['filtre'])) {
+            $url .= '&masque.ref='.$filtres['filtre'];
+        }
+
+        $response = $this->client->request('GET', $url);
+
+        if (200 !== $response->getStatusCode() && !(
+                404 === $response->getStatusCode()
+                && 'Les données recherchées sont introuvables.' === $response->getContent(false)
+            )) {
+            throw new \Exception('Response status code is different than expected.');
+        }
+
+        $infos = json_decode($response->getContent(false), true) ?? [];
+
+        if (empty($infos)){
+            $url = sprintf($url_eflore_tpl, strtolower($filtres['referentiel']), 'floue', urlencode($filtres['recherche'].'%'), $filtres['debut'], $filtres['limite']);
+            $response = $this->client->request('GET', $url);
+            if (200 !== $response->getStatusCode() && !(
+                    404 === $response->getStatusCode()
+                    && 'Les données recherchées sont introuvables.' === $response->getContent(false)
+                )) {
+                throw new \Exception('Response status code is different than expected.');
+            }
+
+            $infos = json_decode($response->getContent(false), true) ?? [];
+        }
+
+        return $infos;
+    }
+
+    public function getInfosTaxons($referentiel, $num_tax): array
+    {
+        $url_eflore_tpl = $this->taxonApiBaseUrl . $this->infosTaxonsUrl;
+        $url = sprintf($url_eflore_tpl, strtolower($referentiel), $num_tax);
+        $response = $this->client->request('GET', $url);
+        if (200 !== $response->getStatusCode() && !(
+                404 === $response->getStatusCode()
+                && 'Les données recherchées sont introuvables.' === $response->getContent(false)
+            )) {
+            throw new \Exception('Response status code is different than expected.');
+        }
+
+        return json_decode($response->getContent(false), true) ?? [];
+    }
+
+    //TODO: a updater (utiliser pour la route /taxon/{taxonRepository}/{taxonNameId}))
     public function getTaxon(string $taxonRepository, string $taxonNameId, bool $refresh = false)
     {
         $taxonInfos = $this->getTaxonRawInfo(

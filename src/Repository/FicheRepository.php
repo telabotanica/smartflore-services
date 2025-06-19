@@ -39,6 +39,52 @@ class FicheRepository extends ServiceEntityRepository
         }
     }
 
+    public function findAllPaginated($filtres)
+    {
+        $qb = $this->createQueryBuilder('f')
+        ->select('f');
+
+        $qb->andWhere('f.derniere_version = 1')
+        ->andWhere("f.nt IS NOT NULL");
+
+        $qb = $this->addFiltersToQuery($qb, $filtres);
+
+        $debut = $filtres['debut'];
+        if ($filtres['referentiel'] != '%' && $filtres['num_tax'] != '%') {
+            $debut = 0;
+        }
+
+        $qb->setMaxResults($filtres['limite']);
+//        $qb->setFirstResult($filtres['debut']);
+        $qb->setFirstResult($debut);
+
+        $qb->orderBy('f.tag', 'ASC');
+//dd($qb -> getQuery()->getSQL());
+        return $qb->getQuery()->getResult();
+    }
+
+    private function addFiltersToQuery($qb, $filters)
+    {
+        foreach ($filters as $key => $value) {
+            if ($key == 'pages_existantes'){
+                $qb->andWhere('f.tag LIKE :tag')
+                ->setParameter('tag', '%SmartFlore%');
+            }
+
+            if ($key == 'referentiel' && $value != '%') {
+                $qb->andWhere('f.referentiel = :referentiel')
+                    ->setParameter('referentiel', $value);
+            }
+
+            if ($key == 'num_tax' && $value != '%') {
+                $qb->andWhere('f.nt = :nt')
+                    ->setParameter('nt', $value);
+            }
+        }
+
+        return $qb;
+    }
+
 //    /**
 //     * @return Fiche[] Returns an array of Fiche objects
 //     */

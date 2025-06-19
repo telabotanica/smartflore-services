@@ -262,7 +262,7 @@ class TrailController extends AbstractController
             return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
-        // On empêche les modification d'un sentier une fois celui-ci publié
+        // On empêche les modifications d'un sentier une fois celui-ci publié
         if ($trail->getDatePublication() != null) {
             return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
@@ -285,7 +285,7 @@ class TrailController extends AbstractController
 
     /**
      * @OA\Response(
-     *     response="200",
+     *     response="202",
      *     description="deleted",
      *      @OA\JsonContent(
      *         type="string",

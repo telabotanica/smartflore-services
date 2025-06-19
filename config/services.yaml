@@ -35,6 +35,9 @@ services:
             - '%env(COSTE_IMAGE_URL_TEMPLATE)%'
             - '%env(VERNACULAR_NAME_URL_TEMPLATE)%'
             - '%env(USE_NATIVE_HTTP_CLIENT)%'
+            - '%env(RECHERCHE_NOMS_VERNACULAIRES_URL)%'
+            - '%env(RECHERCHE_NOM_URL)%'
+            - '%env(INFOS_TAXONS_URL)%'
     App\Service\AnnuaireService:
         arguments:
             - '%env(ANNUAIRE_LOGIN_BASE_URL)%'
@@ -49,3 +52,9 @@ services:
             - '%env(IMAGE_URL)%'
             - '%env(IMAGE_MINIATURE_URL)%'
             - '%env(IP_API_V2_IMAGE)%'
+    App\Service\FicheService:
+        arguments:
+#            - '%env(EFLORE_API_BASE_URL)%'
+#            - '%env(RECHERCHE_NOMS_VERNACULAIRES_URL)%'
+#            - '%env(REFERENTIEL_VERNA_BDTFX)%'
+#            - '%env(REFERENTIEL_VERNA_BDTFXA)%'

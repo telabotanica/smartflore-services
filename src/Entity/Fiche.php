@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Repository\FicheRepository;
 use Doctrine\ORM\Mapping as ORM;
+use OpenApi\Annotations as OA;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass=FicheRepository::class)
@@ -14,51 +16,100 @@ class Fiche
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
+     * @OA\Property(
+     *     type="int",
+     *     example="146"
+     * )
+     * @Groups({"show_fiche", "list_fiche"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @OA\Property(
+     *     type="string",
+     *     example="SmartFloreBDTFXnt3363"
+     * )
+     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
      */
     private $tag;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     * @OA\Property(
+     *     type="int",
+     *     example="3363"
+     * )
+     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
      */
     private $nt;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     * @OA\Property(
+     *     type="string",
+     *     example="bdtfx"
+     * )
+     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
      */
     private $referentiel;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
+     * @Groups({"show_fiche", "list_fiche"})
      */
     private $date_modification;
 
     /**
      * @ORM\Column(type="text", nullable=true)
+     * @OA\Property(
+     *     type="string",
+     *     example="Plante vivace de 20-80 cm, velue, à souche épaisse et oblique
+    - feuilles d'un vert terne et grisâtre, les inférieures entières, dentées ou pennatifides, à lobes lancéolés-linéaires, aigus, les moyennes ordinairement pennatiséquées
+    - pédoncules non ou peu glanduleux, hérissés de poils longs, entremêlés d'un duvet court et crépu
+    - fleurs roses ou lilas, les extérieures rayonnantes, en têtes hémisphériques. Floraison de juin à août."
+     * )
+     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
      */
     private $description;
 
     /**
      * @ORM\Column(type="text", nullable=true)
+     * @OA\Property(
+     *     type="string",
+     *     example="Plante amère et détersive."
+     * )
+     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
      */
     private $usages;
 
     /**
      * @ORM\Column(type="text", nullable=true)
+     * @OA\Property(
+     *     type="string",
+     *     example="Champs, prés et côteaux, dans toute la France et en Corse."
+     * )
+     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
      */
     private $ecologie;
 
     /**
      * @ORM\Column(type="text", nullable=true)
+     * @OA\Property(
+     *     type="string",
+     *     example="https://www.tela-botanica.org/bdtfx-nn-75201-synthese"
+     * )
+     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
      */
     private $sources;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     * @OA\Property(
+     *     type="string",
+     *     example="tela_user"
+     * )
+     * @Groups({"show_fiche", "list_fiche"})
      */
     private $proprietaire;
 
@@ -69,6 +120,7 @@ class Fiche
 
     /**
      * @ORM\Column(type="boolean")
+     * @Groups({"show_fiche", "list_fiche"})
      */
     private $derniere_version;
 
