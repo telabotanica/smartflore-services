@@ -190,8 +190,6 @@ class FicheService extends AbstractController
         return $resultat;
     }
 
-
-
     private function traiterRechercheTaxonUnique(array $recherche): array {
         $infos = $this->efloreService->getInfosTaxons($recherche['referentiel'], $recherche['num_tax']);
         if (empty($infos)) return [];

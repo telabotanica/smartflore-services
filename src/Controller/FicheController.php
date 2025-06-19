@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Fiche;
 use App\Repository\FicheRepository;
+use App\Service\FicheService;
 use Doctrine\ORM\EntityManagerInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
@@ -19,12 +20,14 @@ class FicheController extends AbstractController
     private SerializerInterface $serializer;
     private EntityManagerInterface $em;
     private FicheRepository $ficheRepository;
+    private FicheService $ficheService;
 
-    public function __construct(SerializerInterface $serializer, EntityManagerInterface $em, FicheRepository $ficheRepository)
+    public function __construct(SerializerInterface $serializer, EntityManagerInterface $em, FicheRepository $ficheRepository, FicheService $ficheService)
     {
         $this->serializer = $serializer;
         $this->em = $em;
         $this->ficheRepository = $ficheRepository;
+        $this->ficheService = $ficheService;
     }
 
     /**
@@ -58,7 +61,16 @@ class FicheController extends AbstractController
      */
     public function getFiche(string $referentiel, int $num_tax): Response
     {
-        $fiche = $this->ficheRepository->findOneBy(['referentiel' => $referentiel, 'nt' => $num_tax, 'derniere_version' => 1]);
+        $nom_page = $this->ficheService->formaterPageNom($referentiel, $num_tax);
+        // Fiche SmartFlore eg. SmartFloreBDTFXnt6200
+        $fiche = $this->ficheRepository->findOneBy(['tag' => $nom_page, 'derniere_version' => 1]);
+
+        if (!$fiche) {
+            $nom_page = $this->ficheService->formaterPageNomGlobal($referentiel, $num_tax);
+            // Fiche globale eg. BDTFXnt36750
+            $fiche = $this->ficheRepository->findOneBy(['tag' => $nom_page, 'derniere_version' => 1]);
+        }
+
         if (!$fiche) {
             return new JsonResponse(['error' => 'Fiche not found (referentiel: '. $referentiel .', num_tax: '. $num_tax .')'], Response::HTTP_NOT_FOUND);
         }
