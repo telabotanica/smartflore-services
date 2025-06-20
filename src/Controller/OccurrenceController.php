@@ -208,6 +208,14 @@ class OccurrenceController extends AbstractController
             }
         }
 
+        $trail = $this->sentierRepository->findOneBy(['id' => $occurrence->getSentier()->getId()]);
+        if ($trail->getDatePublication() != null) {
+            return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        $trail->setDateModification(new \DateTime());
+        $this->em->persist($trail);
+
         $this->em->persist($occurrence);
         $this->em->flush();
 
