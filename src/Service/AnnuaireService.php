@@ -153,7 +153,7 @@ class AnnuaireService
         return $this->cookieName;
     }
 
-    public function getRequestToken(Request $request): string
+    public function getRequestToken(Request $request): ?string
     {
         $token = null;
         $cookie = $request->cookies->get($this->getCookieName()) ?? null;

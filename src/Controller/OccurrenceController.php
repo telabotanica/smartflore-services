@@ -71,6 +71,9 @@ class OccurrenceController extends AbstractController
     {
         try {
             $token = $this->annuaire->getRequestToken($request);
+            if (!$token) {
+                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+            }
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
         } catch (\Exception $e) {
@@ -154,6 +157,9 @@ class OccurrenceController extends AbstractController
     {
         try {
             $token = $this->annuaire->getRequestToken($request);
+            if (!$token) {
+                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+            }
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
         } catch (\Exception $e) {
@@ -234,6 +240,9 @@ class OccurrenceController extends AbstractController
     {
         try {
             $token = $this->annuaire->getRequestToken($request);
+            if (!$token) {
+                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+            }
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
         } catch (\Exception $e) {
@@ -290,6 +299,9 @@ class OccurrenceController extends AbstractController
     {
         try {
             $token = $this->annuaire->getRequestToken($request);
+            if (!$token) {
+                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+            }
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
         } catch (\Exception $e) {

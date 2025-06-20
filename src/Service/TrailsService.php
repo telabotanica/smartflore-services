@@ -222,12 +222,13 @@ class TrailsService
     }
 */
     //utilisé en cas de refresh des cards?
+    //TODO: est-ce vraiment utile ?
     public function buildOccurrencesTaxonInfos(Sentier $trail): void
     {
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxon();
             $taxon = $this->efloreService->getTaxon(
-                $taxon->getReferentiel(), $taxon->getNumNom(), true); //TODO à uppdater
+                $taxon['taxon_repository'], $taxon['name_id'], true);
             $occurrence->setTaxon($taxon);
         }
     }

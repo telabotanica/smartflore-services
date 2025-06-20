@@ -149,7 +149,6 @@ class FicheService extends AbstractController
         $resultats = [];
         foreach ($infos['resultat'] as $taxon) {
             if (isset($taxon['num_taxonomique'])) {
-//                $list['resultats'][] = $this->formaterTaxon($taxon, $filtres['referentiel']);
                 $resultats[] = $this->formaterTaxon($taxon, $filtres['referentiel']);
             }
         }
@@ -167,11 +166,6 @@ class FicheService extends AbstractController
         }
 
         return $fiche;
-
-//        return json_decode(
-//            $this->serializer->serialize($fiche, 'json', ['groups' => 'list_fiche']),
-//            true
-//        );
     }
 
     private function formaterTaxon(array $taxon, string $referentiel): FicheResultats {

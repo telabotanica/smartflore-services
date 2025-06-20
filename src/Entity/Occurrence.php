@@ -22,6 +22,7 @@ class Occurrence
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
+     * @Groups({"show_trail", "list_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
      */
     private $id;
 
