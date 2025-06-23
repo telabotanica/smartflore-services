@@ -30,7 +30,7 @@ class Fiche
      *     type="string",
      *     example="SmartFloreBDTFXnt3363"
      * )
-     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
+     * @Groups({"create_fiche", "show_fiche", "list_fiche"})
      */
     private $tag;
 
@@ -40,7 +40,7 @@ class Fiche
      *     type="int",
      *     example="3363"
      * )
-     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
+     * @Groups({"create_fiche", "show_fiche", "list_fiche"})
      */
     private $nt;
 
@@ -50,7 +50,7 @@ class Fiche
      *     type="string",
      *     example="bdtfx"
      * )
-     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
+     * @Groups({"create_fiche", "show_fiche", "list_fiche"})
      */
     private $referentiel;
 

@@ -14,11 +14,11 @@ class SharedService
         $this->ficheRepository = $ficheRepository;
     }
     public function chercherFiche(string $referentiel, string $num_taxonomique): ?Fiche {
-        $nom_page = $this->formaterPageNom($referentiel, $num_taxonomique);
+        $nom_page = $this->formaterPageNom($referentiel, $num_taxonomique); // Fiche SmartFlore eg. SmartFloreBDTFXnt6200
         $fiche = $this->ficheRepository->findOneBy(['tag' => $nom_page, 'derniere_version' => 1]);
 
         if (!$fiche) {
-            $nom_page = $this->formaterPageNomGlobal($referentiel, $num_taxonomique);
+            $nom_page = $this->formaterPageNomGlobal($referentiel, $num_taxonomique); // Fiche globale eg. BDTFXnt36750
             $fiche = $this->ficheRepository->findOneBy(['tag' => $nom_page, 'derniere_version' => 1]);
         }
 

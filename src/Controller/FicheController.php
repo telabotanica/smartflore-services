@@ -4,7 +4,9 @@ namespace App\Controller;
 
 use App\Entity\Fiche;
 use App\Repository\FicheRepository;
+use App\Service\AnnuaireService;
 use App\Service\FicheService;
+use App\Service\SharedService;
 use Doctrine\ORM\EntityManagerInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
@@ -21,13 +23,17 @@ class FicheController extends AbstractController
     private EntityManagerInterface $em;
     private FicheRepository $ficheRepository;
     private FicheService $ficheService;
+    private SharedService $sharedService;
+    private AnnuaireService $annuaire;
 
-    public function __construct(SerializerInterface $serializer, EntityManagerInterface $em, FicheRepository $ficheRepository, FicheService $ficheService)
+public function __construct(SerializerInterface $serializer, EntityManagerInterface $em, FicheRepository $ficheRepository, FicheService $ficheService, SharedService $sharedService, AnnuaireService $annuaire)
     {
         $this->serializer = $serializer;
         $this->em = $em;
         $this->ficheRepository = $ficheRepository;
         $this->ficheService = $ficheService;
+        $this->sharedService = $sharedService;
+        $this->annuaire = $annuaire;
     }
 
     /**
@@ -61,15 +67,7 @@ class FicheController extends AbstractController
      */
     public function getFiche(string $referentiel, int $num_tax): Response
     {
-        $nom_page = $this->ficheService->formaterPageNom($referentiel, $num_tax);
-        // Fiche SmartFlore eg. SmartFloreBDTFXnt6200
-        $fiche = $this->ficheRepository->findOneBy(['tag' => $nom_page, 'derniere_version' => 1]);
-
-        if (!$fiche) {
-            $nom_page = $this->ficheService->formaterPageNomGlobal($referentiel, $num_tax);
-            // Fiche globale eg. BDTFXnt36750
-            $fiche = $this->ficheRepository->findOneBy(['tag' => $nom_page, 'derniere_version' => 1]);
-        }
+        $fiche = $this->sharedService->chercherFiche($referentiel, $num_tax);
 
         if (!$fiche) {
             return new JsonResponse(['error' => 'Fiche not found (referentiel: '. $referentiel .', num_tax: '. $num_tax .')'], Response::HTTP_NOT_FOUND);
@@ -78,5 +76,75 @@ class FicheController extends AbstractController
         $json = $this->serializer->serialize($fiche, 'json', ['groups' => ['list_fiche']]);
 
         return new JsonResponse($json, Response::HTTP_OK, [], true);
+    }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="Fiches list",
+     *     @OA\JsonContent(
+     *         type="object",
+     *         ref=@Model(type=Fiche::class, groups={"list_fiche"})
+     *     ),
+     * )
+     * @OA\RequestBody(
+     *     description="A JSON object containing page information",
+     *     required=true,
+     *     @OA\JsonContent(
+     *         type="object",
+     *         ref=@Model(type=Fiche::class, groups={"update_fiche"})
+     *     )
+     * )
+     * @OA\Tag(name="Fiches")
+     * @OA\Put(
+     *     summary="Update page",
+     * )
+     * @Route("/fiche/{referentiel}/{num_tax}", name="update_fiche", methods={"PUT"})
+     */
+    public function updateFiche(string $referentiel, int $num_tax, Request $request): Response
+    {
+        $user = null;
+        try {
+            $token = $this->annuaire->getRequestToken($request);
+            if (!$token) {
+                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+            }
+            $user = $this->annuaire->getUserInfos($token);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour de la fiche: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $fiche = $this->sharedService->chercherFiche($referentiel, $num_tax);
+
+        if (!$fiche) {
+            return new JsonResponse(['error' => 'Fiche not found (referentiel: '. $referentiel .', num_tax: '. $num_tax .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        $content = json_decode($request->getContent());
+        if (!$request->getContent()) {
+            return new JsonResponse(['error' => 'No update requested on page (id: '. $fiche->getTag() .')'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $fiche->setDerniereVersion(false);
+
+        $newFiche = clone $fiche;
+        $newFiche = $this->serializer->deserialize(json_encode($content), Fiche::class, 'json', ['groups' => ['update_fiche'],  'object_to_populate' => $newFiche]);
+
+        try {
+            $newFiche->setProprietaire($user->getName() ?? 'anonyme');
+            $newFiche->setUser($user->getId());
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur lors de la maj du propriétaire de la fiche: '. $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+
+        $newFiche->setDerniereVersion(true);
+        $newFiche->setDateModification(new \DateTime());
+        $newFiche->setTag($this->sharedService->formaterPageNom($newFiche->getReferentiel(), $newFiche->getNt()));
+
+        $this->em->persist($fiche);
+        $this->em->persist($newFiche);
+        $this->em->flush();
+
+        return new JsonResponse($this->serializer->serialize($newFiche, 'json', ['groups' => ['show_fiche']]), Response::HTTP_OK, [], true);
     }
 }
