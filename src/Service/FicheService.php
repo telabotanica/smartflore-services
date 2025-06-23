@@ -16,15 +16,18 @@ class FicheService extends AbstractController
     private EfloreService $efloreService;
     private FicheRepository $ficheRepository;
     private SerializerInterface $serializer;
+    private SharedService $sharedService;
 
     public function __construct(
     EfloreService $efloreService,
         FicheRepository $ficheRepository,
-        SerializerInterface $serializer
+        SerializerInterface $serializer,
+        SharedService $sharedService
     ) {
         $this->efloreService = $efloreService;
         $this->ficheRepository = $ficheRepository;
         $this->serializer = $serializer;
+        $this->sharedService = $sharedService;
     }
 
     public function getPagination(Request $request): array
@@ -118,31 +121,6 @@ class FicheService extends AbstractController
     }
 
 
-    public function formaterPageNom($referentiel, $nt) {
-        return 'SmartFlore'.strtoupper($referentiel).'nt'.$nt;
-    }
-
-    public function formaterPageNomGlobal($referentiel, $nt) {
-        return strtoupper($referentiel).'nt'.$nt;
-    }
-
-    /**
-     * Retourne le referentiel et le numero taxonomique à partir d'un indentifiant d'individu
-     * Ex: mange 'SmartFloreBDTFXnt6200#1' et recrache array('BDTFX', '6200')
-     * @param      string  $individu_id  (ex: SmartFloreBDTFXnt6200#1)
-     * @return     array
-     */
-    public function digestIndividuId($individu_id): array {
-        $infos = str_replace('smartflore', '', strtolower($individu_id));
-        $infos = preg_replace('/#\d+$/i', '', $infos);
-
-        return explode("nt", $infos);
-    }
-
-    public function splitNt($page) {
-        $page = str_replace('SmartFlore', '', $page);
-        return explode("nt", $page);
-    }
 
     public function formaterResultatsFiches($infos, $list, $filtres): FicheCollection
     {
@@ -156,18 +134,6 @@ class FicheService extends AbstractController
         return $list;
     }
 
-    private function chercherFiche(string $referentiel, string $num_taxonomique): ?Fiche {
-        $nom_page = $this->formaterPageNom($referentiel, $num_taxonomique);
-        $fiche = $this->ficheRepository->findOneBy(['tag' => $nom_page, 'derniere_version' => 1]);
-
-        if (!$fiche) {
-            $nom_page = $this->formaterPageNomGlobal($referentiel, $num_taxonomique);
-            $fiche = $this->ficheRepository->findOneBy(['tag' => $nom_page, 'derniere_version' => 1]);
-        }
-
-        return $fiche;
-    }
-
     private function formaterTaxon(array $taxon, string $referentiel): FicheResultats {
         $resultat = new FicheResultats();
         $resultat->setNumTaxonomique($taxon['num_taxonomique']);
@@ -177,8 +143,8 @@ class FicheService extends AbstractController
         $resultat->setNumNom($taxon['id']);
         $resultat->setReferentiel($referentiel);
         $resultat->setNomsVernaculaires($taxon['noms_vernaculaires'] ?? []);
-        if ($this->chercherFiche($referentiel, $taxon['num_taxonomique'])) {
-            $resultat->setFiche($this->chercherFiche($referentiel, $taxon['num_taxonomique']));
+        if ($this->sharedService->chercherFiche($referentiel, $taxon['num_taxonomique'])) {
+            $resultat->setFiche($this->sharedService->chercherFiche($referentiel, $taxon['num_taxonomique']));
         }
 
         return $resultat;

@@ -7,6 +7,7 @@ use App\Entity\Image;
 //use App\Model\Image;
 use App\Model\Referentiel;
 use App\Model\Taxon;
+use App\Service\SharedService;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\NativeHttpClient;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -29,6 +30,7 @@ class EfloreService
     private $rechercheNomsVernaEfloreUrl;
     private $rechercheNomUrl;
     private $infosTaxonsUrl;
+    private SharedService $sharedService;
 
     public function __construct(
         string $taxonApiBaseUrl,
@@ -40,6 +42,7 @@ class EfloreService
         string $rechercheNomsVernaEfloreUrl,
         string $rechercheNomUrl,
         string $infosTaxonsUrl,
+        SharedService $sharedService,
         CacheInterface $trailsCache
     ) {
         if ($useNativeHttpClient) {
@@ -57,6 +60,7 @@ class EfloreService
         $this->rechercheNomsVernaEfloreUrl = $rechercheNomsVernaEfloreUrl;
         $this->rechercheNomUrl = $rechercheNomUrl;
         $this->infosTaxonsUrl = $infosTaxonsUrl;
+        $this->sharedService = $sharedService;
     }
 
     public function getTaxonRawInfo(string $taxonRepository, int $taxonNameId, bool $refresh = false)
@@ -82,22 +86,24 @@ class EfloreService
         return $taxonCache->get();
     }
 
-    //TODO: a updater (utiliser pour la route /taxon/{taxonRepository}/{taxonNameId}))
     public function getCardText(string $taxonRepository, string $taxonId, bool $refresh = false)
     {
         $cardCache = $this->cache->getItem('taxon.card.SmartFlore'.strtoupper($taxonRepository).'nt'.$taxonId);
 
         if ($refresh || !$cardCache->isHit()) {
-            //TODO: a updater ou à supprimer?
-            // eg. https://www.tela-botanica.org/wikini/eFloreRedaction/api/rest/0.5/pages/SmartFloreBDTFXnt6293?txt.format=text/html&txt.section.titre=Description%2CUsages%2C%C3%89cologie+%26+habitat%2CSources
-            $cardApiUrl = $this->cardApiBaseUrl.'SmartFlore'.strtoupper($taxonRepository).'nt'.$taxonId
-                .'?txt.format=text/html&txt.section.titre='.urlencode('Description,Usages,Écologie & habitat,Sources');
-            $response = $this->client->request('GET', $cardApiUrl, ['timeout' => 120]);
+            $fiche = $this->sharedService->chercherFiche($taxonRepository, $taxonId);
 
-            if (200 !== $response->getStatusCode()) {
-                throw new \Exception('Response status code is different than expected.');
+            if (!$fiche) {
+                throw new \Exception('No page found for taxon '.$taxonId.' in referentiel '.$taxonRepository);
             }
-            $card = json_decode($response->getContent(), true);
+
+            $card['id'] = $fiche->getId();
+            $card['titre'] = $fiche->getTag();
+            $card['href'] = 'https://www.tela-botanica.org/wikini/eFloreRedaction/wakka.php?wiki=' . $fiche->getTag();
+            $card['sections']['description'] = $fiche->getDescription();
+            $card['sections']['usages'] = $fiche->getUsages();
+            $card['sections']['ecologie'] = $fiche->getEcologie();
+            $card['sections']['sources'] = $fiche->getSources();
 
             $cardCache->set($card);
             $this->cache->save($cardCache);
@@ -305,11 +311,14 @@ class EfloreService
             ->setType('card')
             ->setIcon('card');
         $cardSections = $this->getCardText($taxon->getReferentiel(), $taxon->getTaxonomicId(), $refresh);
+
         if (!isset($cardSections['sections'])) {
             $card->addSection('Fiche vide', 'Pas de contenu, cette fiche est vide.');
         } else {
             foreach ($cardSections['sections'] as $sectionTitle => $sectionText) {
-                $card->addSection($sectionTitle, $sectionText);
+                if ($sectionText && $sectionTitle) {
+                    $card->addSection($sectionTitle, $sectionText);
+                }
             }
         }
         $images = $this->getCardSpeciesImages(

@@ -64,10 +64,7 @@ class Fiche
      * @ORM\Column(type="text", nullable=true)
      * @OA\Property(
      *     type="string",
-     *     example="Plante vivace de 20-80 cm, velue, à souche épaisse et oblique
-    - feuilles d'un vert terne et grisâtre, les inférieures entières, dentées ou pennatifides, à lobes lancéolés-linéaires, aigus, les moyennes ordinairement pennatiséquées
-    - pédoncules non ou peu glanduleux, hérissés de poils longs, entremêlés d'un duvet court et crépu
-    - fleurs roses ou lilas, les extérieures rayonnantes, en têtes hémisphériques. Floraison de juin à août."
+     *     example="Plante vivace de 20-80 cm, velue, à souche épaisse et oblique\n- feuilles d'un vert terne\n- pédoncules hérissés\n- fleurs roses ou lilas..."
      * )
      * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
      */

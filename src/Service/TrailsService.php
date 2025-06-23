@@ -5,6 +5,7 @@ namespace App\Service;
 use App\Entity\Sentier;
 //use App\Model\Image;
 use App\Entity\Image;
+use App\Model\Taxon;
 use App\Model\Trail;
 use App\Service\ImageService;
 use App\Repository\SentierRepository;
@@ -221,14 +222,17 @@ class TrailsService
         }
     }
 */
-    //utilisé en cas de refresh des cards?
-    //TODO: est-ce vraiment utile ?
+    //utilisé pour refresh les cards info
     public function buildOccurrencesTaxonInfos(Sentier $trail): void
     {
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxon();
             $taxon = $this->efloreService->getTaxon(
                 $taxon['taxon_repository'], $taxon['name_id'], true);
+
+            $json = $this->serializer->serialize($taxon, 'json', );
+            $taxon = json_decode($json, true);
+
             $occurrence->setTaxon($taxon);
         }
     }
@@ -428,10 +432,10 @@ class TrailsService
 				
 				$trailCache = $this->cache->getItem('trails.trail.'.$trailName);
 				$trail = $trailCache->get();
-//				if ($trail){
-////					$this->buildOccurrencesTaxonInfos($trail);
+				if ($trail){
+					$this->buildOccurrencesTaxonInfos($trail);
 //					$this->imageService->buildTrailImagesCache($trail);
-//				}
+				}
 			} catch (\Exception $e){
 				print_r(' Erreur lors de la création du build trail cache du sentier: ');
 				print_r($trailName);
@@ -457,5 +461,22 @@ class TrailsService
         }
         $trailCache->set($trail);
         $this->cache->save($trailCache);
+    }
+
+    public function updateCacheTrailCards(array $trails){
+        foreach ($trails as $trail) {
+            try {
+                $trailCache = $this->cache->getItem('trails.trail.' . $trail->getNom());
+                $trail = $trailCache->get();
+                if ($trail) {
+                    $this->buildOccurrencesTaxonInfos($trail);
+                }
+            } catch (\Exception $e) {
+                print_r(' Erreur lors de la maj du cache (cards)du sentier: ');
+                print_r($trail->getNom(), $trail->getId());
+                print_r(' ' . $e->getMessage() . '/////');
+                continue;
+            }
+        }
     }
 }

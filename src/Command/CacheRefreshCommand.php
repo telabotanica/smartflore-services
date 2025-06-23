@@ -55,9 +55,7 @@ class CacheRefreshCommand extends Command
                 break;
             case 'cards':
                 $trails = $this->trails->getTrails();
-                foreach ($trails as $trail) {
-                    $this->trails->buildOccurrencesTaxonInfos($trail);
-                }
+                $this->trails->updateCacheTrailCards($trails);
                 break;
             default:
                 $this->trails->getTrail($resource, true);
