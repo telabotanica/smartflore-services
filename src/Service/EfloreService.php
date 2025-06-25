@@ -279,7 +279,6 @@ class EfloreService
         return json_decode($response->getContent(false), true) ?? [];
     }
 
-    //TODO: a updater (utiliser pour la route /taxon/{taxonRepository}/{taxonNameId}))
     public function getTaxon(string $taxonRepository, string $taxonNameId, bool $refresh = false)
     {
         $taxonInfos = $this->getTaxonRawInfo(

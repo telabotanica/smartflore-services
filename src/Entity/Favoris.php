@@ -55,7 +55,7 @@ class Favoris
      *     example="bdtfx"
      * )
      * @Assert\NotBlank
-     * @Groups({"show_favorite", "list_favorite"})
+     * @Groups({"show_favorite", "list_favorite", "add_favorite"})
      */
     private $referentiel;
 
@@ -66,7 +66,7 @@ class Favoris
      *     example="141"
      * )
      * @Assert\NotBlank
-     * @Groups({"show_favorite", "list_favorite"})
+     * @Groups({"show_favorite", "list_favorite", "add_favorite"})
      */
     private $taxon_id;
 
@@ -75,6 +75,13 @@ class Favoris
         return $this->id;
     }
 
+    /**
+     * @OA\Property(
+     *     type="string",
+     *     example="abcd@tela-botanica.org"
+     * )
+     * @Groups({"show_favorite", "list_favorite"})
+     */
     public function getUserEmail(): ?string
     {
         return $this->user_email;
@@ -87,6 +94,13 @@ class Favoris
         return $this;
     }
 
+    /**
+     * @OA\Property(
+     *     type="string",
+     *     example="12345"
+     * )
+     * @Groups({"show_favorite", "list_favorite"})
+     */
     public function getUserId(): ?string
     {
         return $this->user_id;
@@ -99,6 +113,13 @@ class Favoris
         return $this;
     }
 
+    /**
+     * @OA\Property(
+     *     type="string",
+     *     example="Acer campestre L."
+     * )
+     * @Groups({"show_favorite", "list_favorite"})
+     */
     public function getScientificName(): ?string
     {
         return $this->scientific_name;
@@ -123,6 +144,13 @@ class Favoris
         return $this;
     }
 
+    /**
+     * @OA\Property(
+     *     type="int",
+     *     example="141"
+     * )
+     * @Groups({"show_favorite", "list_favorite", "add_favorite"})
+     */
     public function getTaxonId(): ?int
     {
         return $this->taxon_id;

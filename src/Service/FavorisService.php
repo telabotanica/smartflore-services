@@ -2,60 +2,23 @@
 
 namespace App\Service;
 
-use App\Model\Favorite;
-use App\Model\User;
-use PHPUnit\Exception;
-use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Contracts\Cache\CacheInterface;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+use App\Entity\Favoris;
+use Doctrine\ORM\EntityManagerInterface;
 
 class FavorisService
 {
-    private \Symfony\Contracts\HttpClient\HttpClientInterface $client;
+    private EntityManagerInterface $em;
 
     public function __construct(
-        AnnuaireService $annuaire
+        EntityManagerInterface $em
     ) {
-        $this->client = HttpClient::create();
+        $this->em = $em;
     }
 
-    /**
-     * @param string $token
-     * @param array $tokenInfos
-     * @return Favorite[]
-     * @throws \Exception|TransportExceptionInterface
-     */
-    public function getFavorisList(string $token, array $tokenInfos): array
+    public function checkExistingFavoris(string $referentiel, int $taxonId, string $userId): bool
     {
-        $favorisList = [];
-        $url = 'https://www.tela-botanica.org/smart-form/services/Favoris.php/';
+        $existingFavoris = $this->em->getRepository(Favoris::class)->findOneBy(['taxon_id' => $taxonId, 'referentiel' => $referentiel, 'user_id' => $userId]);
 
-            $response = $this->client->request('GET', $url, [
-                'headers' => [
-                    'Auth' => $token,
-                    'Authorization' => $token
-                ]
-            ]);
-
-        if (200 !== $response->getStatusCode()) {
-            throw new \Exception('Something went wrong with user favorite list.');
-        }
-
-        $favoritesData = json_decode($response->getContent(), true)['resultats'];
-
-        foreach ($favoritesData as $favorite) {
-            $userFavorite = new Favorite();
-            $userFavorite->setScientificName($favorite['infos_taxon']['nom_sci']);
-            $userFavorite->setTaxonId($favorite['infos_taxon']['num_taxonomique']);
-            $userFavorite->setUser($tokenInfos['sub']);
-            $userFavorite->setUserId($tokenInfos['id']);
-            $userFavorite->setTaxonRepository($favorite['infos_taxon']['referentiel']);
-
-            $favorisList[] = $userFavorite;
-        }
-
-        return $favorisList;
+        return (bool)$existingFavoris;
     }
-
 }
