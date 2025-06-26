@@ -254,7 +254,7 @@ class OccurrenceController extends AbstractController
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la suppressionde l\'occurrence: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la suppression de l\'occurrence: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
         $occurrence = $this->occurrenceRepository->findOneBy(['id' => $id]);

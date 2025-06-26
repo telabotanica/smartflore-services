@@ -29,6 +29,7 @@ class CreateTrailService
     private $annuaire;
     private EntityManagerInterface $em;
     private EfloreService $eflore;
+    private SharedService $sharedService;
     private SerializerInterface $serializer;
     private FicheRepository $ficheRepository;
     private UrlGeneratorInterface $router;
@@ -43,6 +44,7 @@ class CreateTrailService
         AnnuaireService $annuaire,
         EntityManagerInterface $em,
         EfloreService $eflore,
+        SharedService $sharedService,
         FicheRepository $ficheRepository,
         UrlGeneratorInterface $router
     ) {
@@ -59,6 +61,7 @@ class CreateTrailService
         $this->annuaire = $annuaire;
         $this->em = $em;
         $this->eflore = $eflore;
+        $this->sharedService = $sharedService;
         $this->ficheRepository = $ficheRepository;
         $this->router = $router;
     }
@@ -167,9 +170,32 @@ class CreateTrailService
         }
     }
 
-    public function isTrailEligible(Sentier $trail): bool
+    public function isTrailEligible(Sentier $trail): array
     {
-        return (10 <= count($trail->getOccurrences()));
+        $errors = [];
+        if (!$this->checkMinimalOccurrences($trail)) {
+            $errors[] = 'Trail must have at least 10 occurrences';
+        }
+
+        if (!$this->checkTrailLocalisation($trail)) {
+            $errors[] = 'Trail must have a location';
+        }
+
+        if (!$this->checkTrailPath($trail)) {
+            $errors[] = 'Trail must have a path';
+        }
+
+        if (!$this->checkOccurrencesLocalisation($trail)) {
+            $errors[] = 'All occurrences must have a location';
+        }
+
+        $emptyFiches = $this->checkEmptyFiches($trail);
+        if ($emptyFiches) {
+            $errors[] = 'Pages must be filled with at least a description';
+            $errors[] = ['empty_pages' => $emptyFiches];
+        }
+
+        return $errors;
     }
 
     public function getCardTag(Occurrence $occurrence): void
@@ -234,12 +260,11 @@ class CreateTrailService
             throw new \Exception('Erreur lors de la récupération de la taxon.');
         }
 
-        $nomFiche = 'SmartFlore'.strtoupper($taxonRepository).'nt'.$taxon->getTaxonomicId();
-        $fiche = $this->ficheRepository->findOneBy(['tag' => $nomFiche, 'derniere_version' => true]);
+        $fiche = $this->sharedService->chercherFiche($taxonRepository, $taxon->getTaxonomicId());
 
         if ($fiche) {
-            $taxonArray['tabs'] = $nomFiche;
-            $occurrence->setCardTag($nomFiche);
+            $taxonArray['tabs'] = $fiche->getTag();
+            $occurrence->setCardTag($fiche->getTag());
         }
         $occurrence->setTaxon($taxonArray);
     }
@@ -343,4 +368,81 @@ class CreateTrailService
         $trail->setNbTaxons($nb_taxons);
     }
 
+    private function checkMinimalOccurrences(Sentier $trail): bool
+    {
+        $occurrences = $trail->getOccurrences();
+        if (count($occurrences) < 10) {
+            return false;
+        }
+        return true;
+    }
+
+    private function checkOccurrencesLocalisation(Sentier $trail): bool
+    {
+        $occurrences = $trail->getOccurrences();
+        foreach ($occurrences as $occurrence) {
+            if (!$occurrence->getPosition()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function checkTrailLocalisation(Sentier $trail): bool
+    {
+        $position = $trail->getPosition();
+        if (!$position) {
+            return false;
+        }
+        return true;
+    }
+
+    private function checkTrailPath(Sentier $trail): bool
+    {
+        $path = $trail->getChemin();
+        if (!$path) {
+            return false;
+        }
+        return true;
+    }
+
+    private function checkEmptyFiches(Sentier $trail): array
+    {
+        $emptyFiches = [];
+        foreach ($trail->getOccurrences() as $occurrence) {
+            if (!$occurrence->getCardTag() ||
+                strpos($occurrence->getCardTag(), 'SmartFlore') === false
+            ) {
+                //TODO: réparer le strpos
+                $emptyFiches[] = [
+                    'id' => $occurrence->getId(),
+                    'tag' => $occurrence->getCardTag(),
+                    'taxon' => [
+                        'scientific_name' => $occurrence->getTaxon()['scientific_name'],
+                        'taxon_repository' => $occurrence->getTaxon()['taxon_repository'],
+                        'name_id' => $occurrence->getTaxon()['name_id']
+                        ],
+                    'error' => 'No page'
+                    ];
+                continue;
+            }
+
+            $fiche = $this->ficheRepository->findOneBy(['tag' => $occurrence->getCardTag(), 'derniere_version' => 1]);
+            if (!$fiche->getDescription()) {
+                $emptyFiches[] = [
+                    'id' => $occurrence->getId(),
+                    'tag' => $occurrence->getCardTag(),
+                    'taxon' => [
+                        'scientific_name' => $occurrence->getTaxon()['scientific_name'],
+                        'taxon_repository' => $occurrence->getTaxon()['taxon_repository'],
+                        'name_id' => $occurrence->getTaxon()['name_id']
+                    ],
+                    'error' => 'No description'
+                ];
+            }
+        }
+
+        return $emptyFiches;
+    }
 }
