@@ -12,6 +12,7 @@ use App\Service\AnnuaireService;
 use App\Service\BoundingBoxPolygonFactory;
 use App\Service\CookieAwareClient;
 use App\Service\CreateTrailService;
+use App\Service\EmailService;
 use App\Service\TrailsService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
@@ -35,8 +36,9 @@ class TrailController extends AbstractController
     private SentierRepository $sentierRepository;
     private CreateTrailService $createTrail;
     private EntityManagerInterface $em;
+    private EmailService $emailService;
 
-    public function __construct(SerializerInterface $serializer, ValidatorInterface $validator, AnnuaireService $annuaire, SentierRepository $sentierRepository, CreateTrailService $createTrail, EntityManagerInterface $em)
+    public function __construct(SerializerInterface $serializer, ValidatorInterface $validator, AnnuaireService $annuaire, SentierRepository $sentierRepository, CreateTrailService $createTrail, EntityManagerInterface $em, EmailService $emailService)
     {
         $this->serializer = $serializer;
         $this->validator = $validator;
@@ -44,6 +46,7 @@ class TrailController extends AbstractController
         $this->sentierRepository = $sentierRepository;
         $this->createTrail = $createTrail;
         $this->em = $em;
+        $this->emailService = $emailService;
     }
 
     /**
@@ -382,11 +385,6 @@ class TrailController extends AbstractController
             return new JsonResponse(['error' => 'You need to be an administrator to publish a trail'], Response::HTTP_FORBIDDEN);
         }
 
-        // On empêche les modifications d'un sentier une fois celui-ci publié
-        if ($trail->getDatePublication() != null) {
-            return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
-        }
-
         $errors = $this->createTrail->isTrailEligible($trail);
         if ($errors) {
             return new JsonResponse(['error' => $errors], Response::HTTP_BAD_REQUEST);
@@ -397,6 +395,144 @@ class TrailController extends AbstractController
 
         $this->em->persist($trail);
         $this->em->flush();
+
+        return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
+    }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="Trail unpublished",
+     *      @Model(type=Sentier::class, groups={"show_trail"})
+     * )
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The trail ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Trails")
+     * @OA\Post(
+     *     summary="Unpublish a trail"
+     * )
+     * @Route("/trail/{id}/unpublish", name="unpublish_trail", methods={"POST"})
+     */
+    public function unPublishTrail(Request $request, $id): Response
+    {
+        try {
+            $token = $this->annuaire->getRequestToken($request);
+            if (!$token) {
+                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+            }
+            $this->createTrail->setAuth($token);
+            $user = $this->annuaire->getUserInfos($token);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        if (!$trail) {
+            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($trail->getDatePublication() == null) {
+            return new JsonResponse(['error' => 'This trail is not yet published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        if (!$this->annuaire->isAdmin($user)) {
+            return new JsonResponse(['error' => 'You need to be an administrator to unpublish a trail'], Response::HTTP_FORBIDDEN);
+        }
+
+        $trail->setDatePublication(null);
+        $trail->setStatus(null);
+
+        $this->em->persist($trail);
+        $this->em->flush();
+
+        return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
+    }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="send trail to review",
+     *      @Model(type=Sentier::class, groups={"show_trail"})
+     * )
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The trail ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Trails")
+     * @OA\Post(
+     *     summary="send trail to review"
+     * )
+     * @Route("/trail/{id}/review", name="review_trail", methods={"POST"})
+     */
+    public function reviewTrail(Request $request, $id): Response
+    {
+        try {
+            $token = $this->annuaire->getRequestToken($request);
+            if (!$token) {
+                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+            }
+            $this->createTrail->setAuth($token);
+            $user = $this->annuaire->getUserInfos($token);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        if (!$trail) {
+            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (!$this->annuaire->canUpdateTrail($user, $trail)) {
+            return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        // On empêche les modifications d'un sentier une fois celui-ci publié
+        if ($trail->getDatePublication() != null) {
+            return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        $errors = $this->createTrail->isTrailEligible($trail);
+        if ($errors) {
+            return new JsonResponse(['error' => $errors], Response::HTTP_BAD_REQUEST);
+        }
+
+        $trail->setStatus('En attente');
+
+        $this->em->persist($trail);
+        $this->em->flush();
+
+        $displayName = $trail->getAuteurEmail() ?? $trail->getAuteur();
+        $admins = $this->annuaire->listAdmin();
+
+        foreach ($admins as $admin) {
+            try {
+                $message= '
+            <h1>Sentier en attente de validation</h1>
+            <p>Bonjour,<br/>vous recevez ce message car vous êtres administrateur des sentiers SmartFlore.</p>
+            <p>Un nouveau sentier requiert votre attention : </p>
+            <p>Nom du sentier : <b>'.$trail->getNom().'</b></br>
+            Auteur du sentier : '.$displayName.'</p>
+            <p>Rendez-vous sur le site <a href="https://www.tela-botanica.org/appli:smartflore">https://www.tela-botanica.org/appli:smartflore</a> pour consulter le sentier.</p>
+            ';
+
+            $this->emailService->sendEmail(
+                'telaorg@tela-botanica.org',
+                $admin,
+                "Demande de validation d'un sentier",
+                $message
+            );
+            } catch (\Exception $e) {
+                return new JsonResponse(['error' => 'Erreur lors de l\'envoi de l\'email: '. $e->getMessage()], Response::HTTP_BAD_REQUEST);
+            }
+        }
 
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }

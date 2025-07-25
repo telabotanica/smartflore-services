@@ -80,6 +80,17 @@ class Sentier
      * @ORM\Column(type="string", length=255, nullable=true)
      * @OA\Property(
      *     type="string",
+     *     example="exemple@gmail.com"
+     * )
+     * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @SerializedName("author_email")
+     */
+    private $auteur_email;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     * @OA\Property(
+     *     type="string",
      *     example="draft"
      * )
      * @Groups({"show_trail", "list_trail", "user_trail"})
@@ -274,6 +285,16 @@ class Sentier
     {
         $this->authorId = $authorId;
         return $this;
+    }
+
+    public function getAuteurEmail()
+    {
+        return $this->auteur_email;
+    }
+
+    public function setAuteurEmail($auteur_email): void
+    {
+        $this->auteur_email = $auteur_email;
     }
 
     public function getAuteur(): string

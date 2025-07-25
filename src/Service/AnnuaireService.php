@@ -202,4 +202,9 @@ class AnnuaireService
 
         return $occurrence->getUserId() === $user->getId();
     }
+
+    public function listAdmin(): array
+    {
+        return explode(',',  $this->admins);
+    }
 }

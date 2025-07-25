@@ -112,6 +112,7 @@ class CreateTrailService
         $trail->setAuteur($auteur);
         $trail->setNom($trailName);
         $trail->setAuthorId($user->getId());
+        $trail->setAuteurEmail($user->getEmail());
         $trail->setDateCreation(new \DateTime());
     }
 
