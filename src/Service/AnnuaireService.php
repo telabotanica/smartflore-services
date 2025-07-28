@@ -92,10 +92,11 @@ class AnnuaireService
         $tokenInfos = $this->decodeToken($token);
         $user = new User();
         $user->setEmail($tokenInfos['sub'])
+            ->setId($tokenInfos['id'])
             ->setName($tokenInfos['intitule'])
             ->setAvatar(($tokenInfos['avatar'] ?? ''));
 
-        $userTrails = $this->trails->getAllUserTrails($token, $user);
+        $userTrails = $this->trails->getAllUserTrails($user);
         $user->setTrails($userTrails);
 
         return $user;
@@ -157,11 +158,15 @@ class AnnuaireService
     {
         $token = null;
         $cookie = $request->cookies->get($this->getCookieName()) ?? null;
+        $headerAuthorization = $request->headers->get('Authorization') ?? null;
+        $tokenInQuery = $request->query->get('token', '');
 
         if ($cookie){
             $token = $request->cookies->get($this->getCookieName());
+        } else if ($headerAuthorization) {
+            $token = $headerAuthorization;
         } else {
-            $token = $request->headers->get('Authorization');
+            $token = $tokenInQuery;
         }
 
         $cookie = [

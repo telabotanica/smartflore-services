@@ -32,7 +32,7 @@ class Image
      *     type="string",
      *     example="https://api.tela-botanica.org/img:002221908M.jpg"
      * )
-     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
+     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
      */
     private $url;
 
@@ -42,7 +42,7 @@ class Image
      *     type="string",
      *     example="Jean Michel Photographe"
      * )
-     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
+     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
      */
     private $author;
 
@@ -58,13 +58,13 @@ class Image
      *     example=131269
      * )
      * @SerializedName("id")
-     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
+     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
      */
     private $cel_image_id;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
+     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
      */
     private $mini;
 

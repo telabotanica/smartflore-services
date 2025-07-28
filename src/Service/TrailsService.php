@@ -240,92 +240,16 @@ class TrailsService
     /**
      * Call private route for user's trails list (for /me route)
      */
-    public function getAllUserTrails(string $token, $user): array
+    public function getAllUserTrails($user): array
     {
-		$userTrailsList = [];
-		$response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentier/', [
-			'timeout' => 1800,
-			'headers' => [
-				'Authorization' => $token,
-				'Auth' => $token
-			],
-		]);
-	
-		if (200 !== $response->getStatusCode()) {
-			throw new \Exception('Something went wrong with user sentier list.');
-		}
-	
-		foreach (json_decode($response->getContent(), true)['resultats'] as $trail) {
-			if (isset($trail['auteur']) && $trail['auteur'] == $user->getEmail() && !$trail['dateSuppression']) {
-				$userTrail = new Trail();
-				
-				$displayName = '';
-				$detail = '';
-				$image = null;
-				$position = null;
-				$occurrencesCount = 0;
-				$pathLength = 0;
-				
-				$trailDetail = $this->getTrailInCache($trail['titre']);
-				if ( !$trailDetail) {
-					$trailInfos = null;
-					$trailInfos = $this->getDraftTrailInfo($trail['titre']);
-					if ($trailInfos) {
-						if ($trailInfos->getOccurrencesCount() > 0) {
-							$occurrencesCount = $trailInfos->getOccurrencesCount();
-							$pathLength = $trailInfos->getPathLength();
-							$trailInfos = $this->getImageForMe($trailInfos);
-							$hasAnImage = false;
-							foreach ($trailInfos->getOccurrences() as $trailOccurrence){
-								if ($trailOccurrence->getFirstImage()){
-									$hasAnImage = true;
-								}
-								if ($hasAnImage){
-									$image = $trailOccurrence->getFirstImage();
-									break;
-								}
-							}
-							if (!$hasAnImage){
-								$image = null;
-							}
-						}
-						
-						$displayName = $trailInfos->getDisplayName();
-						$detail = $trailInfos->getDetails();
-						$position = $trailInfos->getPosition();
-					}
-					
-					$userTrail->setId($trail['id'])
-						->setNom($trail['titre'])
-						->setDisplayName($displayName)
-						->setAuteur($trail['auteur'])
-						->setDetails($detail)
-						->setPathLength($pathLength)
-						->setOccurrencesCount($occurrencesCount)
-						->setImage($image)
-						->setStatus($trail['etat'] ?? 'draft');
-					if ($position){
-						$userTrail->setPosition($position);
-					}
-				} else {
-					$userTrail->setId($trailDetail->getId())
-						->setNom($trail['titre'])
-						->setDisplayName($trailDetail->getNom())
-						->setAuteur($trail['auteur'])
-						->setOccurrencesCount($trailDetail->getOccurrencesCount())
-						->setDetails($trailDetail->getDetails())
-						->setImage($trailDetail->getImage())
-						->setPathLength($trailDetail->getPathlength())
-						->setStatus($trail['etat'] ?? 'draft');
-					
-					if ($trailDetail->getPosition() != null) {
-						$userTrail->setPosition($trailDetail->getPosition());
-					}
-				}
-				$userTrailsList[] = $userTrail;
-			}
-		}
-		return $userTrailsList;
+        $trails = [];
+        $trails = $this->sentierRepository->findBy(['authorId' => $user->getId(), 'date_suppression' => null], ['nom' => 'ASC']);
+
+        if (!$trails){
+            $trails = $this->sentierRepository->findBy(['auteur_email' => $user->getEmail(), 'date_suppression' => null], ['nom' => 'ASC']);
+        }
+
+        return $trails;
     }
 	
 	public function getDraftTrailInfo($id){

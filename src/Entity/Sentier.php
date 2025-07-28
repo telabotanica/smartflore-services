@@ -91,7 +91,7 @@ class Sentier
      * @ORM\Column(type="string", length=255, nullable=true)
      * @OA\Property(
      *     type="string",
-     *     example="draft"
+     *     example="Validé"
      * )
      * @Groups({"show_trail", "list_trail", "user_trail"})
      */
@@ -126,7 +126,7 @@ class Sentier
      * @ORM\OneToOne(targetEntity=Path::class, cascade={"persist", "remove"}, fetch="EAGER")
      * @ORM\JoinColumn(nullable=true)
      * @SerializedName("path")
-     * @Groups({"show_trail", "create_trail", "update_trail", "list_trail"})
+     * @Groups({"show_trail", "create_trail", "update_trail", "list_trail", "user_trail",})
      * @OA\Property(ref=@Model(type=Path::class))
      */
     private $chemin;
@@ -235,7 +235,7 @@ class Sentier
      *     type="array",
      *     @OA\Items(ref=@Model(type=Occurrence::class)),
      * )
-     * @Groups({"show_trail", "list_trail", "create_trail"})
+     * @Groups({"show_trail", "list_trail", "create_trail", "user_trail"})
      */
     private $occurrences;
 
