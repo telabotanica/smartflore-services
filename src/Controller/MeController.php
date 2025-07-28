@@ -35,7 +35,7 @@ class MeController extends AbstractController
      * @OA\Tag(name="Login")
      * @Route("/me", name="user_trail", methods={"GET"})
      */
-    public function me(AnnuaireService $annuaire, SerializerInterface $serializer, Request $request)
+    public function me(AnnuaireService $annuaire, SerializerInterface $serializer, Request $request): Response
     {
         try {
             $token = $annuaire->getRequestToken($request);

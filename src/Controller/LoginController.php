@@ -10,6 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -116,5 +117,33 @@ class LoginController extends AbstractController
             'redirect' => $annuaire->getRegisterUrl(),
             'text' => 'Smart’Flore propose la connexion avec un compte Tela Botanica, si besoin créez donc le votre depuis le site tela-botanica.org. Un mail de validation vous parviendra pour valider votre email et activer votre compte. Une fois votre compte actif vous pourrez vous connecter ici.'
         ]);
+    }
+
+    /**
+     * @OA\Response (
+     *     response="200",
+     *     description="Check if user is admin or not",
+     *     @OA\JsonContent(
+     *         @OA\Schema(type="boolean", example="true")
+     *     )
+     * )
+     * @OA\Tag(name="Login")
+     * @Route("/admincheck", name="user_admincheck", methods={"GET"})
+     */
+    public function checkIfAdmin(AnnuaireService $annuaire, Request $request): Response
+    {
+        try {
+            $token = $annuaire->getRequestToken($request);
+            if (!$token) {
+                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+            }
+            $user = $annuaire->getUserInfos($token);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la recherche des droits utilisateurs: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $isAdmin = $annuaire->isAdmin($user);
+
+        return new JsonResponse(json_encode($isAdmin), Response::HTTP_OK, [], true);
     }
 }
