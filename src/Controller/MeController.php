@@ -33,6 +33,9 @@ class MeController extends AbstractController
      *     @OA\Schema(type="string")
      * )
      * @OA\Tag(name="Login")
+     * @OA\get(
+     *     summary="get user infos & trails",
+     * )
      * @Route("/me", name="user_trail", methods={"GET"})
      */
     public function me(AnnuaireService $annuaire, SerializerInterface $serializer, Request $request): Response

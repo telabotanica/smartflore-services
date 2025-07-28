@@ -82,7 +82,10 @@ class LoginController extends AbstractController
      */
     public function refresh(AnnuaireService $annuaire, Request $request)
     {
-        $token = $request->query->get('token', '');
+        $token = $request->query->get('token', null);
+        if (!$token) {
+            $token = $request->headers->get('Authorization') ?? '';
+        }
         $cookie = $request->cookies->all() ?? [];
 
         if (!trim($token)) {
@@ -128,6 +131,9 @@ class LoginController extends AbstractController
      *     )
      * )
      * @OA\Tag(name="Login")
+     * @OA\get(
+     *     summary="check if user is admin or not",
+     * )
      * @Route("/admincheck", name="user_admincheck", methods={"GET"})
      */
     public function checkIfAdmin(AnnuaireService $annuaire, Request $request): Response
