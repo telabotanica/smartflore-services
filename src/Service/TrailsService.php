@@ -37,6 +37,7 @@ class TrailsService
     private SentierRepository $sentierRepository;
     private ImageService $imageService;
     private SerializerInterface $serializer;
+    private SharedService $sharedService;
 
     public function __construct(
         string $smartfloreLegacyApiBaseUrl,
@@ -46,7 +47,8 @@ class TrailsService
         EfloreService $efloreService,
         SentierRepository $sentierRepository,
         ImageService $imageService,
-        SerializerInterface $serializer
+        SerializerInterface $serializer,
+        SharedService $sharedService
     ) {
         $this->client = HttpClient::create();
         $this->cache = $cache;
@@ -57,6 +59,7 @@ class TrailsService
         $this->sentierRepository = $sentierRepository;
         $this->imageService = $imageService;
         $this->serializer = $serializer;
+        $this->sharedService = $sharedService;
     }
 
     /**
@@ -259,7 +262,7 @@ class TrailsService
         }
 
         if (!$trail->getDetails()){
-            $trail->setDetails($this->router->generate('show_trail', ['id' => $trail->getNom() ], UrlGeneratorInterface::ABSOLUTE_URL));
+            $this->sharedService->addDetailToTrail($trail);
         }
 
         return $trail;
@@ -379,10 +382,9 @@ class TrailsService
         }
 
         if (!$trail->getDetails()){
-            $trail->setDetails($this->router->generate('show_trail', [
-                'id' => $trail->getNom()
-            ], UrlGeneratorInterface::ABSOLUTE_URL));
+            $this->sharedService->addDetailToTrail($trail);
         }
+
         $trailCache->set($trail);
         $this->cache->save($trailCache);
     }

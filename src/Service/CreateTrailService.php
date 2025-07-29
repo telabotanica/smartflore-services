@@ -87,9 +87,7 @@ class CreateTrailService
         $this->em->persist($trail);
         $this->em->flush();
 
-        $trail->setDetails($this->router->generate('show_trail', [
-            'id' => $trail->getId()
-        ], UrlGeneratorInterface::ABSOLUTE_URL));
+        $trail = $this->sharedService->addDetailToTrail($trail);
 
         $this->em->persist($trail);
         $this->em->flush();

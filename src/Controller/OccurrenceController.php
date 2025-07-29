@@ -9,6 +9,7 @@ use App\Repository\OccurrenceRepository;
 use App\Repository\SentierRepository;
 use App\Service\AnnuaireService;
 use App\Service\CreateTrailService;
+use App\Service\SharedService;
 use Doctrine\ORM\EntityManagerInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
@@ -28,8 +29,9 @@ class OccurrenceController extends AbstractController
     private OccurrenceRepository $occurrenceRepository;
     private ImageRepository $imageRepository;
     private SentierRepository $sentierRepository;
+    private SharedService $sharedService;
 
-    public function __construct(SerializerInterface $serializer, AnnuaireService $annuaire, CreateTrailService $createTrail, EntityManagerInterface $em, OccurrenceRepository $occurrenceRepository, ImageRepository $imageRepository, SentierRepository $sentierRepository)
+    public function __construct(SerializerInterface $serializer, AnnuaireService $annuaire, CreateTrailService $createTrail, EntityManagerInterface $em, OccurrenceRepository $occurrenceRepository, ImageRepository $imageRepository, SentierRepository $sentierRepository, SharedService $sharedService)
     {
         $this->serializer = $serializer;
         $this->annuaire = $annuaire;
@@ -38,6 +40,7 @@ class OccurrenceController extends AbstractController
         $this->occurrenceRepository = $occurrenceRepository;
         $this->imageRepository = $imageRepository;
         $this->sentierRepository = $sentierRepository;
+        $this->sharedService = $sharedService;
     }
 
     /**
@@ -119,6 +122,10 @@ class OccurrenceController extends AbstractController
         $trail->addOccurrence($occurrence);
         $trail->setDateModification(new \DateTime());
         $this->createTrail->addNbTaxonsToTrail($trail);
+
+        if (!$trail->getDetails()){
+            $trail = $this->sharedService->addDetailToTrail($trail);
+        }
 
         $this->em->persist($trail);
         $this->em->flush();
@@ -211,6 +218,10 @@ class OccurrenceController extends AbstractController
         $trail = $this->sentierRepository->findOneBy(['id' => $occurrence->getSentier()->getId()]);
         if ($trail->getDatePublication() != null) {
             return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        if (!$trail->getDetails()){
+            $trail = $this->sharedService->addDetailToTrail($trail);
         }
 
         $trail->setDateModification(new \DateTime());

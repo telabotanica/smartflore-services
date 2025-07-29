@@ -3,14 +3,17 @@
 namespace App\Service;
 
 use App\Entity\Fiche;
+use App\Entity\Sentier;
 use App\Repository\FicheRepository;
 
 class SharedService
 {
+    private string $smartfloreFrontUrl;
     private FicheRepository $ficheRepository;
 
-    public function __construct(FicheRepository $ficheRepository)
+    public function __construct(string $smartfloreFrontUrl, FicheRepository $ficheRepository)
     {
+        $this->smartfloreFrontUrl = $smartfloreFrontUrl;
         $this->ficheRepository = $ficheRepository;
     }
     public function chercherFiche(string $referentiel, string $num_taxonomique): ?Fiche {
@@ -49,5 +52,12 @@ class SharedService
     public function splitNt($page) {
         $page = str_replace('SmartFlore', '', $page);
         return explode("nt", $page);
+    }
+
+    public function addDetailToTrail(Sentier $trail): Sentier
+    {
+        $trail->setDetails($this->smartfloreFrontUrl.'trail/'.$trail->getId());
+
+        return $trail;
     }
 }

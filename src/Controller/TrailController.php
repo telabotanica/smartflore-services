@@ -13,6 +13,7 @@ use App\Service\BoundingBoxPolygonFactory;
 use App\Service\CookieAwareClient;
 use App\Service\CreateTrailService;
 use App\Service\EmailService;
+use App\Service\SharedService;
 use App\Service\TrailsService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
@@ -37,8 +38,9 @@ class TrailController extends AbstractController
     private CreateTrailService $createTrail;
     private EntityManagerInterface $em;
     private EmailService $emailService;
+    private SharedService $sharedService;
 
-    public function __construct(SerializerInterface $serializer, ValidatorInterface $validator, AnnuaireService $annuaire, SentierRepository $sentierRepository, CreateTrailService $createTrail, EntityManagerInterface $em, EmailService $emailService)
+    public function __construct(SerializerInterface $serializer, ValidatorInterface $validator, AnnuaireService $annuaire, SentierRepository $sentierRepository, CreateTrailService $createTrail, EntityManagerInterface $em, EmailService $emailService, SharedService $sharedService)
     {
         $this->serializer = $serializer;
         $this->validator = $validator;
@@ -47,6 +49,7 @@ class TrailController extends AbstractController
         $this->createTrail = $createTrail;
         $this->em = $em;
         $this->emailService = $emailService;
+        $this->sharedService = $sharedService;
     }
 
     /**
@@ -286,6 +289,10 @@ class TrailController extends AbstractController
         $trail->setPathLength(round(TrailsService::getTrailLength($trail)));
         $trail->setDateModification(new \DateTime());
 
+        if (!$trail->getDetails()){
+            $trail = $this->sharedService->addDetailToTrail($trail);
+        }
+
         $this->em->persist($trail);
         $this->em->flush();
 
@@ -392,6 +399,9 @@ class TrailController extends AbstractController
 
         $trail->setDatePublication(new \DateTime());
         $trail->setStatus('validé');
+        if (!$trail->getDetails()){
+            $trail = $this->sharedService->addDetailToTrail($trail);
+        }
 
         $this->em->persist($trail);
         $this->em->flush();
