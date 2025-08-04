@@ -460,10 +460,10 @@ class Sentier
 
     public function setMeilleuresSaisons(?array $meilleures_saisons): self
     {
-        if (count($meilleures_saisons) !== 4) {
-            throw new \InvalidArgumentException(
-                'Best season array should contain exactly 4 elements instead of given '.count($meilleures_saisons));
-        }
+//        if (count($meilleures_saisons) !== 4) {
+//            throw new \InvalidArgumentException(
+//                'Best season array should contain exactly 4 elements instead of given '.count($meilleures_saisons));
+//        }
         foreach ($meilleures_saisons as $season) {
             if (!is_bool($season)) {
                 throw new \InvalidArgumentException(

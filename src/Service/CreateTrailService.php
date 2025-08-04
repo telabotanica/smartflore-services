@@ -345,7 +345,7 @@ class CreateTrailService
             $author = $image_data->observation->{'auteur.nom'};
             $image->setAuthor($author);
         }
-
+//dd($image);
         $image->setOccurrence($occurrence);
         $occurrence->addImage($image);
 

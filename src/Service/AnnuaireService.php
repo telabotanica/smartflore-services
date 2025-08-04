@@ -16,20 +16,25 @@ class AnnuaireService
     private $registerUrl;
     private $cookieName;
     private $admins;
+    private $annuaireFindUser;
     private $trails;
+    private $client;
 
     public function __construct(
         string $annuaireLoginBaseUrl,
         string $annuaireRegisterUrl,
         string $annuaireCookieName,
         string $admins,
+        string $annuaireFindUser,
         TrailsService $trailsService
     ) {
         $this->loginBaseUrl = $annuaireLoginBaseUrl;
         $this->registerUrl = $annuaireRegisterUrl;
         $this->cookieName = $annuaireCookieName;
         $this->admins = $admins;
+        $this->annuaireFindUser = $annuaireFindUser;
         $this->trails = $trailsService;
+        $this->client = HttpClient::create();
     }
 
     public function getToken(string $login, string $password): array
@@ -211,5 +216,50 @@ class AnnuaireService
     public function listAdmin(): array
     {
         return explode(',',  $this->admins);
+    }
+
+    public function findUserIdByEmail(string $email)
+    {
+        $response = $this->client->request(
+            'GET', $this->annuaireFindUser.'/'.$email
+        );
+
+        try {
+            if (200 !== $response->getStatusCode()) {
+                if (500 === $response->getStatusCode()) {
+                    // annuaire returns a 500 when email is not found
+                    return false;
+                }
+
+                throw new \Exception(sprintf(
+                    'Annuaire is not happy, getting some %d error for: "%s"',
+                    $response->getStatusCode(),
+                    $response->getInfo('url')
+                ));
+            }
+        } catch (\Exception $e) {
+            return false;
+        }
+
+        $userData = $response->getContent();
+        if ('[]' === $userData) {
+            return false;
+        }
+        $userData = json_decode($this->fixDumbAnnuaireDataStructure($userData));
+        return $userData->id;
+    }
+
+    private function fixDumbAnnuaireDataStructure(string $data): string
+    {
+        $data = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+        $email = array_key_first($data);
+        $id = $data[$email]['id'];
+        $intitule = $data[$email]['intitule'] ?? $data[$email]['pseudo'] ?? $data[$email]['prenom'] ?? 'anonymous';
+
+        return json_encode([
+            'id' => $id,
+            'email' => $email,
+            'intitule' => $intitule,
+        ], JSON_THROW_ON_ERROR);
     }
 }
