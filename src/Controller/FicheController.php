@@ -130,6 +130,11 @@ public function __construct(SerializerInterface $serializer, EntityManagerInterf
         $newFiche = clone $fiche;
         $newFiche = $this->serializer->deserialize(json_encode($content), Fiche::class, 'json', ['groups' => ['update_fiche'],  'object_to_populate' => $newFiche]);
 
+
+        if (empty(trim($newFiche->getDescription()))) {
+            return new JsonResponse(['error' => 'A description is required'], Response::HTTP_BAD_REQUEST);
+        }
+
         try {
             $newFiche->setProprietaire($user->getName() ?? 'anonyme');
             $newFiche->setUser($user->getId());
