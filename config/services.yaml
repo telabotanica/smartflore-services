@@ -58,9 +58,8 @@ services:
         arguments:
             - '%env(SMARTFLORE_FRONT_URL)%'
 
-    App\Service\FicheService:
+    App\Service\ImageService:
         arguments:
-#            - '%env(EFLORE_API_BASE_URL)%'
-#            - '%env(RECHERCHE_NOMS_VERNACULAIRES_URL)%'
-#            - '%env(REFERENTIEL_VERNA_BDTFX)%'
-#            - '%env(REFERENTIEL_VERNA_BDTFXA)%'
+            - '%env(IMAGE_URL)%'
+            - '%env(IMAGE_MINIATURE_URL)%'
+            - '%env(IP_API_V2_IMAGE)%'

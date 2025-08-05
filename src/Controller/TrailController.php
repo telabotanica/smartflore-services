@@ -13,6 +13,7 @@ use App\Service\BoundingBoxPolygonFactory;
 use App\Service\CookieAwareClient;
 use App\Service\CreateTrailService;
 use App\Service\EmailService;
+use App\Service\ImageService;
 use App\Service\SharedService;
 use App\Service\TrailsService;
 use DateTime;
@@ -39,8 +40,9 @@ class TrailController extends AbstractController
     private EntityManagerInterface $em;
     private EmailService $emailService;
     private SharedService $sharedService;
+    private ImageService $imageService;
 
-    public function __construct(SerializerInterface $serializer, ValidatorInterface $validator, AnnuaireService $annuaire, SentierRepository $sentierRepository, CreateTrailService $createTrail, EntityManagerInterface $em, EmailService $emailService, SharedService $sharedService)
+    public function __construct(SerializerInterface $serializer, ValidatorInterface $validator, AnnuaireService $annuaire, SentierRepository $sentierRepository, CreateTrailService $createTrail, EntityManagerInterface $em, EmailService $emailService, SharedService $sharedService, ImageService $imageService)
     {
         $this->serializer = $serializer;
         $this->validator = $validator;
@@ -50,6 +52,7 @@ class TrailController extends AbstractController
         $this->em = $em;
         $this->emailService = $emailService;
         $this->sharedService = $sharedService;
+        $this->imageService = $imageService;
     }
 
     /**
@@ -281,7 +284,7 @@ class TrailController extends AbstractController
         }
 
         // On empêche les modifications d'un sentier une fois celui-ci publié
-        if ($trail->getDatePublication() != null) {
+        if ($trail->getDatePublication() != null || $trail->getStatus() == 'Validé') {
             return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
@@ -549,6 +552,61 @@ class TrailController extends AbstractController
                 return new JsonResponse(['error' => 'Erreur lors de l\'envoi de l\'email: '. $e->getMessage()], Response::HTTP_BAD_REQUEST);
             }
         }
+
+        return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
+    }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="updated",
+     *      @Model(type=Sentier::class, groups={"show_trail"})
+     * )
+     * @OA\Parameter(name="image_id", in="query", required=true, description="Cel image id", @OA\Schema(type="string", example="10023")),
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The trail ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Trails")
+     * @OA\Put(
+     *     summary="update a trail default image"
+     * )
+     * @Route("/trail/{id}/update-image", name="update_trail_image", methods={"PUT"})
+     */
+    public function updateTrailImage(Request $request, $id): Response
+    {
+        $newImage = $request->query->get('image_id');
+        if (!$newImage) {
+            return new JsonResponse(['error' => 'No image id provided'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $token = $this->annuaire->getRequestToken($request);
+            if (!$token) {
+                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+            }
+            $this->createTrail->setAuth($token);
+            $user = $this->annuaire->getUserInfos($token);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        }
+        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        if (!$trail) {
+            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (!$this->annuaire->canUpdateTrail($user, $trail)) {
+            return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        $newImage = $this->imageService->findImageFromId($newImage);
+        $trail->setImage($newImage);
+
+        $this->em->persist($trail);
+        $this->em->flush();
 
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }

@@ -5,17 +5,34 @@ namespace App\Service;
 use App\Entity\Image;
 use App\Entity\Sentier;
 use App\Service\EfloreService;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class ImageService
 {
+    private $client;
+    private $imageUrl;
+    private $imageMiniatureUrl;
+    private $ipApiV2Image;
     private $cache;
     private $efloreService;
 
+
     public function __construct(
+        string $imageUrl,
+        string $imageMiniatureUrl,
+        string $ipApiV2Image,
         CacheInterface $cache,
         EfloreService $efloreService
     ) {
+        /**
+         * @var $client HttpClientInterface
+         */
+        $this->client = HttpClient::create();
+        $this->imageUrl = $imageUrl;
+        $this->imageMiniatureUrl = $imageMiniatureUrl;
+        $this->ipApiV2Image = $ipApiV2Image;
         $this->cache = $cache;
         $this->efloreService = $efloreService;
     }
@@ -165,6 +182,29 @@ class ImageService
             $image->getMini());
 
         $trail->setImage($imageModel);
+    }
+
+    public function findImageFromId(string $image_id)
+    {
+        $image_api_id = str_pad($image_id, 9, '0', STR_PAD_LEFT);
+        $mini = sprintf($this->imageMiniatureUrl, $image_api_id);
+        $url = sprintf($this->imageUrl, $image_api_id);
+        $author = null;
+
+        $response = $this->client->request('GET', sprintf($this->ipApiV2Image, $image_id), []);
+        if (200 == $response->getStatusCode()) {
+            $image_data = json_decode($response->getContent());
+            $author = $image_data->observation->{'auteur.nom'};
+        }
+
+        $image = new \App\Model\Image(
+            $image_id,
+            $url,
+            $author,
+            $mini
+        );
+
+        return $image;
     }
 
 }
