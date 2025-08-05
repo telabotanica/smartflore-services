@@ -106,32 +106,65 @@ class ImageService
      * Get image collection
      * TODO: voir si encore utile
      */
-    /*
+/*
     public function collectTrailImages(Sentier $trail): void
     {
         $occurrencesImages = $this->getTrailSpecieImages($trail->getNom());
-        foreach ($trail->getOccurrences() as $occurrence) {
-            $taxon = $occurrence->getTaxon();
+        if (count($trail->getOccurrences()) > 0) {
+            foreach ($trail->getOccurrences() as $occurrence) {
+                $taxon = $occurrence->getTaxon();
 //            $taxon = $occurrence->getTaxo();
 
-            $images = $occurrencesImages[$taxon->getReferentiel()][$taxon->getTaxonomicId()] ?? [];
-            $images += $this->efloreService->getCardSpeciesImages(
-                $taxon->getReferentiel(), $taxon->getNumNom());
+                $images = $occurrencesImages[$taxon->getReferentiel()][$taxon->getTaxonomicId()] ?? [];
+                $images += $this->efloreService->getCardSpeciesImages(
+                    $taxon->getReferentiel(), $taxon->getNumNom());
 
-            $coste = $this->efloreService->getCardCosteImage(
-                $taxon->getReferentiel(), $taxon->getTaxonomicId());
-            if ($coste) {
-                $images[] = $coste;
-            }
+                $coste = $this->efloreService->getCardCosteImage(
+                    $taxon->getReferentiel(), $taxon->getTaxonomicId());
+                if ($coste) {
+                    $images[] = $coste;
+                }
 
-            //TODO: a updater ?
-            $occurrence->setImages(array_filter($images));
-
-            if (!$trail->getImage() && $occurrence->getFirstImage()) {
                 //TODO: a updater ?
-                $trail->setImage($occurrence->getFirstImage());
+//            $occurrence->setImages(array_filter($images));
+
+                if (!$trail->getImage() && $occurrence->getFirstImage()) {
+                    $trail->setImage($occurrence->getFirstImage());
+                }
             }
         }
     }
-    */
+*/
+
+    public function findImageForTrail(Sentier $trail)
+    {
+        $image = null;
+        $occurrences = $trail->getOccurrences();
+        if (count($occurrences) > 0) {
+            foreach ($occurrences as $occurrence) {
+                if (count($occurrence->getImages()) != 0){
+                    $image = $occurrence->getImages()[0];
+                    break;
+                }
+            }
+
+            if (!$image){
+                $occurrence = $occurrences[0];
+                $taxon = $occurrence->getTaxon();
+                $images = $this->efloreService->getCardSpeciesImages(
+                    $taxon["taxon_repository"], $taxon["name_id"]
+                );
+                $image = $images[0];
+            }
+        }
+
+        $imageModel = new \App\Model\Image(
+            $image->getCelImageId(),
+            $image->getUrl(),
+            $image->getAuthor(),
+            $image->getMini());
+
+        $trail->setImage($imageModel);
+    }
+
 }

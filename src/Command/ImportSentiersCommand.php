@@ -6,11 +6,13 @@ use App\Entity\Favoris;
 use App\Entity\Occurrence;
 use App\Entity\Path;
 use App\Entity\Sentier;
+use App\Model\Image;
 use App\Model\Taxon;
 use App\Service\AnnuaireService;
 use App\Service\CreateTrailService;
 use App\Service\EfloreService;
 use App\Service\FicheService;
+use App\Service\ImageService;
 use App\Service\importService;
 use App\Service\SharedService;
 use App\Service\TrailsService;
@@ -39,6 +41,7 @@ class ImportSentiersCommand extends Command
     private EfloreService $efloreService;
     private importService $importService;
     private AnnuaireService $annuaire;
+    private ImageService $imageService;
 
     public function __construct(Connection $connection,
                                 EntityManagerInterface $entityManager,
@@ -48,7 +51,8 @@ class ImportSentiersCommand extends Command
                                 FicheService $ficheService,
                                 EfloreService $efloreService,
                                 importService $importService,
-                                AnnuaireService $annuaire
+                                AnnuaireService $annuaire,
+                                ImageService $imageService
     )
     {
         parent::__construct();
@@ -61,6 +65,7 @@ class ImportSentiersCommand extends Command
         $this->efloreService = $efloreService;
         $this->importService = $importService;
         $this->annuaire = $annuaire;
+        $this->imageService = $imageService;
     }
 
     protected function configure(): void
@@ -196,6 +201,7 @@ class ImportSentiersCommand extends Command
                 }
             }
 
+            $this->imageService->findImageForTrail($sentier);
             $this->createTrailService->addNbTaxonsToTrail($sentier);
 
             $this->entityManager->persist($sentier);

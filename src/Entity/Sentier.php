@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Entity\Path;
+use App\Model\Image;
 use App\Repository\SentierRepository;
 use App\Service\TrailsService;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -238,6 +239,13 @@ class Sentier
      * @Groups({"show_trail", "list_trail", "create_trail", "user_trail"})
      */
     private $occurrences;
+
+    /**
+     * @ORM\Column(type="json", nullable=true)
+     * @OA\Property(ref=@Model(type=Image::class))
+     * @Groups({"show_trail", "list_trail", "user_trail","add_occurrence"})
+     */
+    private ?array $image;
 
     public function __construct()
     {
@@ -530,6 +538,32 @@ class Sentier
     public function setNbTaxons(?int $nb_taxons): self
     {
         $this->nb_taxons = $nb_taxons;
+
+        return $this;
+    }
+
+    public function getImage(): ?Image
+    {
+        if (is_array($this->image)) {
+            return new Image(
+                $this->image['id'],
+                $this->image['url'],
+                $this->image['author'],
+                $this->image['mini'] ?? '' // ou null selon ton modèle
+            );
+        }
+
+        return null;
+    }
+
+    public function setImage(?Image $image): self
+    {
+        $this->image = $image ? [
+            'id' => $image->getId(),
+            'url' => $image->getUrl(),
+            'author' => $image->getAuthor(),
+            'mini' => $image->getMini(),
+        ] : null;
 
         return $this;
     }

@@ -30,6 +30,7 @@ class CreateTrailService
     private EntityManagerInterface $em;
     private EfloreService $eflore;
     private SharedService $sharedService;
+    private ImageService $imageService;
     private SerializerInterface $serializer;
     private FicheRepository $ficheRepository;
     private UrlGeneratorInterface $router;
@@ -45,6 +46,7 @@ class CreateTrailService
         EntityManagerInterface $em,
         EfloreService $eflore,
         SharedService $sharedService,
+        ImageService $imageService,
         FicheRepository $ficheRepository,
         UrlGeneratorInterface $router
     ) {
@@ -62,6 +64,7 @@ class CreateTrailService
         $this->em = $em;
         $this->eflore = $eflore;
         $this->sharedService = $sharedService;
+        $this->imageService = $imageService;
         $this->ficheRepository = $ficheRepository;
         $this->router = $router;
     }
@@ -83,6 +86,7 @@ class CreateTrailService
 //			}
         }
         $this->addNbTaxonsToTrail($trail);
+        $this->imageService->findImageForTrail($trail);
 
         $this->em->persist($trail);
         $this->em->flush();
