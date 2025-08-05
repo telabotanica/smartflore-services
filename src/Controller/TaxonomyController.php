@@ -51,6 +51,9 @@ class TaxonomyController extends AbstractController
      *     @OA\Schema(type="integer")
      * )
      * @OA\Tag(name="Taxon")
+     * @OA\Get(
+     *     summary="Get taxon infos (public)",
+     * )
      * @Route("/taxon/{taxonRepository}/{taxonNameId}", name="show_taxon", methods={"GET"})
      */
     public function taxonInfo(
@@ -76,6 +79,9 @@ class TaxonomyController extends AbstractController
      *     )
      * )
      * @OA\Tag(name="Taxon")
+     * @OA\Get(
+     *     summary="Get referentiels available (public)",
+     * )
      * @Route("/taxon/referentiels", name="list_referentiel", methods={"GET"})
      */
     public function referentielInfo(SerializerInterface $serializer,EfloreService $eflore){
@@ -107,7 +113,7 @@ class TaxonomyController extends AbstractController
      * @OA\Parameter(name="pages_existantes", in="query", required=false, description="Pages existantes uniquement", @OA\Schema(type="boolean", example=false)),
      * @OA\Tag(name="Taxon")
      * @OA\Get(
-     *     summary="Search taxons with corresponding pages",
+     *     summary="Search taxons with corresponding pages (public)",
      * )
      * @Route("/taxons", name="list_fiche", methods={"GET"})
      */
@@ -172,7 +178,7 @@ class TaxonomyController extends AbstractController
      * //TODO: ajouter les pramètres de recherche
      * @OA\Tag(name="Taxon")
      * @OA\Get(
-     *     summary="Search and return taxon names for reactive autocomplete search",
+     *     summary="Search and return taxon names for reactive autocomplete search (public)",
      * )
      * @Route("/taxons/search", name="search_fiche", methods={"GET"})
      */

@@ -34,6 +34,9 @@ class PingController extends AbstractController
      *     )
      * )
      * @OA\Tag(name="Ping")
+     * @OA\Post(
+     *     summary="Save trails access (public)",
+     * )
      * @Route("/ping", name="Ping",methods={"POST"})
      */
     public function ping(Request $request, EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator): Response

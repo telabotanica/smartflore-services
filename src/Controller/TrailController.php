@@ -69,6 +69,9 @@ class TrailController extends AbstractController
      *     example="90.0,179.0,-90.0,-172.0"
      * )
      * @OA\Tag(name="Trails")
+     * @OA\Get(
+     *     summary="Get all published trails (public)",
+     * )
      * @Route("/trails", name="list_trail", methods={"GET"})
      */
     public function trailsList(
@@ -118,6 +121,9 @@ class TrailController extends AbstractController
      *     example="146"
      * )
      * @OA\Tag(name="Trails")
+     * @OA\Get(
+     *     summary="Get a trail (public)",
+     * )
      * @Route("/trail/{id}", name="show_trail", methods={"GET"})
      */
     public function trailDetails(

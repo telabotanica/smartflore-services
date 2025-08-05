@@ -61,7 +61,7 @@ public function __construct(SerializerInterface $serializer, EntityManagerInterf
      * )
      * @OA\Tag(name="Fiches")
      * @OA\Get(
-     *     summary="Get one page",
+     *     summary="Get one page (public)",
      * )
      * @Route("/fiche/{referentiel}/{num_tax}", name="single_fiche", methods={"GET"})
      */
