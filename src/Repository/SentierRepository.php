@@ -39,6 +39,49 @@ class SentierRepository extends ServiceEntityRepository
         }
     }
 
+    public function findByCriterias(array $criterias): array
+    {
+        $qb = $this->createQueryBuilder('s')
+            ->where('s.status = :status')
+            ->andWhere('s.date_suppression IS NULL')
+            ->setParameter('status', 'Validé');
+
+        if (isset($criterias['nom']) && !empty($criterias['nom'])) {
+            $qb->andWhere('s.nom LIKE :nom')
+                ->setParameter('nom', '%' . $criterias['nom'] . '%');
+        }
+
+        if (isset($criterias['auteur_id']) && !empty($criterias['auteur_id'])) {
+            $qb->andWhere('s.authorId = :auteur_id')
+                ->setParameter('auteur_id', $criterias['auteur_id']);
+        }
+
+        if (isset($criterias['auteur']) && !empty($criterias['auteur'])) {
+            $qb->andWhere('s.auteur LIKE :auteur')
+                ->OrWhere('s.auteur_email LIKE :auteur')
+                ->setParameter('auteur', '%' . $criterias['auteur'] . '%');
+        }
+
+        if (isset($criterias['pmr'])) {
+            if ($criterias['pmr'] == '1') {
+                $qb->andWhere($qb->expr()->orX(
+                    $qb->expr()->eq('s.pmr', ':pmr'),
+                    $qb->expr()->eq('s.pmr', ':pmrAlt')
+                ))
+                    ->setParameter('pmr', 1)
+                    ->setParameter('pmrAlt', -1);
+            }
+        }
+
+        if (!empty($criterias['ordre']) && in_array(strtoupper($criterias['ordre']), ['ASC', 'DESC'])) {
+            $qb->orderBy('s.nom', strtoupper($criterias['ordre']));
+        } else {
+            $qb->orderBy('s.nom', 'ASC');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
 //    /**
 //     * @return Sentier[] Returns an array of Sentier objects
 //     */

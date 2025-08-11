@@ -9,6 +9,7 @@ use App\Model\Taxon;
 use App\Model\Trail;
 use App\Service\ImageService;
 use App\Repository\SentierRepository;
+use Symfony\Component\HttpFoundation\Request;
 use League\Geotools\Coordinate\Coordinate;
 use League\Geotools\Geotools;
 use League\Geotools\Polygon\Polygon;
@@ -404,5 +405,18 @@ class TrailsService
                 continue;
             }
         }
+    }
+
+    public function getSearchCriterias(Request $request){
+        $criterias = [];
+        $validSearchCriterias = ['nom', 'auteur', 'auteur_id', 'pmr', 'ordre', 'limite', 'page'];
+
+        foreach ($validSearchCriterias as $criteria) {
+            if ($request->query->has($criteria)) {
+                $criterias[$criteria] = $request->query->get($criteria);
+            }
+        }
+
+        return $criterias;
     }
 }

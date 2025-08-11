@@ -70,7 +70,21 @@ class TrailController extends AbstractController
      *     description="Bounding box's upper-left and lower-right coordinates",
      *     @OA\Schema(type="string"),
      *     example="90.0,179.0,-90.0,-172.0"
-     * )
+     * ),
+     * @OA\Parameter(name="nom", in="query", required=false, description="Nom du sentier", @OA\Schema(type="string", example="Superbes arbres")),
+     * @OA\Parameter(name="auteur", in="query", required=false, description="pseudo ou email de l'auteur", @OA\Schema(type="string", example="tela botanica")),
+     * @OA\Parameter(name="pmr", in="query", required=false,description="Filtre les sentiers pmr ou ceux dont l'accessibilité est inconnue (1 pour activer le filtre)",
+     * @OA\Schema(
+     *   type="string",
+     *   enum={"-1", "0","1"},
+     *   example="1"
+     *  )),
+     * @OA\Parameter(name="auteur_id", in="query", required=false, description="id de l'auteur", @OA\Schema(type="string", example="10000")),
+     * @OA\Parameter(name="ordre", in="query", required=false, description="organise les sentiers par nom croissant ou décroissant (ASC par défaut)", @OA\Schema(
+     *   type="string",
+     *   enum={"ASC","DESC"},
+     *   example="DESC"
+     *  ))
      * @OA\Tag(name="Trails")
      * @OA\Get(
      *     summary="Get all published trails (public)",
@@ -83,9 +97,12 @@ class TrailController extends AbstractController
         Request $request,
         BoundingBoxPolygonFactory $polygonFactory
     ) {
+        $searchCriterias = $trails->getSearchCriterias($request);
+
         $list = $trails->getTrailsList();
-        if (!$list){
-            $list = $this->sentierRepository->findBy(['status' => 'Validé', 'date_suppression' => null], ['nom' => 'ASC']);
+        if (!$list || !empty($searchCriterias)) {
+            $list = $this->sentierRepository->findByCriterias($searchCriterias);
+//            $list = $this->sentierRepository->findBy(['status' => 'Validé', 'date_suppression' => null], ['nom' => 'ASC']);
         }
 
         // filter list with given coords bounding box
