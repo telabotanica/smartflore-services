@@ -544,7 +544,7 @@ class Sentier
 
     public function getImage(): ?Image
     {
-        if (is_array($this->image)) {
+        if (is_array($this->image) && !empty($this->image)) {
             return new Image(
                 $this->image['id'],
                 $this->image['url'],
