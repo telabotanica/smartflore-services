@@ -530,16 +530,17 @@ class TrailController extends AbstractController
 
         $displayName = $trail->getAuteurEmail() ?? $trail->getAuteur();
         $admins = $this->annuaire->listAdmin();
+        $url = "https://www.tela-botanica.org/appli:smartflore" . "/trail/" . $trail->getId();
 
         foreach ($admins as $admin) {
             try {
                 $message= '
             <h1>Sentier en attente de validation</h1>
-            <p>Bonjour,<br/>vous recevez ce message car vous êtres administrateur des sentiers SmartFlore.</p>
+            <p>Bonjour,<br/>vous recevez ce message car vous êtes administrateur des sentiers SmartFlore.</p>
             <p>Un nouveau sentier requiert votre attention : </p>
             <p>Nom du sentier : <b>'.$trail->getNom().'</b></br>
             Auteur du sentier : '.$displayName.'</p>
-            <p>Rendez-vous sur le site <a href="https://www.tela-botanica.org/appli:smartflore">https://www.tela-botanica.org/appli:smartflore</a> pour consulter le sentier.</p>
+            <p>Rendez-vous sur le site <a href="'.$url.'">'.$url.'</a> pour consulter le sentier.</p>
             ';
 
             $this->emailService->sendEmail(
