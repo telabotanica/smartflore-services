@@ -91,19 +91,23 @@ class ImportSentiersCommand extends Command
             'SELECT value FROM `eFloreRedaction_triples` WHERE property = "smartFlore.evenements.sentiers.ajout"'
         );
 
+        //ANY_VALUE(t2.value) ne marche pas pour les anciennes versions de mysql
+        // On est donc obligé d'ajouter ce statement pour les anciennes versions de mysql
+        $this->connection->executeStatement("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''))");
+
         $trails = $this->connection->fetchAllAssociative(
             'SELECT t1.resource AS nom,
-                       ANY_VALUE(t2.value) AS pmr,
-                       ANY_VALUE(t3.value) AS statut,
-                       ANY_VALUE(t4.value) AS meilleures_saisons,
-                       ANY_VALUE(t5.value) AS position,
-                       ANY_VALUE(t6.value) AS auteur,
-                       ANY_VALUE(t7.value) AS date_creation,
-                       ANY_VALUE(t8.value) AS date_modification,
-                       ANY_VALUE(t9.value) AS date_suppression,
-                       ANY_VALUE(t10.value) AS dessin,
+                       t2.value AS pmr,
+                       t3.value AS statut,
+                       t4.value AS meilleures_saisons,
+                       t5.value AS position,
+                       t6.value AS auteur,
+                       t7.value AS date_creation,
+                       t8.value AS date_modification,
+                       t9.value AS date_suppression,
+                       t10.value AS dessin,                       
                        GROUP_CONCAT(t11.value SEPARATOR "||") AS fiches,
-                        ANY_VALUE(t12.value) AS images
+                        t12.value AS images
                     FROM `eFloreRedaction_triples` t1
                     LEFT JOIN `eFloreRedaction_triples` t2 ON t1.resource = t2.resource
                     AND t2.property = "smartFlore.sentiers.pmr"

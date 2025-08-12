@@ -168,20 +168,28 @@ class ImageService
             if (!$image){
                 $occurrence = $occurrences[0];
                 $taxon = $occurrence->getTaxon();
-                $images = $this->efloreService->getCardSpeciesImages(
-                    $taxon["taxon_repository"], $taxon["name_id"]
-                );
-                $image = $images[0];
+                if ($taxon){
+                    if (isset($taxon["taxon_repository"]) && isset($taxon["name_id"])){
+                        $images = $this->efloreService->getCardSpeciesImages(
+                            $taxon["taxon_repository"], $taxon["name_id"]
+                        );
+                        if (count($images) > 0){
+                            $image = $images[0];
+                        }
+                    }
+                }
             }
         }
 
-        $imageModel = new \App\Model\Image(
-            $image->getCelImageId(),
-            $image->getUrl(),
-            $image->getAuthor(),
-            $image->getMini());
+        if ($image && $image->getCelImageId()) {
+            $imageModel = new \App\Model\Image(
+                $image->getCelImageId(),
+                $image->getUrl(),
+                $image->getAuthor() ?? '',
+                $image->getMini() ?? '');
+            $trail->setImage($imageModel);
+        }
 
-        $trail->setImage($imageModel);
     }
 
     public function findImageFromId(string $image_id)
