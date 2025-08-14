@@ -7,7 +7,9 @@ use App\Entity\Sentier;
 use App\Model\User;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class AnnuaireService
@@ -122,6 +124,20 @@ class AnnuaireService
             ->setAvatar(($tokenInfos['avatar'] ?? ''));
 
         return $user;
+    }
+
+    public function getUserFromRequest(Request $request): array
+    {
+        try {
+            $token = $this->getRequestToken($request);
+            if (!$token) {
+                return ['user' => null, 'token'=> null, 'error' => 'No token found, veuillez vous reconnecter'];
+            }
+            $user = $this->getUserInfos($token);
+            return ['user' => $user, 'token'=>$token, 'error' => null];
+        } catch (\Exception $e) {
+            return ['user' => null, 'token'=> null, 'error' => 'Erreur d\'authentification: '. $e->getMessage()];
+        }
     }
 
     /**

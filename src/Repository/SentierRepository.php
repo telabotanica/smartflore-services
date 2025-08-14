@@ -41,10 +41,20 @@ class SentierRepository extends ServiceEntityRepository
 
     public function findByCriterias(array $criterias): array
     {
-        $qb = $this->createQueryBuilder('s')
-            ->where('s.status = :status')
-            ->andWhere('s.date_suppression IS NULL')
-            ->setParameter('status', 'Validé');
+        $qb = $this->createQueryBuilder('s');
+//dd($criterias);
+        if (isset($criterias['status'])) {
+            $qb->andWhere('s.status = :status')
+                ->setParameter('status', $criterias['status']);
+        }
+
+        if (isset($criterias['show_deleted'])) {
+            if ($criterias['show_deleted'] == "false") {
+                $qb->andWhere('s.date_suppression IS NULL');
+            } elseif ($criterias['show_deleted'] == "true") {
+                $qb->andWhere('s.date_suppression IS NOT NULL');
+            }
+        }
 
         if (isset($criterias['nom']) && !empty($criterias['nom'])) {
             $qb->andWhere('s.nom LIKE :nom')

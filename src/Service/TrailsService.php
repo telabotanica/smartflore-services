@@ -409,7 +409,7 @@ class TrailsService
 
     public function getSearchCriterias(Request $request){
         $criterias = [];
-        $validSearchCriterias = ['nom', 'auteur', 'auteur_id', 'pmr', 'ordre', 'limite', 'page'];
+        $validSearchCriterias = ['nom', 'auteur', 'auteur_id', 'pmr', 'ordre', 'limite', 'page', 'status', 'show_deleted'];
 
         foreach ($validSearchCriterias as $criteria) {
             if ($request->query->has($criteria)) {

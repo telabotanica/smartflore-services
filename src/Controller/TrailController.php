@@ -101,8 +101,9 @@ class TrailController extends AbstractController
 
         $list = $trails->getTrailsList();
         if (!$list || !empty($searchCriterias)) {
+            $searchCriterias['status'] = 'Validé';
+            $searchCriterias['show_deleted'] = false;
             $list = $this->sentierRepository->findByCriterias($searchCriterias);
-//            $list = $this->sentierRepository->findBy(['status' => 'Validé', 'date_suppression' => null], ['nom' => 'ASC']);
         }
 
         // filter list with given coords bounding box
@@ -371,122 +372,6 @@ class TrailController extends AbstractController
         $this->em->flush();
 
         return new JsonResponse('Trail id: '.$id.' deleted', Response::HTTP_ACCEPTED);
-    }
-
-    /**
-     * @OA\Response(
-     *     response="200",
-     *     description="Trail published",
-     *      @Model(type=Sentier::class, groups={"show_trail"})
-     * )
-     * @OA\Parameter(
-     *     name="id",
-     *     in="path",
-     *     description="The trail ID",
-     *     @OA\Schema(type="integer"),
-     *     example=146
-     * )
-     * @OA\Tag(name="Trails")
-     * @OA\Post(
-     *     summary="Publish a trail"
-     * )
-     * @Route("/trail/{id}/publish", name="publish_trail", methods={"POST"})
-     */
-    public function publishTrail(Request $request, $id): Response
-    {
-        try {
-            $token = $this->annuaire->getRequestToken($request);
-            if (!$token) {
-                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
-            }
-            $this->createTrail->setAuth($token);
-            $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
-        }
-
-        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
-        if (!$trail) {
-            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
-        }
-
-        if ($trail->getDatePublication() != null) {
-            return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
-        }
-
-        if (!$this->annuaire->isAdmin($user)) {
-            return new JsonResponse(['error' => 'You need to be an administrator to publish a trail'], Response::HTTP_FORBIDDEN);
-        }
-
-        $errors = $this->createTrail->isTrailEligible($trail);
-        if ($errors) {
-            return new JsonResponse(['error' => $errors], Response::HTTP_BAD_REQUEST);
-        }
-
-        $trail->setDatePublication(new \DateTime());
-        $trail->setStatus('validé');
-        if (!$trail->getDetails()){
-            $trail = $this->sharedService->addDetailToTrail($trail);
-        }
-
-        $this->em->persist($trail);
-        $this->em->flush();
-
-        return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
-    }
-
-    /**
-     * @OA\Response(
-     *     response="200",
-     *     description="Trail unpublished",
-     *      @Model(type=Sentier::class, groups={"show_trail"})
-     * )
-     * @OA\Parameter(
-     *     name="id",
-     *     in="path",
-     *     description="The trail ID",
-     *     @OA\Schema(type="integer"),
-     *     example=146
-     * )
-     * @OA\Tag(name="Trails")
-     * @OA\Post(
-     *     summary="Unpublish a trail"
-     * )
-     * @Route("/trail/{id}/unpublish", name="unpublish_trail", methods={"POST"})
-     */
-    public function unPublishTrail(Request $request, $id): Response
-    {
-        try {
-            $token = $this->annuaire->getRequestToken($request);
-            if (!$token) {
-                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
-            }
-            $this->createTrail->setAuth($token);
-            $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
-        }
-
-        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
-        if (!$trail) {
-            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
-        }
-
-        if ($trail->getDatePublication() == null) {
-            return new JsonResponse(['error' => 'This trail is not yet published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
-        }
-
-        if (!$this->annuaire->isAdmin($user)) {
-            return new JsonResponse(['error' => 'You need to be an administrator to unpublish a trail'], Response::HTTP_FORBIDDEN);
-        }
-
-        $trail->setDatePublication(null);
-        $trail->setStatus(null);
-
-        $this->em->persist($trail);
-        $this->em->flush();
-
-        return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }
 
     /**

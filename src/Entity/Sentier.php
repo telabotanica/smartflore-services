@@ -215,6 +215,7 @@ class Sentier
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $date_suppression;
 
