@@ -513,5 +513,51 @@ class TrailController extends AbstractController
 
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="Check if trail can be published",
+     *      @OA\JsonContent(
+     *         type="object",
+     *         @OA\Property(property="status", type="string", example="OK"),
+     *         @OA\Property(
+     *            property="errors",
+     *            type="array",
+     *            @OA\Items(type="string", example="")
+     *            )
+     *        )
+     *     ),
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The trail ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Trails")
+     * @OA\Get(
+     *     summary="Check if trail can be published"
+     * )
+     * @Route("/trail/{id}/check", name="check_trail", methods={"GET"})
+     */
+    public function checkTrail(Request $request, $id): Response
+    {
+        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        if (!$trail) {
+            return new JsonResponse(['status'=> 'error', 'errors' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($trail->getDatePublication() != null) {
+            return new JsonResponse(['status'=> 'error', 'errors' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        $errors = $this->createTrail->isTrailEligible($trail);
+        if ($errors) {
+            return new JsonResponse(['status'=> 'error', 'errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
+
+        return new JsonResponse(['status'=> 'OK', 'errors' => $errors], Response::HTTP_OK);
+    }
 }
 

@@ -177,25 +177,25 @@ class CreateTrailService
     {
         $errors = [];
         if (!$this->checkMinimalOccurrences($trail)) {
-            $errors[] = 'Trail must have at least 10 occurrences';
+            $errors[] = 'Le sentier doit avoir au moins 10 occurrences';
         }
 
         if (!$this->checkTrailLocalisation($trail)) {
-            $errors[] = 'Trail must have a location';
+            $errors[] = 'Le sentier doit avoir une localisation';
         }
 
         if (!$this->checkTrailPath($trail)) {
-            $errors[] = 'Trail must have a path';
+            $errors[] = 'Le sentier doit avoir un chemin tracé';
         }
 
         if (!$this->checkOccurrencesLocalisation($trail)) {
-            $errors[] = 'All occurrences must have a location';
+            $errors[] = 'Toutes les occurrences doivent être localisées';
         }
 
         $emptyFiches = $this->checkEmptyFiches($trail);
         if ($emptyFiches) {
-            $errors[] = 'Pages must be filled with at least a description';
-            $errors[] = ['empty_pages' => $emptyFiches];
+            $errors[] = 'Toutes les occurrences doivent avoir une fiche et celle-ci doit être remplie';
+            $errors[] = ['fiches_incompletes' => $emptyFiches];
         }
 
         return $errors;
@@ -419,29 +419,31 @@ class CreateTrailService
             ) {
                 //TODO: réparer le strpos
                 $emptyFiches[] = [
-                    'id' => $occurrence->getId(),
-                    'tag' => $occurrence->getCardTag(),
+                    'occurrence_id' => $occurrence->getId(),
+                    'fiche_tag' => $occurrence->getCardTag(),
                     'taxon' => [
                         'scientific_name' => $occurrence->getTaxon()['scientific_name'],
                         'taxon_repository' => $occurrence->getTaxon()['taxon_repository'],
-                        'name_id' => $occurrence->getTaxon()['name_id']
+                        'name_id' => $occurrence->getTaxon()['name_id'],
+                        'taxonomic_id' => $occurrence->getTaxon()['taxonomic_id']
                         ],
-                    'error' => 'No page'
+                    'error' => 'La fiche n\'existe pas et doit être créée puis remplie avec au moins une description et les sources'
                     ];
                 continue;
             }
 
             $fiche = $this->ficheRepository->findOneBy(['tag' => $occurrence->getCardTag(), 'derniere_version' => 1]);
-            if (!$fiche->getDescription()) {
+            if (!$fiche->getDescription() || !$fiche->getSources()) {
                 $emptyFiches[] = [
-                    'id' => $occurrence->getId(),
-                    'tag' => $occurrence->getCardTag(),
+                    'occurrence_id' => $occurrence->getId(),
+                    'fiche_tag' => $occurrence->getCardTag(),
                     'taxon' => [
                         'scientific_name' => $occurrence->getTaxon()['scientific_name'],
                         'taxon_repository' => $occurrence->getTaxon()['taxon_repository'],
-                        'name_id' => $occurrence->getTaxon()['name_id']
+                        'name_id' => $occurrence->getTaxon()['name_id'],
+                        'taxonomic_id' => $occurrence->getTaxon()['taxonomic_id']
                     ],
-                    'error' => 'No description'
+                    'error' => 'La fiche doit être remplie avec au moins une description et les sources'
                 ];
             }
         }
