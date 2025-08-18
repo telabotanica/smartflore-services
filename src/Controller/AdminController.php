@@ -7,6 +7,7 @@ use App\Repository\SentierRepository;
 use App\Service\AnnuaireService;
 use App\Service\BoundingBoxPolygonFactory;
 use App\Service\CreateTrailService;
+use App\Service\EmailService;
 use App\Service\SharedService;
 use App\Service\TrailsService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -27,6 +28,7 @@ class AdminController extends AbstractController
     private AnnuaireService $annuaire;
     private CreateTrailService $createTrail;
     private SharedService $sharedService;
+    private EmailService $emailService;
 
     public function __construct(
         SerializerInterface $serializer,
@@ -34,7 +36,8 @@ class AdminController extends AbstractController
         SentierRepository $sentierRepository,
         AnnuaireService $annuaire,
         CreateTrailService $createTrail,
-        SharedService $sharedService
+        SharedService $sharedService,
+        EmailService $emailService
     )
     {
         $this->serializer = $serializer;
@@ -43,6 +46,7 @@ class AdminController extends AbstractController
         $this->annuaire = $annuaire;
         $this->createTrail = $createTrail;
         $this->sharedService = $sharedService;
+        $this->emailService = $emailService;
     }
 
     /**
@@ -170,6 +174,32 @@ class AdminController extends AbstractController
 
         $this->em->persist($trail);
         $this->em->flush();
+
+        if ($trail->getAuteurEmail()) {
+            $url = "https://www.tela-botanica.org/proposer-une-actualite/";
+            try {
+                $message = '
+                <p>Bonjour,</p>
+                <p>Merci pour l’intérêt que vous portez au dispositif  Smart\'Flore !</p>
+                <p>Nous avons bien reçu la demande de validation du sentier Smart\'Flore : " <b>' . $trail->getNom() . '</b>", et nous l\'avons validé. 
+                Il sera visible sur l\'application d\'ici 24h maximum.</p>
+                <p>N’hésitez pas à publier un article sur le site web de Tela Botanica pour valoriser votre sentier auprès du réseau ou à publier un événement si vous prévoyez une inauguration du sentier par exemple. 
+                Voici le lien pour proposer une publication : <a href="' . $url . '">' . $url . '</a></p>
+                <p>Bonne journée,</br>
+                L\'équipe Smart\'Flore</p>
+                ';
+
+                $this->emailService->sendEmail(
+                    'contact-smartflore@tela-botanica.org',
+                    $trail->getAuteurEmail(),
+                    "Votre sentier Smart'Flore a été validé",
+                    $message,
+                    'contact-smartflore@tela-botanica.org'
+                );
+            } catch (\Exception $e) {
+                return new JsonResponse(['error' => 'Erreur lors de l\'envoi de l\'email: ' . $e->getMessage()], Response::HTTP_BAD_REQUEST);
+            }
+        }
 
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }

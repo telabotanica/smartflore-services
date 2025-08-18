@@ -21,13 +21,17 @@ class EmailService
     /**
      * @throws TransportExceptionInterface
      */
-    public function sendEmail($from, $to, $subject, $message)
+    public function sendEmail($from, $to, $subject, $message, $cc = null)
     {
         $email = (new Email())
             ->from($from)
             ->to($to)
             ->subject($subject)
             ->html($message);
+
+        if ($cc) {
+            $email->cc($cc);
+        }
 
         $this->mailer->send($email);
     }
