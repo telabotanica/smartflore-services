@@ -228,4 +228,56 @@ class AdminController extends AbstractController
 
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="Trail reactivated",
+     *      @Model(type=Sentier::class, groups={"show_trail"})
+     * )
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The trail ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Admin")
+     * @OA\Post(
+     *     summary="Reactivate a deleted trail"
+     * )
+     * @Route("/admin/trail/{id}/reactivate", name="reactivate_trail", methods={"POST"})
+     */
+    public function reactivateTrail(Request $request, $id): Response
+    {
+        ['user' => $user, 'token' => $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
+
+        if ($error) {
+            return new JsonResponse(['error' => $error], Response::HTTP_UNAUTHORIZED);
+        }
+
+        if (!$user || !$token) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        if (!$trail) {
+            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($trail->getDateSuppression() == null) {
+            return new JsonResponse(['error' => 'This trail is not deleted (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        if (!$this->annuaire->isAdmin($user)) {
+            return new JsonResponse(['error' => 'You need to be an administrator to reactivate a trail'], Response::HTTP_FORBIDDEN);
+        }
+
+        $trail->setDateSuppression(null);
+        $this->em->persist($trail);
+        $this->em->flush();
+
+        return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
+
+    }
 }
