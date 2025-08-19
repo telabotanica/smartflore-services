@@ -98,7 +98,7 @@ class importService
         if (isset($dessin['coordinates']) && !empty($dessin['coordinates'])) {
             $coordinates = [];
             $path = new Path();
-            $path->setType($dessin['type']);
+            $path->setType($dessin['type'] ?? 'LineString');
             foreach ($dessin['coordinates'] as $coordinate) {
                 $coordinates[] = (new Point())->setPosition($coordinate)->getPosition();
             }
