@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Fiche;
 use App\Repository\FicheRepository;
+use App\Repository\OccurrenceRepository;
 use App\Service\AnnuaireService;
 use App\Service\FicheService;
 use App\Service\SharedService;
@@ -22,15 +23,17 @@ class FicheController extends AbstractController
     private SerializerInterface $serializer;
     private EntityManagerInterface $em;
     private FicheRepository $ficheRepository;
+    private OccurrenceRepository $occurrenceRepository;
     private FicheService $ficheService;
     private SharedService $sharedService;
     private AnnuaireService $annuaire;
 
-public function __construct(SerializerInterface $serializer, EntityManagerInterface $em, FicheRepository $ficheRepository, FicheService $ficheService, SharedService $sharedService, AnnuaireService $annuaire)
+public function __construct(SerializerInterface $serializer, EntityManagerInterface $em, FicheRepository $ficheRepository, OccurrenceRepository $occurrenceRepository, FicheService $ficheService, SharedService $sharedService, AnnuaireService $annuaire)
     {
         $this->serializer = $serializer;
         $this->em = $em;
         $this->ficheRepository = $ficheRepository;
+        $this->occurrenceRepository = $occurrenceRepository;
         $this->ficheService = $ficheService;
         $this->sharedService = $sharedService;
         $this->annuaire = $annuaire;
@@ -130,7 +133,6 @@ public function __construct(SerializerInterface $serializer, EntityManagerInterf
         $newFiche = clone $fiche;
         $newFiche = $this->serializer->deserialize(json_encode($content), Fiche::class, 'json', ['groups' => ['update_fiche'],  'object_to_populate' => $newFiche]);
 
-
         if (empty(trim($newFiche->getDescription()))) {
             return new JsonResponse(['error' => 'A description is required'], Response::HTTP_BAD_REQUEST);
         }
@@ -146,10 +148,88 @@ public function __construct(SerializerInterface $serializer, EntityManagerInterf
         $newFiche->setDateModification(new \DateTime());
         $newFiche->setTag($this->sharedService->formaterPageNom($newFiche->getReferentiel(), $newFiche->getNt()));
 
+        $occurrences = $this->occurrenceRepository->findByTaxon($newFiche->getReferentiel(), $newFiche->getNt());
+        foreach ($occurrences as $occurrence) {
+            $taxon = $occurrence->getTaxon();
+            $taxon['tabs'] = $newFiche->getTag();
+
+            $occurrence->setTaxon($taxon);
+            $occurrence->setCardTag($newFiche->getTag());
+            $this->em->persist($occurrence);
+        }
+
         $this->em->persist($fiche);
         $this->em->persist($newFiche);
         $this->em->flush();
 
         return new JsonResponse($this->serializer->serialize($newFiche, 'json', ['groups' => ['show_fiche']]), Response::HTTP_OK, [], true);
+    }
+
+    /**
+     * @OA\Response(
+     *     response="201",
+     *     description="Fiche créée",
+     *     @OA\JsonContent(
+     *         type="object",
+     *         ref=@Model(type=Fiche::class, groups={"list_fiche"})
+     *     ),
+     * )
+     * @OA\RequestBody(
+     *     description="A JSON object containing page information",
+     *     required=true,
+     *     @OA\JsonContent(
+     *         type="object",
+     *         ref=@Model(type=Fiche::class, groups={"update_fiche"})
+     *     )
+     * )
+     * @OA\Tag(name="Fiches")
+     * @OA\Post(
+     *     summary="Create a page",
+     * )
+     * @Route("/fiche/{referentiel}/{num_tax}", name="create_fiche", methods={"POST"})
+     */
+    public function createFiche(string $referentiel, int $num_tax, Request $request): Response
+    {
+        ['user' => $user, 'token'=> $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
+
+        if ($error) {
+            return new JsonResponse(['error' => $error], Response::HTTP_UNAUTHORIZED);
+        }
+
+        if (!$user || !$token) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $fiche = $this->sharedService->chercherFiche($referentiel, $num_tax);
+
+        if ($fiche) {
+            return new JsonResponse(['error' => 'The page already exist (referentiel: '. $referentiel .', num_tax: '. $num_tax .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        $fiche = $this->serializer->deserialize($request->getContent(), Fiche::class, 'json', ['groups' => ['update_fiche']]);
+
+        $fiche->setReferentiel($referentiel);
+        $fiche->setNt($num_tax);
+        $fiche->setTag($this->sharedService->formaterPageNom($fiche->getReferentiel(), $fiche->getNt()));
+        $fiche->setProprietaire($user->getName() ?? 'anonyme');
+        $fiche->setUser($user->getId());
+        $fiche->setDateModification(new \DateTime());
+        $fiche->setDerniereVersion(true);
+
+        $this->em->persist($fiche);
+
+        //On cherche les occurrences avec cette fiche et on update update le taxon"tabs" et le card tag
+        $occurrences = $this->occurrenceRepository->findByTaxon($referentiel, $num_tax);
+        foreach ($occurrences as $occurrence) {
+            $taxon = $occurrence->getTaxon();
+            $taxon['tabs'] = $fiche->getTag();
+
+            $occurrence->setTaxon($taxon);
+            $occurrence->setCardTag($fiche->getTag());
+            $this->em->persist($occurrence);
+        }
+        $this->em->flush();
+
+        return new JsonResponse($this->serializer->serialize($fiche, 'json', ['groups' => ['show_fiche']]), Response::HTTP_CREATED, [], true);
     }
 }

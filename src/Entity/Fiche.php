@@ -248,6 +248,13 @@ class Fiche
         return $this;
     }
 
+    /**
+     * @OA\Property(
+     *     type="boolean",
+     *     example=true
+     * )
+     * @Groups({"show_fiche", "list_fiche"})
+     */
     public function isDerniereVersion(): ?bool
     {
         return $this->derniere_version;

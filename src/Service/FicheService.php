@@ -120,8 +120,6 @@ class FicheService extends AbstractController
         return $this->traiterRechercheNomSci($recherche);
     }
 
-
-
     public function formaterResultatsFiches($infos, $list, $filtres): FicheCollection
     {
         $resultats = [];
@@ -143,8 +141,10 @@ class FicheService extends AbstractController
         $resultat->setNumNom($taxon['id']);
         $resultat->setReferentiel($referentiel);
         $resultat->setNomsVernaculaires($taxon['noms_vernaculaires'] ?? []);
-        if ($this->sharedService->chercherFiche($referentiel, $taxon['num_taxonomique'])) {
-            $resultat->setFiche($this->sharedService->chercherFiche($referentiel, $taxon['num_taxonomique']));
+
+        $fiche = $this->sharedService->chercherFiche($referentiel, $taxon['num_taxonomique']);
+        if ($fiche) {
+            $resultat->setFiche($fiche);
         }
 
         return $resultat;
