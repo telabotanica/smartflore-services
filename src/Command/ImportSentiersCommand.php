@@ -96,7 +96,8 @@ class ImportSentiersCommand extends Command
         $this->connection->executeStatement("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''))");
 
         $trails = $this->connection->fetchAllAssociative(
-            'SELECT t1.resource AS nom,
+            'SELECT t1.id AS id,
+                       t1.resource AS nom,
                        t2.value AS pmr,
                        t3.value AS statut,
                        t4.value AS meilleures_saisons,

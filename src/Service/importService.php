@@ -28,6 +28,7 @@ class importService
     {
         $sentier->setAuthorId("0");
         $sentier->setNom($trail['nom']);
+        $sentier->setAncienId($trail['id']);
         $sentier->setDisplayName($trail['nom']);
         $sentier->setAuteur($trail['auteur'] ?? null);
         $sentier->setAuteurEmail($trail['auteur_email'] ?? null);

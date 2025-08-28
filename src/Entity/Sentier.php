@@ -248,6 +248,11 @@ class Sentier
      */
     private ?array $image;
 
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $ancien_id;
+
     public function __construct()
     {
         $this->occurrences = new ArrayCollection();
@@ -601,6 +606,18 @@ class Sentier
                 $occurrence->setSentier(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getAncienId(): ?int
+    {
+        return $this->ancien_id;
+    }
+
+    public function setAncienId(?int $ancien_id): self
+    {
+        $this->ancien_id = $ancien_id;
 
         return $this;
     }

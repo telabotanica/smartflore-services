@@ -23,8 +23,8 @@ composer install
 
 ```bash
 symfony console doctrine:database:create
+symfony console make:migration
 symfony console doctrine:migrations:migrate
-symfony console doctrine:fixtures:load
 symfony console cache:clear
 symfony console cache:warmup
 ```
@@ -34,3 +34,18 @@ symfony serve
 ```
 
 ## Usage
+### Old pages import
+
+Import eFloreRedaction_pages.sql file into the new database then:
+
+```bash
+symfony console app:import:fiches
+```
+
+### Old Trails & user favorites import
+
+Import eFloreRedaction_triples.sql file into the new database then:
+
+```bash
+symfony console app:import:sentiers
+```
