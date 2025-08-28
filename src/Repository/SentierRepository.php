@@ -67,20 +67,18 @@ class SentierRepository extends ServiceEntityRepository
         }
 
         if (isset($criterias['auteur']) && !empty($criterias['auteur'])) {
-            $qb->andWhere('s.auteur LIKE :auteur')
-                ->OrWhere('s.auteur_email LIKE :auteur')
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    's.auteur LIKE :auteur',
+                    's.auteur_email LIKE :auteur'
+                )
+            )
                 ->setParameter('auteur', '%' . $criterias['auteur'] . '%');
         }
 
         if (isset($criterias['pmr'])) {
-            if ($criterias['pmr'] == '1') {
-                $qb->andWhere($qb->expr()->orX(
-                    $qb->expr()->eq('s.pmr', ':pmr'),
-                    $qb->expr()->eq('s.pmr', ':pmrAlt')
-                ))
-                    ->setParameter('pmr', 1)
-                    ->setParameter('pmrAlt', -1);
-            }
+            $qb->andWhere('s.pmr = :pmr')
+                ->setParameter('pmr', $criterias['pmr']);
         }
 
         if (!empty($criterias['ordre']) && in_array(strtoupper($criterias['ordre']), ['ASC', 'DESC'])) {
