@@ -545,19 +545,19 @@ class TrailController extends AbstractController
     {
         $trail = $this->sentierRepository->findOneBy(['id' => $id]);
         if (!$trail) {
-            return new JsonResponse(['status'=> 'error', 'errors' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
         }
 
         if ($trail->getDatePublication() != null) {
-            return new JsonResponse(['status'=> 'error', 'errors' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+            return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
         $errors = $this->createTrail->isTrailEligible($trail);
         if ($errors) {
-            return new JsonResponse(['status'=> 'error', 'errors' => $errors], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['error' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
-        return new JsonResponse(['status'=> 'OK', 'errors' => $errors], Response::HTTP_OK);
+        return new JsonResponse(['error' => $errors], Response::HTTP_OK);
     }
 }
 
