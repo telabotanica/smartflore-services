@@ -522,7 +522,7 @@ class TrailController extends AbstractController
      *         type="object",
      *         @OA\Property(property="status", type="string", example="OK"),
      *         @OA\Property(
-     *            property="errors",
+     *            property="error",
      *            type="array",
      *            @OA\Items(type="string", example="")
      *            )
@@ -557,7 +557,7 @@ class TrailController extends AbstractController
             return new JsonResponse(['error' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
-        return new JsonResponse(['error' => $errors], Response::HTTP_OK);
+        return new JsonResponse(['status' => true, 'error' => $errors], Response::HTTP_OK);
     }
 }
 

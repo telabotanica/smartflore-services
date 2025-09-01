@@ -360,8 +360,13 @@ class Sentier
         ];
     }
 
-    public function setPosition(array $position): self
+    public function setPosition(?array $position): self
     {
+        if ($position == null) {
+            $this->position = [];
+            return $this;
+        }
+
         // Cas 1 : format start/end
         if (
             isset($position['start']['lat'], $position['start']['lng']) &&
