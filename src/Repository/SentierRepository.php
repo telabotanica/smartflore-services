@@ -49,9 +49,9 @@ class SentierRepository extends ServiceEntityRepository
         }
 
         if (isset($criterias['show_deleted'])) {
-            if ($criterias['show_deleted'] == "false") {
+            if ($criterias['show_deleted'] == false) {
                 $qb->andWhere('s.date_suppression IS NULL');
-            } elseif ($criterias['show_deleted'] == "true") {
+            } elseif ($criterias['show_deleted'] == true) {
                 $qb->andWhere('s.date_suppression IS NOT NULL');
             }
         }
