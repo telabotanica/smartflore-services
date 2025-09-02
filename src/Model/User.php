@@ -11,6 +11,7 @@ class User
 {
     /**
      * @var string
+     * @Groups({"user_trail"})
      */
     private $id;
 
@@ -26,6 +27,7 @@ class User
 
     /**
      * @var string
+     * @Groups({"user_trail"})
      */
     private $email;
 
