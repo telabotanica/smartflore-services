@@ -177,25 +177,27 @@ class CreateTrailService
     {
         $errors = [];
         if (!$this->checkMinimalOccurrences($trail)) {
-            $errors[] = 'Le sentier doit avoir au moins 10 occurrences';
+            $errors['nb_occurrences'] = 'Le sentier doit avoir au moins 10 occurrences';
         }
 
         if (!$this->checkTrailLocalisation($trail)) {
-            $errors[] = 'Le sentier doit avoir une localisation';
+            $errors['localisation'] = 'Le sentier doit avoir une localisation';
         }
 
         if (!$this->checkTrailPath($trail)) {
-            $errors[] = 'Le sentier doit avoir un chemin tracé';
+            $errors['path'] = 'Le sentier doit avoir un chemin tracé';
         }
 
         if (!$this->checkOccurrencesLocalisation($trail)) {
-            $errors[] = 'Toutes les occurrences doivent être localisées';
+            $errors['occurrences_localisation'] = 'Toutes les occurrences doivent être localisées';
         }
 
         $emptyFiches = $this->checkEmptyFiches($trail);
         if ($emptyFiches) {
-            $errors[] = 'Toutes les occurrences doivent avoir une fiche et celle-ci doit être remplie';
-            $errors[] = ['fiches_incompletes' => $emptyFiches];
+            $errors['fiches_incompletes'] = [];
+            foreach ($emptyFiches as $fiche) {
+                $errors['fiches_incompletes'][] =$fiche;
+            }
         }
 
         return $errors;
