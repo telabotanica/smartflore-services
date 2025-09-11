@@ -33,6 +33,7 @@ class Occurrence
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     * @Groups({"show_trail", "list_trail", "user_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
      */
     private $card_tag;
 
