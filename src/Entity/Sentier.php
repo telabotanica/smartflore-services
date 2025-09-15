@@ -405,7 +405,7 @@ class Sentier
         return $this;
     }
 
-    public function setChemin(Path $chemin): self
+    public function setChemin(?Path $chemin): self
     {
         $this->chemin = $chemin;
         return $this;
