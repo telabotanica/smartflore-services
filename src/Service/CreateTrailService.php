@@ -276,7 +276,7 @@ class CreateTrailService
 
     public function isTrailNameAvailable(string $trailName): bool
     {
-        $existingTrail = $this->em->getRepository(Sentier::class)->findBy(['nom' => $trailName]);
+        $existingTrail = $this->em->getRepository(Sentier::class)->findBy(['nom' => $trailName, 'date_suppression' => null]);
         return !$existingTrail;
     }
 

@@ -63,7 +63,7 @@ class TaxonomyController extends AbstractController
         int $taxonNameId
     ) {
         $json = $serializer->serialize(
-            $eflore->getTaxon($taxonRepository, $taxonNameId),
+            $eflore->getTaxon($taxonRepository, $taxonNameId, true),
             'json', ['groups' => ['show_taxon', 'full_images']]);
 
         return new JsonResponse($json, 200, [], true);
