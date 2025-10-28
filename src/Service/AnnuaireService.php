@@ -216,7 +216,12 @@ class AnnuaireService
             return true;
         }
 
-        return $trail->getAuthorId() === $user->getId();
+        return $trail->getAuthorId() === $user->getId() && !$this->isTrailLocked($trail);
+    }
+
+    public function isTrailLocked(Sentier $trail): bool
+    {
+        return $trail->getStatus() === 'Validé' || $trail->getStatus() === 'En attente';
     }
 
     public function canUpdateOccurrence(User $user, Occurrence $occurrence): bool
@@ -226,7 +231,7 @@ class AnnuaireService
             return true;
         }
 
-        return $occurrence->getUserId() === $user->getId();
+        return $occurrence->getUserId() === $user->getId() && !$this->isTrailLocked($occurrence->getSentier());
     }
 
     public function listAdmin(): array
