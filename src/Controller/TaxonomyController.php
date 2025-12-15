@@ -62,9 +62,17 @@ class TaxonomyController extends AbstractController
         string $taxonRepository,
         int $taxonNameId
     ) {
-        $json = $serializer->serialize(
-            $eflore->getTaxon($taxonRepository, $taxonNameId, true),
-            'json', ['groups' => ['show_taxon', 'full_images']]);
+        $taxon = $eflore->getTaxon($taxonRepository, $taxonNameId, true);
+
+        if (!$taxon) {
+            return new JsonResponse(
+                [
+                    'error' => 'No taxon found (réferentiel: '. $taxonRepository .', num nom: '. $taxonNameId .')',
+                    'message' => 'No taxon found (réferentiel: '. $taxonRepository .', num nom: '. $taxonNameId .')'
+                ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $json = $serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
 
         return new JsonResponse($json, 200, [], true);
     }

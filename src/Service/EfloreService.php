@@ -281,8 +281,12 @@ class EfloreService
 
     public function getTaxon(string $taxonRepository, string $taxonNameId, bool $refresh = false)
     {
-        $taxonInfos = $this->getTaxonRawInfo(
-            $taxonRepository, $taxonNameId, $refresh);
+        try {
+            $taxonInfos = $this->getTaxonRawInfo(
+                $taxonRepository, $taxonNameId, $refresh);
+        } catch (\Exception $e) {
+            return null;
+        }
 
         $taxon = new Taxon();
         $taxon
