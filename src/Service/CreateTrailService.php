@@ -311,6 +311,25 @@ class CreateTrailService
         return $uniqueCardTags;
     }
 
+    public function getUniqueTaxons(Sentier $trail): array
+    {
+        $taxons = [];
+        $seenCardTags = [];
+
+        foreach ($trail->getOccurrences() as $occurrence) {
+            $cardTag = $occurrence->getCardTag();
+            if ($cardTag && !in_array($cardTag, $seenCardTags, true)) {
+                $seenCardTags[] = $cardTag;
+                $taxonData = $occurrence->getTaxon();
+                if ($taxonData) {
+                    $taxons[] = $taxonData;
+                }
+            }
+        }
+
+        return $taxons;
+    }
+
     public function setTaxonToOccurrence(Occurrence $occurrence, $content) {
         $taxon = new Taxon();
         if (isset($content->taxon)) {

@@ -12,6 +12,7 @@ use App\Service\AnnuaireService;
 use App\Service\BoundingBoxPolygonFactory;
 use App\Service\CookieAwareClient;
 use App\Service\CreateTrailService;
+use App\Service\EfloreService;
 use App\Service\EmailService;
 use App\Service\ImageService;
 use App\Service\SharedService;
@@ -558,6 +559,57 @@ class TrailController extends AbstractController
         }
 
         return new JsonResponse(['status' => true, 'error' => $errors], Response::HTTP_OK);
+    }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="Unique taxons list for a trail",
+     *     @OA\JsonContent(
+     *         type="array",
+     *         @OA\Items(ref=@Model(type=Taxon::class, groups={"show_taxon"}))
+     *     )
+     * )
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The trail ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Trails")
+     * @OA\Get(
+     *     summary="Get unique taxons for a trail"
+     * )
+     * @Route("/trail/{id}/taxons", name="trail_taxons", methods={"GET"})
+     */
+    public function trailTaxons(
+        EfloreService $eflore,
+        SerializerInterface $serializer,
+        $id
+    ): Response {
+        $trail = $this->sentierRepository->findOneBy(['id' => $id, 'date_suppression' => null]);
+        if (!$trail) {
+            return new JsonResponse(['error' => 'Trail not found or deleted (id: ' . $id . ')'], Response::HTTP_NOT_FOUND);
+        }
+
+        $taxonsData = $this->createTrail->getUniqueTaxons($trail);
+
+        $taxons = [];
+        foreach ($taxonsData as $taxonData) {
+            $taxon = $eflore->getTaxon(
+                $taxonData['taxon_repository'],
+                $taxonData['name_id'],
+                true
+            );
+            if ($taxon) {
+                $taxons[] = $taxon;
+            }
+        }
+
+        $json = $serializer->serialize($taxons, 'json', ['groups' => ['show_taxon', 'full_images']]);
+
+        return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 }
 
