@@ -314,16 +314,18 @@ class CreateTrailService
     public function getUniqueTaxons(Sentier $trail): array
     {
         $taxons = [];
-        $seenCardTags = [];
+        $seenKeys = [];
 
         foreach ($trail->getOccurrences() as $occurrence) {
-            $cardTag = $occurrence->getCardTag();
-            if ($cardTag && !in_array($cardTag, $seenCardTags, true)) {
-                $seenCardTags[] = $cardTag;
-                $taxonData = $occurrence->getTaxon();
-                if ($taxonData) {
-                    $taxons[] = $taxonData;
-                }
+            $taxonData = $occurrence->getTaxon();
+            if (!$taxonData) {
+                continue;
+            }
+
+            $key = ($taxonData['taxon_repository'] ?? '') . '_' . ($taxonData['name_id'] ?? '');
+            if (!in_array($key, $seenKeys, true)) {
+                $seenKeys[] = $key;
+                $taxons[] = $taxonData;
             }
         }
 
@@ -381,11 +383,8 @@ class CreateTrailService
     {
         $nb_taxons = 0;
         if ($trail->getOccurrences()) {
-            $uniqueCardTags = [];
-            foreach ($trail->getOccurrences() as $occurrence) {
-                $uniqueCardTags = $this->getUniqueCardTags($uniqueCardTags, $occurrence);
-            }
-            $nb_taxons = count($uniqueCardTags);
+            $uniqueTaxons = $this->getUniqueTaxons($trail);
+            $nb_taxons = count($uniqueTaxons);
         }
 
         $trail->setOccurrencesCount(count($trail->getOccurrences()));

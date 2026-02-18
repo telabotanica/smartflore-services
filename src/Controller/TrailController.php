@@ -597,14 +597,19 @@ class TrailController extends AbstractController
 
         $taxons = [];
         foreach ($taxonsData as $taxonData) {
-            $taxon = $eflore->getTaxon(
-                $taxonData['taxon_repository'],
-                $taxonData['name_id'],
-                true
-            );
-            if ($taxon) {
-                $taxons[] = $taxon;
+            try {
+                $taxon = $eflore->getTaxon(
+                    $taxonData['taxon_repository'],
+                    $taxonData['name_id'],
+                    true
+                );
+                if ($taxon) {
+                    $taxons[] = $taxon;
+                }
+            } catch (\Exception $e) {
+                $taxons[] = $taxonData;
             }
+
         }
 
         $json = $serializer->serialize($taxons, 'json', ['groups' => ['show_taxon', 'full_images']]);
