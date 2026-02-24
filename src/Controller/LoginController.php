@@ -6,6 +6,7 @@ use App\Model\Login;
 use App\Service\AnnuaireService;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
+use phpDocumentor\Reflection\Types\Boolean;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -97,6 +98,48 @@ class LoginController extends AbstractController
         return $this->json(
             $error ?? $token
         );
+    }
+
+    /**
+     * @OA\Response (
+     *     response="200",
+     *     description="Refreshed token: don't throw away your old token! Give it to us and get a new one :)",
+     *     @OA\JsonContent(
+     *         @OA\Schema(type="string", example="thisisatokenlol")
+     *     )
+     * )
+     * @OA\Parameter(
+     *     name="token",
+     *     in="query",
+     *     description="Old token",
+     *     example="thisisatokenlol",
+     *     @OA\Schema(type="string")
+     * )
+     * @OA\Tag(name="Login")
+     * @Route("/login/refreshv2", methods={"GET"})
+     */
+    public function refreshV2(AnnuaireService $annuaire, Request $request)
+    {
+        $forceCookie = $request->query->get('cookie', null);
+
+        if (!$forceCookie){
+            $token = $request->query->get('token', null);
+            if (!$token) {
+                $token = $request->headers->get('Authorization') ?? '';
+            }
+        } else {
+            $token = "";
+        }
+
+        $cookie = $request->cookies->all() ?? [];
+
+        ['token' => $token, 'duration' => $duration, 'token_id' => $token_id, 'error' => $error] = $annuaire->refreshToken($token, $cookie);
+
+        if ($error) {
+            return new Response($error, Response::HTTP_BAD_REQUEST);
+        }
+
+        return $this->json(['token' => $token, 'duration' => $duration, 'token_id' => $token_id, 'error' => $error]);
     }
 
     /**

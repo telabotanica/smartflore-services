@@ -102,7 +102,12 @@ class AnnuaireService
     {
         $error = null;
         $client = CookieAwareClient::create($cookie);
-        $client->request('GET', $this->loginBaseUrl.'identite?token='.$token);
+        if ($token){
+            $client->request('GET', $this->loginBaseUrl.'identite?token='.$token);
+        } else {
+            $client->request('GET', $this->loginBaseUrl.'identite');
+        }
+
         $response = $client->getResponse();
 
         if (200 !== $response->getStatusCode()) {
@@ -114,6 +119,8 @@ class AnnuaireService
 		
         return [
             'token' => json_decode($response->getContent(), true)['token'] ?? null,
+            'duration' => json_decode($response->getContent(), true)['duration'] ?? null,
+            'token_id' => json_decode($response->getContent(), true)['token_id'] ?? null,
             'error' => $error
         ];
     }
