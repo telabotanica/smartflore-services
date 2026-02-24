@@ -19,6 +19,7 @@ nelmio_api_doc:
             - ^/trail
             - ^/taxon
             - ^/login
+            - ^/logout
             - ^/register
             - ^/me
             - ^/ping

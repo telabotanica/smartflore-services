@@ -152,4 +152,28 @@ class LoginController extends AbstractController
 
         return new JsonResponse(json_encode($isAdmin), Response::HTTP_OK, [], true);
     }
+
+    /**
+     * @OA\Response(
+     *     response=200,
+     *     description="Logout successful"
+     * )
+     * @OA\Tag(name="Login")
+     * @Route("/logout", name="user_logout", methods={"GET"})
+     */
+    public function logout(AnnuaireService $annuaire): Response
+    {
+        ['data' => $data, 'cookie' => $cookie, 'error' => $error] = $annuaire->logout();
+
+        $response = new JsonResponse(
+            $error ?? $data,
+            $error ? Response::HTTP_BAD_REQUEST : Response::HTTP_OK
+        );
+
+        if ($cookie) {
+            $response->headers->setCookie($cookie);
+        }
+
+        return $response;
+    }
 }

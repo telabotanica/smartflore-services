@@ -7,6 +7,7 @@ use App\Entity\Sentier;
 use App\Model\User;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,6 +22,7 @@ class AnnuaireService
     private $annuaireFindUser;
     private $trails;
     private $client;
+    private $cookieDomaine;
 
     public function __construct(
         string $annuaireLoginBaseUrl,
@@ -28,6 +30,7 @@ class AnnuaireService
         string $annuaireCookieName,
         string $admins,
         string $annuaireFindUser,
+        string $cookieDomaine,
         TrailsService $trailsService
     ) {
         $this->loginBaseUrl = $annuaireLoginBaseUrl;
@@ -35,6 +38,7 @@ class AnnuaireService
         $this->cookieName = $annuaireCookieName;
         $this->admins = $admins;
         $this->annuaireFindUser = $annuaireFindUser;
+        $this->cookieDomaine = $cookieDomaine;
         $this->trails = $trailsService;
         $this->client = HttpClient::create();
     }
@@ -61,6 +65,34 @@ class AnnuaireService
 
         return [
             'token' => json_decode($response->getContent(), true)['token'] ?? null,
+            'cookie' => $cookie,
+            'error' => $error
+        ];
+    }
+
+    public function logout()
+    {
+        $client = new HttpBrowser();
+        $error = null;
+
+        $client->request('GET', $this->loginBaseUrl.'deconnexion');
+        $response = $client->getResponse();
+
+        if (200 !== $response->getStatusCode()) {
+            $error = 'error';
+            if (401 === $response->getStatusCode()) {
+                $error = "Erreur. Mauvais login ou mot de passe";
+            }
+        }
+        $cookie = Cookie::create($this->cookieName)
+            ->withValue("deleted")
+            ->withExpires(new \DateTimeImmutable('1970-01-01', new \DateTimeZone('UTC')))
+            ->withPath('/')
+            ->withDomain($this->cookieDomaine)
+            ->withSecure(false);
+
+        return [
+            'data' => json_decode($response->getContent(), true) ?? null,
             'cookie' => $cookie,
             'error' => $error
         ];
