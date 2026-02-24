@@ -5,6 +5,8 @@ namespace App\Service;
 use App\Entity\Occurrence;
 use App\Entity\Sentier;
 use App\Model\User;
+//use Symfony\Component\BrowserKit\Cookie;
+//use Symfony\Component\BrowserKit\CookieJar;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Cookie;
@@ -102,6 +104,16 @@ class AnnuaireService
     {
         $error = null;
         $client = CookieAwareClient::create($cookie);
+//        $cookieJar = new CookieJar();
+//
+//        if ($cookie) {
+//            foreach ($cookie as $name => $value) {
+//                $cookieJar->set(new Cookie($name, $value));
+//            }
+//        }
+//
+//        $client = new HttpBrowser(null, null, $cookieJar);
+
         if ($token){
             $client->request('GET', $this->loginBaseUrl.'identite?token='.$token);
         } else {

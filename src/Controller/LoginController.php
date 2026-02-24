@@ -128,7 +128,7 @@ class LoginController extends AbstractController
                 $token = $request->headers->get('Authorization') ?? '';
             }
         } else {
-            $token = "";
+            $token = $annuaire->getRequestToken($request);
         }
 
         $cookie = $request->cookies->all() ?? [];
