@@ -433,7 +433,7 @@ class TrailController extends AbstractController
 
         $displayName = $trail->getAuteurEmail() ?? $trail->getAuteur();
         $admins = $this->annuaire->listAdmin();
-        $url = "https://www.tela-botanica.org/appli:smartflore" . "/trail/" . $trail->getId();
+        $url = $this->sharedService->getSentierFrontUrl($trail);
 
         foreach ($admins as $admin) {
             try {

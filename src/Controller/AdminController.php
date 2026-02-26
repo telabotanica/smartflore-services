@@ -157,6 +157,10 @@ class AdminController extends AbstractController
             return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
+        if ($trail->getStatus() != 'En attente') {
+            return new JsonResponse(['error' => 'This trail is not waiting admin approval (id: '. $id .', status = '.$trail->getStatus().')'], Response::HTTP_FORBIDDEN);
+        }
+
         if (!$this->annuaire->isAdmin($user)) {
             return new JsonResponse(['error' => 'You need to be an administrator to publish a trail'], Response::HTTP_FORBIDDEN);
         }
@@ -167,7 +171,7 @@ class AdminController extends AbstractController
         }
 
         $trail->setDatePublication(new \DateTime());
-        $trail->setStatus('validé');
+        $trail->setStatus('Validé');
         if (!$trail->getDetails()){
             $trail = $this->sharedService->addDetailToTrail($trail);
         }
@@ -177,10 +181,11 @@ class AdminController extends AbstractController
 
         if ($trail->getAuteurEmail()) {
             $url = "https://www.tela-botanica.org/proposer-une-actualite/";
+//            $urlCharte = "https://www.tela-botanica.org/wikini/smartflore/wakka.php?wiki=PageCharte&Authorization";
             try {
                 $message = '
                 <p>Bonjour,</p>
-                <p>Merci pour l’intérêt que vous portez au dispositif  Smart\'Flore !</p>
+                <p>Merci pour l’intérêt que vous portez à Smart\'Flore !</p>
                 <p>Nous avons bien reçu la demande de validation du sentier Smart\'Flore : " <b>' . $trail->getNom() . '</b>", et nous l\'avons validé. 
                 Il sera visible sur l\'application d\'ici 24h maximum.</p>
                 <p>N’hésitez pas à publier un article sur le site web de Tela Botanica pour valoriser votre sentier auprès du réseau ou à publier un événement si vous prévoyez une inauguration du sentier par exemple. 
@@ -255,6 +260,112 @@ class AdminController extends AbstractController
 
         $this->em->persist($trail);
         $this->em->flush();
+
+        $admins = $this->annuaire->listAdmin();
+        $url = $this->sharedService->getSentierFrontUrl($trail);
+        foreach ($admins as $admin) {
+            try {
+                $message = '
+                    <h1>Sentier dépublié</h1>
+                    <p>Bonjour,</p>
+                    <p>Vous recevez ce message car vous êtes administrateur des sentiers SmartFlore</p>
+                    <p>Le sentier Smart\'Flore : " <a href="' . $url . '"><b>' . $trail->getNom() . '</b></a>", a été dépublié</p>
+                    <p>Merci d\'envoyer un message à l\'utilisateur (<a href="mailto:' . $trail->getAuteurEmail() . '">' . $trail->getAuteurEmail() . '</a>) afin de lui en expliquer la raison</p>
+                    <p>Bonne journée,</br>
+                    L\'équipe Smart\'Flore</p>
+                ';
+
+                $this->emailService->sendEmail(
+                    'telaorg@tela-botanica.org',
+                    $admin,
+                    "Sentier Smart'Flore dépublié",
+                    $message,
+                    'contact-smartflore@tela-botanica.org'
+                );
+            } catch (\Exception $e) {
+                return new JsonResponse(['error' => 'Erreur lors de l\'envoi de l\'email: ' . $e->getMessage()], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
+        return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
+    }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="Trail rejected",
+     *      @Model(type=Sentier::class, groups={"show_trail"})
+     * )
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The trail ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Admin")
+     * @OA\Post(
+     *     summary="Reject a trail waiting admin approval"
+     * )
+     * @Route("/admin/trail/{id}/reject", name="reject_trail", methods={"POST"})
+     */
+    public function rejectTrail(Request $request, $id): Response
+    {
+        ['user' => $user, 'token'=> $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
+
+        if ($error) {
+            return new JsonResponse(['error' => $error], Response::HTTP_UNAUTHORIZED);
+        }
+
+        if (!$user || !$token) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $this->createTrail->setAuth($token);
+
+        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        if (!$trail) {
+            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($trail->getStatus() != 'En attente') {
+            return new JsonResponse(['error' => 'This trail is not waiting admin approval (id: '. $id .', status = '.$trail->getStatus().')'], Response::HTTP_FORBIDDEN);
+        }
+
+        if (!$this->annuaire->isAdmin($user)) {
+            return new JsonResponse(['error' => 'You need to be an administrator to unpublish a trail'], Response::HTTP_FORBIDDEN);
+        }
+
+        $trail->setStatus(null);
+
+        $this->em->persist($trail);
+        $this->em->flush();
+
+        $admins = $this->annuaire->listAdmin();
+        $url = $this->sharedService->getSentierFrontUrl($trail);
+        foreach ($admins as $admin) {
+            try {
+                $message = '
+            <h1>Sentier refusé</h1>
+            <p>Bonjour,</p>
+            <p>Vous recevez ce message car vous êtes administrateur des sentiers SmartFlore</p>
+            <p>Nous avons reçu une demande de validation du sentier Smart\'Flore : " <a href="' . $url . '"><b>' . $trail->getNom() . '</b></a>", et nous l\'avons rejeté</p>
+            <p>Merci d\'envoyer un message à l\'utilisateur (<a href="mailto:' . $trail->getAuteurEmail() . '">' . $trail->getAuteurEmail() . '</a>) afin de lui en expliquer la raison</p>
+            <p>Bonne journée,</br>
+            L\'équipe Smart\'Flore</p>
+            ';
+
+                $this->emailService->sendEmail(
+                    'telaorg@tela-botanica.org',
+                    $admin,
+                    "Sentier Smart'Flore refusé",
+                    $message,
+                    'contact-smartflore@tela-botanica.org'
+                );
+            } catch (\Exception $e) {
+                return new JsonResponse(['error' => 'Erreur lors de l\'envoi de l\'email: ' . $e->getMessage()], Response::HTTP_BAD_REQUEST);
+            }
+        }
 
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }

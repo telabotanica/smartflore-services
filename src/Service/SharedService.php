@@ -56,8 +56,13 @@ class SharedService
 
     public function addDetailToTrail(Sentier $trail): Sentier
     {
-        $trail->setDetails($this->smartfloreFrontUrl.'trail/'.$trail->getId());
+        $trail->setDetails($this->getSentierFrontUrl($trail));
 
         return $trail;
+    }
+
+    public function getSentierFrontUrl(Sentier $trail): string
+    {
+        return $this->smartfloreFrontUrl.'trail/'.$trail->getId();
     }
 }
