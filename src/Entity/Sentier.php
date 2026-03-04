@@ -3,7 +3,7 @@
 namespace App\Entity;
 
 use App\Entity\Path;
-use App\Model\Image;
+use App\Entity\Image;
 use App\Repository\SentierRepository;
 use App\Service\TrailsService;
 use Doctrine\Common\Collections\ArrayCollection;

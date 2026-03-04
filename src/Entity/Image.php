@@ -23,6 +23,7 @@ class Image
      *     type="int",
      *     example="131269"
      * )
+     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
      */
     private $id;
 
@@ -57,7 +58,6 @@ class Image
      *     type="integer",
      *     example=131269
      * )
-     * @SerializedName("id")
      * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
      */
     private $cel_image_id;

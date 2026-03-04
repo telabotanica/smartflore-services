@@ -379,6 +379,18 @@ class CreateTrailService
         return $occurrence;
     }
 
+    public function getImageFromContent($content): Image {
+        $image = new Image();
+
+        $image->setCelImageId($content->id);
+        $image->setUrl($content->url);
+        if (isset($content->author)) {
+            $image->setAuthor($content->author);
+        }
+
+        return $image;
+    }
+
     public function addNbTaxonsToTrail(Sentier $trail): void
     {
         $nb_taxons = 0;

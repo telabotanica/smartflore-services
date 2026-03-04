@@ -244,6 +244,13 @@ class TrailController extends AbstractController
         }
         $this->createTrail->setAuth($token);
 
+        if (isset($content->image)){
+            $newImage = $this->createTrail->getImageFromContent($content->image);
+            $newTrail->setImage($newImage);
+
+            $this->em->persist($newImage);
+        }
+
         try {
             $trail = $this->createTrail->process($newTrail);
         } catch (\Exception $e) {
@@ -316,6 +323,13 @@ class TrailController extends AbstractController
 
         $trail->setPathLength(round(TrailsService::getTrailLength($trail)));
         $trail->setDateModification(new \DateTime());
+
+        if (isset($content->image)){
+            $newImage = $this->createTrail->getImageFromContent($content->image);
+            $trail->setImage($newImage);
+
+            $this->em->persist($newImage);
+        }
 
         if (!$trail->getDetails()){
             $trail = $this->sharedService->addDetailToTrail($trail);
@@ -466,7 +480,6 @@ class TrailController extends AbstractController
      *     description="updated",
      *      @Model(type=Sentier::class, groups={"show_trail"})
      * )
-     * @OA\Parameter(name="image_id", in="query", required=true, description="Cel image id", @OA\Schema(type="string", example="10023")),
      * @OA\Parameter(
      *     name="id",
      *     in="path",
@@ -482,11 +495,6 @@ class TrailController extends AbstractController
      */
     public function updateTrailImage(Request $request, $id): Response
     {
-        $newImage = $request->query->get('image_id');
-        if (!$newImage) {
-            return new JsonResponse(['error' => 'No image id provided'], Response::HTTP_BAD_REQUEST);
-        }
-
         try {
             $token = $this->annuaire->getRequestToken($request);
             if (!$token) {
@@ -497,6 +505,15 @@ class TrailController extends AbstractController
         } catch (\Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
+
+        $content = json_decode($request->getContent());
+
+        if ($content->image) {
+            $newImage = $this->createTrail->getImageFromContent($content->image);
+        } else {
+            return new JsonResponse(['error' => 'No image id provided'], Response::HTTP_BAD_REQUEST);
+        }
+
         $trail = $this->sentierRepository->findOneBy(['id' => $id]);
         if (!$trail) {
             return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
@@ -506,9 +523,9 @@ class TrailController extends AbstractController
             return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
-        $newImage = $this->imageService->findImageFromId($newImage);
         $trail->setImage($newImage);
 
+        $this->em->persist($newImage);
         $this->em->persist($trail);
         $this->em->flush();
 
