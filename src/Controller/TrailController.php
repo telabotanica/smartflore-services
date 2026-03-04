@@ -246,9 +246,10 @@ class TrailController extends AbstractController
 
         if (isset($content->image)){
             $newImage = $this->createTrail->getImageFromContent($content->image);
-            $newTrail->setImage($newImage);
-
             $this->em->persist($newImage);
+            $this->em->flush();
+
+            $newTrail->setImage($newImage);
         }
 
         try {
@@ -326,9 +327,10 @@ class TrailController extends AbstractController
 
         if (isset($content->image)){
             $newImage = $this->createTrail->getImageFromContent($content->image);
-            $trail->setImage($newImage);
-
             $this->em->persist($newImage);
+            $this->em->flush();
+
+            $trail->setImage($newImage);
         }
 
         if (!$trail->getDetails()){
@@ -523,9 +525,11 @@ class TrailController extends AbstractController
             return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
+        $this->em->persist($newImage);
+        $this->em->flush();
+
         $trail->setImage($newImage);
 
-        $this->em->persist($newImage);
         $this->em->persist($trail);
         $this->em->flush();
 

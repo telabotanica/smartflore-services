@@ -556,14 +556,14 @@ class Sentier
     public function getImage(): ?Image
     {
         if (is_array($this->image) && !empty($this->image)) {
-            return new Image(
-                $this->image['id'],
-                $this->image['url'],
-                $this->image['author'],
-                $this->image['mini'] ?? '' // ou null selon ton modèle
-            );
+            $image = new Image();
+            $image->setId($this->image['id'] ?? null);
+            $image->setCelImageId($this->image['cel_image_id'] ?? null);
+            $image->setUrl($this->image['url'] ?? null);
+            $image->setAuthor($this->image['author'] ?? null);
+            $image->setMini($this->image['mini'] ?? null);
+            return $image;
         }
-
         return null;
     }
 
@@ -571,6 +571,7 @@ class Sentier
     {
         $this->image = $image ? [
             'id' => $image->getId(),
+            'cel_image_id' => $image->getCelImageId(),
             'url' => $image->getUrl(),
             'author' => $image->getAuthor(),
             'mini' => $image->getMini(),

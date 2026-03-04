@@ -382,6 +382,7 @@ class CreateTrailService
     public function getImageFromContent($content): Image {
         $image = new Image();
 
+
         $image->setCelImageId($content->id);
         $image->setUrl($content->url);
         if (isset($content->userPseudo)) {
