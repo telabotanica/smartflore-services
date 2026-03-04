@@ -384,8 +384,8 @@ class CreateTrailService
 
         $image->setCelImageId($content->id);
         $image->setUrl($content->url);
-        if (isset($content->author)) {
-            $image->setAuthor($content->author);
+        if (isset($content->userPseudo)) {
+            $image->setAuthor($content->userPseudo);
         }
 
         return $image;
