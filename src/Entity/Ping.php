@@ -19,6 +19,7 @@ class Ping
     /**
      * @ORM\Id
      * @ORM\Column(type="integer")
+     * @Groups({"show_ping"})
      * @ORM\GeneratedValue()
      */
     private int $id;
@@ -29,7 +30,7 @@ class Ping
      *     type="bool",
      *     example="false"
      * )
-     * @Groups({"create"})
+     * @Groups({"create", "show_ping"})
      * @Assert\NotNull()
      * @Assert\Type("bool")
      */
@@ -41,7 +42,7 @@ class Ping
      *     type="bool",
      *     example="true"
      * )
-     * @Groups({"create"})
+     * @Groups({"create", "show_ping"})
      * @Assert\NotNull()
      * @Assert\Type("bool")
      */
@@ -54,7 +55,7 @@ class Ping
      *     type="int",
      *     example="500"
      * )
-     * @Groups({"create"})
+     * @Groups({"create", "show_ping"})
      * @Assert\Type("integer")
      */
     private ?int $distanceFromTrail=null;
@@ -65,7 +66,7 @@ class Ping
      *     type="bool",
      *     example="false"
      * )
-     * @Groups({"create"})
+     * @Groups({"create", "show_ping"})
      * @Assert\NotNull()
      * @Assert\Type("bool")
      */
@@ -78,7 +79,7 @@ class Ping
      *     type="string",
      *     example="2022-11-18 10:52:16"
      * )
-     * @Groups({"create"})
+     * @Groups({"create", "show_ping"})
      * @Assert\Type("string")
      */
     private ?string $date = null;
@@ -89,12 +90,24 @@ class Ping
      *     type="int",
      *     example="25"
      * )
-     * @Groups({"create"})
+     * @Groups({"create", "show_ping"})
      * @Assert\NotBlank()
      * @Assert\NotNull()
      * @Assert\Type("integer")
      */
     private int $trail;
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     * @Groups({"create", "show_ping"})
+     */
+    private $from_website;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     * @Groups({"create", "show_ping"})
+     */
+    private $ip;
 
     public function getId(): ?int
     {
@@ -176,6 +189,30 @@ class Ping
     public function setDistanceFromTrail(?int $distanceFromTrail): self
     {
         $this->distanceFromTrail = $distanceFromTrail;
+
+        return $this;
+    }
+
+    public function isFromWebsite(): ?bool
+    {
+        return $this->from_website;
+    }
+
+    public function setFromWebsite(?bool $from_website): self
+    {
+        $this->from_website = $from_website;
+
+        return $this;
+    }
+
+    public function getIp(): ?string
+    {
+        return $this->ip;
+    }
+
+    public function setIp(?string $ip): self
+    {
+        $this->ip = $ip;
 
         return $this;
     }
