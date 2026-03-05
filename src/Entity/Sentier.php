@@ -244,7 +244,7 @@ class Sentier
     /**
      * @ORM\Column(type="json", nullable=true)
      * @OA\Property(ref=@Model(type=Image::class))
-     * @Groups({"show_trail", "list_trail", "user_trail","add_occurrence"})
+     * @Groups({"show_trail", "list_trail", "user_trail","add_occurrence", "create_trail", "update_trail", "update_image"})
      */
     private ?array $image;
 

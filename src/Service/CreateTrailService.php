@@ -372,7 +372,7 @@ class CreateTrailService
             $author = $image_data->observation->{'auteur.nom'};
             $image->setAuthor($author);
         }
-//dd($image);
+
         $image->setOccurrence($occurrence);
         $occurrence->addImage($image);
 
@@ -381,12 +381,10 @@ class CreateTrailService
 
     public function getImageFromContent($content): Image {
         $image = new Image();
-
-
         $image->setCelImageId($content->id);
         $image->setUrl($content->url);
-        if (isset($content->userPseudo)) {
-            $image->setAuthor($content->userPseudo);
+        if (isset($content->author)) {
+            $image->setAuthor($content->author);
         }
 
         return $image;

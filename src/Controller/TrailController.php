@@ -7,6 +7,7 @@ use App\Entity\Sentier;
 use App\Model\CreateTrailDto;
 use App\Model\Taxon;
 use App\Model\Trail;
+use App\Repository\ImageRepository;
 use App\Repository\SentierRepository;
 use App\Service\AnnuaireService;
 use App\Service\BoundingBoxPolygonFactory;
@@ -482,6 +483,14 @@ class TrailController extends AbstractController
      *     description="updated",
      *      @Model(type=Sentier::class, groups={"show_trail"})
      * )
+     * @OA\RequestBody(
+     *      description="A JSON object containing trail information.",
+     *      required=true,
+     *      @OA\JsonContent(
+     *          type="object",
+     *          ref=@Model(type=Sentier::class, groups={"update_image"})
+     *      )
+     *  )
      * @OA\Parameter(
      *     name="id",
      *     in="path",
@@ -529,6 +538,62 @@ class TrailController extends AbstractController
         $this->em->flush();
 
         $trail->setImage($newImage);
+
+        $this->em->persist($trail);
+        $this->em->flush();
+
+        return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
+    }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="deleted",
+     *      @Model(type=Sentier::class, groups={"show_trail"})
+     * )
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The trail ID",
+     *     @OA\Schema(type="integer"),
+     *     example=146
+     * )
+     * @OA\Tag(name="Trails")
+     * @OA\Put(
+     *     summary="delete a trail default image"
+     * )
+     * @Route("/trail/{id}/delete-image", name="delete_trail_image", methods={"DELETE"})
+     */
+    public function deleteTrailImage(Request $request, $id, ImageRepository $imageRepository): Response
+    {
+        try {
+            $token = $this->annuaire->getRequestToken($request);
+            if (!$token) {
+                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+            }
+            $this->createTrail->setAuth($token);
+            $user = $this->annuaire->getUserInfos($token);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $trail = $this->sentierRepository->findOneBy(['id' => $id]);
+        if (!$trail || !$trail->getImage()) {
+            return new JsonResponse(['error' => 'Trail not found or no image set on this trail (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (!$this->annuaire->canUpdateTrail($user, $trail)) {
+            return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+        }
+
+        $image = $imageRepository->findOneBy(['id' => $trail->getImage()->getId()]);
+        if (!$image) {
+            return new JsonResponse(['error' => 'Image not found (id: '. $trail->getImage()->getId() .')'], Response::HTTP_NOT_FOUND);
+        }
+
+        $imageRepository->remove($image);
+
+        $trail->setImage(null);
 
         $this->em->persist($trail);
         $this->em->flush();
