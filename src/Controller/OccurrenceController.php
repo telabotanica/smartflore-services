@@ -8,6 +8,7 @@ use App\Repository\ImageRepository;
 use App\Repository\OccurrenceRepository;
 use App\Repository\SentierRepository;
 use App\Service\AnnuaireService;
+use App\Service\CacheFileService;
 use App\Service\CreateTrailService;
 use App\Service\SharedService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -30,9 +31,19 @@ class OccurrenceController extends AbstractController
     private ImageRepository $imageRepository;
     private SentierRepository $sentierRepository;
     private SharedService $sharedService;
+    private CacheFileService $cacheFile;
 
-    public function __construct(SerializerInterface $serializer, AnnuaireService $annuaire, CreateTrailService $createTrail, EntityManagerInterface $em, OccurrenceRepository $occurrenceRepository, ImageRepository $imageRepository, SentierRepository $sentierRepository, SharedService $sharedService)
-    {
+    public function __construct(
+        SerializerInterface $serializer,
+        AnnuaireService $annuaire,
+        CreateTrailService $createTrail,
+        EntityManagerInterface $em,
+        OccurrenceRepository $occurrenceRepository,
+        ImageRepository $imageRepository,
+        SentierRepository $sentierRepository,
+        SharedService $sharedService,
+        CacheFileService $cacheFile
+    ) {
         $this->serializer = $serializer;
         $this->annuaire = $annuaire;
         $this->createTrail = $createTrail;
@@ -41,6 +52,7 @@ class OccurrenceController extends AbstractController
         $this->imageRepository = $imageRepository;
         $this->sentierRepository = $sentierRepository;
         $this->sharedService = $sharedService;
+        $this->cacheFile = $cacheFile;
     }
 
     /**
@@ -87,20 +99,20 @@ class OccurrenceController extends AbstractController
         $trail = $this->sentierRepository->findOneBy(['id' => $sentier_id]);
 
         if (!$trail) {
-            return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['error' => 'Trail not found (id: '. $sentier_id .')'], Response::HTTP_NOT_FOUND);
         }
 
         if (!$this->annuaire->canUpdateTrail($user, $trail)) {
-            return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+            return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $sentier_id .')'], Response::HTTP_FORBIDDEN);
         }
 
         // On empêche les modification d'un sentier une fois celui-ci publié
         if ($trail->getDatePublication() != null) {
-            return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
+            return new JsonResponse(['error' => 'This trail is already published (id: '. $sentier_id .')'], Response::HTTP_FORBIDDEN);
         }
 
         if (!$request->getContent()) {
-            return new JsonResponse(['error' => 'No data available in order to add occurrence to trail (id: '. $id .')'], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['error' => 'No data available in order to add occurrence to trail (id: '. $sentier_id .')'], Response::HTTP_BAD_REQUEST);
         }
 
         $occurrence = $this->serializer->deserialize($request->getContent(), Occurrence::class, 'json', [
@@ -129,6 +141,9 @@ class OccurrenceController extends AbstractController
 
         $this->em->persist($trail);
         $this->em->flush();
+
+        // --- Mise à jour du cache trail après ajout d'occurrence ---
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
 
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_CREATED, [], true);
     }
@@ -230,6 +245,9 @@ class OccurrenceController extends AbstractController
         $this->em->persist($occurrence);
         $this->em->flush();
 
+        // --- Mise à jour du cache trail après modification de l'occurrence ---
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
+
         return new JsonResponse($this->serializer->serialize($occurrence, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }
 
@@ -292,6 +310,9 @@ class OccurrenceController extends AbstractController
         $this->em->persist($trail);
         $this->em->flush();
 
+        // --- Mise à jour du cache trail après suppression d'occurrence ---
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
+
         return new JsonResponse( 'Occurrence deleted (id: '. $id .')', Response::HTTP_OK);
     }
 
@@ -337,8 +358,15 @@ class OccurrenceController extends AbstractController
             return new JsonResponse(['error' => 'You are not allowed to update this occurrence (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
+        $trail = $occurrence->getSentier();
+
         $this->em->remove($image);
         $this->em->flush();
+
+        // --- Mise à jour du cache trail après suppression d'image ---
+        if ($trail) {
+            $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
+        }
 
         return new JsonResponse($this->serializer->serialize($occurrence, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }

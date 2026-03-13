@@ -24,6 +24,10 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    App\Service\CacheFileService:
+        arguments:
+            $cachePath: '%env(CACHE_PATH)%'
+
     App\Service\TrailsService:
         arguments:
             - '%env(SMARTFLORE_LEGACY_API_BASE_URL)%'
@@ -39,6 +43,7 @@ services:
             - '%env(RECHERCHE_NOMS_VERNACULAIRES_URL)%'
             - '%env(RECHERCHE_NOM_URL)%'
             - '%env(INFOS_TAXONS_URL)%'
+            - '%env(SMARTFLORE_FRONT_URL)%'
     App\Service\AnnuaireService:
         arguments:
             - '%env(ANNUAIRE_LOGIN_BASE_URL)%'

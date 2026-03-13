@@ -11,6 +11,7 @@ use App\Repository\ImageRepository;
 use App\Repository\SentierRepository;
 use App\Service\AnnuaireService;
 use App\Service\BoundingBoxPolygonFactory;
+use App\Service\CacheFileService;
 use App\Service\CookieAwareClient;
 use App\Service\CreateTrailService;
 use App\Service\EfloreService;
@@ -43,9 +44,20 @@ class TrailController extends AbstractController
     private EmailService $emailService;
     private SharedService $sharedService;
     private ImageService $imageService;
+    private CacheFileService $cacheFile;
 
-    public function __construct(SerializerInterface $serializer, ValidatorInterface $validator, AnnuaireService $annuaire, SentierRepository $sentierRepository, CreateTrailService $createTrail, EntityManagerInterface $em, EmailService $emailService, SharedService $sharedService, ImageService $imageService)
-    {
+    public function __construct(
+        SerializerInterface $serializer,
+        ValidatorInterface $validator,
+        AnnuaireService $annuaire,
+        SentierRepository $sentierRepository,
+        CreateTrailService $createTrail,
+        EntityManagerInterface $em,
+        EmailService $emailService,
+        SharedService $sharedService,
+        ImageService $imageService,
+        CacheFileService $cacheFile
+    ) {
         $this->serializer = $serializer;
         $this->validator = $validator;
         $this->annuaire = $annuaire;
@@ -55,6 +67,7 @@ class TrailController extends AbstractController
         $this->emailService = $emailService;
         $this->sharedService = $sharedService;
         $this->imageService = $imageService;
+        $this->cacheFile = $cacheFile;
     }
 
     /**
@@ -154,12 +167,19 @@ class TrailController extends AbstractController
         SerializerInterface $serializer,
         $id
     ) {
+        // --- Lecture cache fichier ---
+        $cached = $this->cacheFile->getTrail($id);
+        if ($cached !== null) {
+            return new JsonResponse($cached, Response::HTTP_OK);
+        }
+
         $trail = $this->sentierRepository->findOneBy(['id' => $id, 'date_suppression' => null]);
         if (!$trail) {
             return new JsonResponse(['error' => 'Trail not found or deleted (id: '. $id .')'], Response::HTTP_NOT_FOUND);
         }
 
-//        $json = $serializer->serialize($trails->getTrail($id), 'json', ['groups' => 'show_trail']);
+        // --- Mise en cache ---
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
 
         $json = $serializer->serialize($trail, 'json', ['groups' => 'show_trail']);
 
@@ -220,9 +240,13 @@ class TrailController extends AbstractController
     public function createTrail(Request $request): Response
     {
         $content = json_decode($request->getContent());
+        if ($content === null) {
+            return new JsonResponse(['error' => 'Corps de la requête JSON invalide'], Response::HTTP_BAD_REQUEST);
+        }
+
         $newTrail = $this->serializer->deserialize($request->getContent(), Sentier::class, 'json', ['groups' => ['create_trail']]);
 
-        // On map les taxons et imaes aux occurrences
+        // On map les taxons et images aux occurrences
         if (count($newTrail->getOccurrences()) > 0) {
             foreach ($newTrail->getOccurrences() as $key => $occurrence) {
                 $this->createTrail->setTaxonToOccurrence($occurrence, $content->occurrences[$key]);
@@ -258,6 +282,9 @@ class TrailController extends AbstractController
         } catch (\Exception $e) {
             return new JsonResponse(['error' => 'Erreur lors de la création du sentier: '. $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
+
+        // --- Mise en cache après création ---
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
 
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_CREATED, [], true);
     }
@@ -341,6 +368,9 @@ class TrailController extends AbstractController
         $this->em->persist($trail);
         $this->em->flush();
 
+        // --- Mise à jour du cache après modification ---
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
+
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }
 
@@ -388,6 +418,9 @@ class TrailController extends AbstractController
         $trail->setDateSuppression(new \DateTime());
         $this->em->persist($trail);
         $this->em->flush();
+
+        // --- Suppression du cache après soft-delete ---
+        $this->cacheFile->deleteTrail($id);
 
         return new JsonResponse('Trail id: '.$id.' deleted', Response::HTTP_ACCEPTED);
     }
@@ -448,6 +481,9 @@ class TrailController extends AbstractController
         $this->em->persist($trail);
         $this->em->flush();
 
+        // --- Mise à jour du cache après changement de statut ---
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
+
         $displayName = $trail->getAuteurEmail() ?? $trail->getAuteur();
         $admins = $this->annuaire->listAdmin();
         $url = $this->sharedService->getSentierFrontUrl($trail);
@@ -463,12 +499,12 @@ class TrailController extends AbstractController
             <p>Rendez-vous sur le site <a href="'.$url.'">'.$url.'</a> pour consulter le sentier.</p>
             ';
 
-            $this->emailService->sendEmail(
-                'telaorg@tela-botanica.org',
-                $admin,
-                "Demande de validation d'un sentier",
-                $message
-            );
+                $this->emailService->sendEmail(
+                    'telaorg@tela-botanica.org',
+                    $admin,
+                    "Demande de validation d'un sentier",
+                    $message
+                );
             } catch (\Exception $e) {
                 return new JsonResponse(['error' => 'Erreur lors de l\'envoi de l\'email: '. $e->getMessage()], Response::HTTP_BAD_REQUEST);
             }
@@ -519,9 +555,7 @@ class TrailController extends AbstractController
 
         $content = json_decode($request->getContent());
 
-        if ($content->image) {
-            $newImage = $this->createTrail->getImageFromContent($content->image);
-        } else {
+        if (!$content || !isset($content->image)) {
             return new JsonResponse(['error' => 'No image id provided'], Response::HTTP_BAD_REQUEST);
         }
 
@@ -534,6 +568,7 @@ class TrailController extends AbstractController
             return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
+        $newImage = $this->createTrail->getImageFromContent($content->image);
         $this->em->persist($newImage);
         $this->em->flush();
 
@@ -541,6 +576,9 @@ class TrailController extends AbstractController
 
         $this->em->persist($trail);
         $this->em->flush();
+
+        // --- Mise à jour du cache ---
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
 
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }
@@ -597,6 +635,9 @@ class TrailController extends AbstractController
 
         $this->em->persist($trail);
         $this->em->flush();
+
+        // --- Mise à jour du cache ---
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
 
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
     }
@@ -703,4 +744,3 @@ class TrailController extends AbstractController
         return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 }
-

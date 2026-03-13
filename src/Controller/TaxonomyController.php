@@ -6,6 +6,7 @@ use App\Model\Entete;
 use App\Model\FicheCollection;
 use App\Model\Referentiel;
 use App\Model\Taxon;
+use App\Service\CacheFileService;
 use App\Service\EfloreService;
 use App\Service\FicheService;
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -21,12 +22,18 @@ class TaxonomyController extends AbstractController
 {
     private SerializerInterface $serializer;
     private FicheService $ficheService;
+    private CacheFileService $cacheFile;
 
-    public function __construct(SerializerInterface $serializer, FicheService $ficheService)
-    {
+    public function __construct(
+        SerializerInterface $serializer,
+        FicheService $ficheService,
+        CacheFileService $cacheFile
+    ) {
         $this->serializer = $serializer;
         $this->ficheService = $ficheService;
+        $this->cacheFile = $cacheFile;
     }
+
     /**
      * @OA\Response (
      *     response="200",
@@ -62,6 +69,12 @@ class TaxonomyController extends AbstractController
         string $taxonRepository,
         int $taxonNameId
     ) {
+        // --- Lecture cache fichier ---
+        $cached = $this->cacheFile->getTaxon($taxonRepository, $taxonNameId);
+        if ($cached !== null) {
+            return new JsonResponse($cached, Response::HTTP_OK);
+        }
+
         $taxon = $eflore->getTaxon($taxonRepository, $taxonNameId, true);
 
         if (!$taxon) {
@@ -71,6 +84,9 @@ class TaxonomyController extends AbstractController
                     'message' => 'No taxon found (réferentiel: '. $taxonRepository .', num nom: '. $taxonNameId .')'
                 ], Response::HTTP_BAD_REQUEST);
         }
+
+        // --- Mise en cache ---
+        $this->cacheFile->saveTaxon($taxonRepository, $taxonNameId, $taxon, ['show_taxon', 'full_images']);
 
         $json = $serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
 

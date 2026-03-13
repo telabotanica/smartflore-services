@@ -6,6 +6,7 @@ use App\Entity\Fiche;
 use App\Repository\FicheRepository;
 use App\Repository\OccurrenceRepository;
 use App\Service\AnnuaireService;
+use App\Service\CacheFileService;
 use App\Service\FicheService;
 use App\Service\SharedService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -27,9 +28,18 @@ class FicheController extends AbstractController
     private FicheService $ficheService;
     private SharedService $sharedService;
     private AnnuaireService $annuaire;
+    private CacheFileService $cacheFile;
 
-public function __construct(SerializerInterface $serializer, EntityManagerInterface $em, FicheRepository $ficheRepository, OccurrenceRepository $occurrenceRepository, FicheService $ficheService, SharedService $sharedService, AnnuaireService $annuaire)
-    {
+    public function __construct(
+        SerializerInterface $serializer,
+        EntityManagerInterface $em,
+        FicheRepository $ficheRepository,
+        OccurrenceRepository $occurrenceRepository,
+        FicheService $ficheService,
+        SharedService $sharedService,
+        AnnuaireService $annuaire,
+        CacheFileService $cacheFile
+    ) {
         $this->serializer = $serializer;
         $this->em = $em;
         $this->ficheRepository = $ficheRepository;
@@ -37,6 +47,7 @@ public function __construct(SerializerInterface $serializer, EntityManagerInterf
         $this->ficheService = $ficheService;
         $this->sharedService = $sharedService;
         $this->annuaire = $annuaire;
+        $this->cacheFile = $cacheFile;
     }
 
     /**
@@ -70,11 +81,20 @@ public function __construct(SerializerInterface $serializer, EntityManagerInterf
      */
     public function getFiche(string $referentiel, int $num_tax): Response
     {
+        // --- Lecture cache fichier ---
+        $cached = $this->cacheFile->getFiche($referentiel, $num_tax);
+        if ($cached !== null) {
+            return new JsonResponse($cached, Response::HTTP_OK);
+        }
+
         $fiche = $this->sharedService->chercherFiche($referentiel, $num_tax);
 
         if (!$fiche) {
             return new JsonResponse(['error' => 'Fiche not found (referentiel: '. $referentiel .', num_tax: '. $num_tax .')'], Response::HTTP_NOT_FOUND);
         }
+
+        // --- Mise en cache ---
+        $this->cacheFile->saveFiche($referentiel, $num_tax, $fiche, ['list_fiche']);
 
         $json = $this->serializer->serialize($fiche, 'json', ['groups' => ['list_fiche']]);
 
@@ -150,17 +170,25 @@ public function __construct(SerializerInterface $serializer, EntityManagerInterf
 
         $occurrences = $this->occurrenceRepository->findByTaxon($newFiche->getReferentiel(), $newFiche->getNt());
         foreach ($occurrences as $occurrence) {
-            $taxon = $occurrence->getTaxon();
+            $taxon = $occurrence->getTaxon(); //"accepted_scientific_name_id"
             $taxon['tabs'] = $newFiche->getTag();
 
             $occurrence->setTaxon($taxon);
             $occurrence->setCardTag($newFiche->getTag());
+
+            // --- Invalidation du cache taxon lié (le texte de la card a changé) ---
+            $this->cacheFile->deleteTaxon($referentiel,  $taxon["accepted_scientific_name_id"]);
+
             $this->em->persist($occurrence);
         }
 
         $this->em->persist($fiche);
         $this->em->persist($newFiche);
         $this->em->flush();
+
+        // --- Mise à jour du cache fiche ---
+        $this->cacheFile->deleteFiche($referentiel, $num_tax);
+        $this->cacheFile->saveFiche($referentiel, $num_tax, $newFiche, ['show_fiche']);
 
         return new JsonResponse($this->serializer->serialize($newFiche, 'json', ['groups' => ['show_fiche']]), Response::HTTP_OK, [], true);
     }
@@ -218,7 +246,7 @@ public function __construct(SerializerInterface $serializer, EntityManagerInterf
 
         $this->em->persist($fiche);
 
-        //On cherche les occurrences avec cette fiche et on update update le taxon"tabs" et le card tag
+        //On cherche les occurrences avec cette fiche et on update le taxon "tabs" et le card tag
         $occurrences = $this->occurrenceRepository->findByTaxon($referentiel, $num_tax);
         foreach ($occurrences as $occurrence) {
             $taxon = $occurrence->getTaxon();
@@ -226,9 +254,16 @@ public function __construct(SerializerInterface $serializer, EntityManagerInterf
 
             $occurrence->setTaxon($taxon);
             $occurrence->setCardTag($fiche->getTag());
+
+            // --- Invalidation du cache taxon lié (le texte de la card a changé) ---
+            $this->cacheFile->deleteTaxon($referentiel,  $taxon["accepted_scientific_name_id"]);
+
             $this->em->persist($occurrence);
         }
         $this->em->flush();
+
+        // --- Mise en cache fiche après création ---
+        $this->cacheFile->saveFiche($referentiel, $num_tax, $fiche, ['show_fiche']);
 
         return new JsonResponse($this->serializer->serialize($fiche, 'json', ['groups' => ['show_fiche']]), Response::HTTP_CREATED, [], true);
     }

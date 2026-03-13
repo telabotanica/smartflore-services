@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\Fiche;
 use App\Model\CardTab;
 use App\Entity\Image;
 //use App\Model\Image;
@@ -10,6 +11,7 @@ use App\Model\Taxon;
 use App\Service\SharedService;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\NativeHttpClient;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 
 class EfloreService
@@ -30,20 +32,25 @@ class EfloreService
     private $rechercheNomsVernaEfloreUrl;
     private $rechercheNomUrl;
     private $infosTaxonsUrl;
+    private $smartflorefronturl;
     private SharedService $sharedService;
+    private CacheFileService $cacheFile;
+    private SerializerInterface $serializer;
 
     public function __construct(
-        string $taxonApiBaseUrl,
-        string $cardApiBaseUrl,
-        string $imagesApiUrlTemplate,
-        string $imageCosteApiUrlTemplate,
-        string $vernacularNameApiUrlTemplate,
-        bool $useNativeHttpClient,
-        string $rechercheNomsVernaEfloreUrl,
-        string $rechercheNomUrl,
-        string $infosTaxonsUrl,
-        SharedService $sharedService,
-        CacheInterface $trailsCache
+        string           $taxonApiBaseUrl,
+        string           $cardApiBaseUrl,
+        string           $imagesApiUrlTemplate,
+        string           $imageCosteApiUrlTemplate,
+        string           $vernacularNameApiUrlTemplate,
+        bool             $useNativeHttpClient,
+        string           $rechercheNomsVernaEfloreUrl,
+        string           $rechercheNomUrl,
+        string           $infosTaxonsUrl,
+        string           $smartflorefronturl,
+        SharedService    $sharedService,
+        CacheFileService $cacheFile,
+        CacheInterface   $trailsCache, SerializerInterface $serializer
     ) {
         if ($useNativeHttpClient) {
             $this->client = new NativeHttpClient();
@@ -60,7 +67,10 @@ class EfloreService
         $this->rechercheNomsVernaEfloreUrl = $rechercheNomsVernaEfloreUrl;
         $this->rechercheNomUrl = $rechercheNomUrl;
         $this->infosTaxonsUrl = $infosTaxonsUrl;
+        $this->smartflorefronturl = $smartflorefronturl;
         $this->sharedService = $sharedService;
+        $this->cacheFile = $cacheFile;
+        $this->serializer = $serializer;
     }
 
     public function getTaxonRawInfo(string $taxonRepository, int $taxonNameId, bool $refresh = false)
@@ -86,11 +96,26 @@ class EfloreService
         return $taxonCache->get();
     }
 
-    public function getCardText(string $taxonRepository, string $taxonId, bool $refresh = false)
+    public function getCardText(string $taxonRepository, string $taxonId,string $taxon_num_nom = null,  bool $refresh = false)
     {
         $cardCache = $this->cache->getItem('taxon.card.SmartFlore'.strtoupper($taxonRepository).'nt'.$taxonId);
 
-        if ($refresh || !$cardCache->isHit()) {
+        $cached = $this->cacheFile->getFiche($taxonRepository, $taxonId); //For Smarflore v2
+        if ($cached) {
+            $fiche = $this->serializer->deserialize(json_encode($cached, true), Fiche::class, 'json');
+            $card['id'] = $fiche->getId();
+            $card['titre'] = $fiche->getTag();
+            //TODO: voir comment ajouter le num nom du taxon
+            $card['href'] = $this->smartflorefronturl . "/fiche/" . $fiche->getReferentiel() . "/" . $fiche->getNt() ."/" . $taxon_num_nom;
+            $card['sections']['description'] = $fiche->getDescription();
+            $card['sections']['usages'] = $fiche->getUsages();
+            $card['sections']['ecologie'] = $fiche->getEcologie();
+            $card['sections']['sources'] = $fiche->getSources();
+
+            return $card;
+        }
+
+        if ($refresh || !$cached || !$cardCache->isHit() ) {
             $fiche = $this->sharedService->chercherFiche($taxonRepository, $taxonId);
 
             if (!$fiche) {
@@ -313,9 +338,10 @@ class EfloreService
         $card->setTitle('Fiche Smart’Flore')
             ->setType('card')
             ->setIcon('card');
-        $cardSections = $this->getCardText($taxon->getReferentiel(), $taxon->getTaxonomicId(), $refresh);
+        $cardSections = $this->getCardText($taxon->getReferentiel(), $taxon->getTaxonomicId(), $taxon->getNumNom(), $refresh);
 
         if (!isset($cardSections['sections'])) {
+            //TO update ?
             $card->addSection('Fiche vide', 'Pas de contenu, cette fiche est vide.');
         } else {
             foreach ($cardSections['sections'] as $sectionTitle => $sectionText) {
