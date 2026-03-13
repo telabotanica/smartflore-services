@@ -715,7 +715,13 @@ class TrailController extends AbstractController
         SerializerInterface $serializer,
         $id
     ): Response {
-        $trail = $this->sentierRepository->findOneBy(['id' => $id, 'date_suppression' => null]);
+        $cached = $this->cacheFile->getTrail($id);
+        if ($cached !== null) {
+            $trail = $this->serializer->deserialize(json_encode($cached, true), Sentier::class, 'json', ['groups' => 'show_trail']);
+        } else {
+            $trail = $this->sentierRepository->findOneBy(['id' => $id, 'date_suppression' => null]);
+        }
+
         if (!$trail) {
             return new JsonResponse(['error' => 'Trail not found or deleted (id: ' . $id . ')'], Response::HTTP_NOT_FOUND);
         }
@@ -725,11 +731,19 @@ class TrailController extends AbstractController
         $taxons = [];
         foreach ($taxonsData as $taxonData) {
             try {
-                $taxon = $eflore->getTaxon(
-                    $taxonData['taxon_repository'],
-                    $taxonData['name_id'],
-                    true
-                );
+                $cached = $this->cacheFile->getTaxon($taxonData['taxon_repository'], $taxonData['name_id']);
+                if ($cached !== null) {
+                    $taxon = $this->serializer->deserialize(json_encode($cached, true), Taxon::class, 'json', ['groups' => 'show_taxon']);
+                } else {
+                    $taxon = $eflore->getTaxon(
+                        $taxonData['taxon_repository'],
+                        $taxonData['name_id'],
+                        true
+                    );
+
+                    $this->cacheFile->saveTaxon($taxonData['taxon_repository'], $taxonData['name_id'], $taxon, ['show_taxon', 'full_images']);
+                }
+
                 if ($taxon) {
                     $taxons[] = $taxon;
                 }
