@@ -267,6 +267,8 @@ class AdminController extends AbstractController
         $this->em->persist($trail);
         $this->em->flush();
 
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
+
         $admins = $this->annuaire->listAdmin();
         $url = $this->sharedService->getSentierFrontUrl($trail);
         foreach ($admins as $admin) {
