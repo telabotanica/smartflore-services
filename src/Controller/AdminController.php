@@ -6,6 +6,7 @@ use App\Entity\Sentier;
 use App\Repository\SentierRepository;
 use App\Service\AnnuaireService;
 use App\Service\BoundingBoxPolygonFactory;
+use App\Service\CacheFileService;
 use App\Service\CreateTrailService;
 use App\Service\EmailService;
 use App\Service\SharedService;
@@ -29,6 +30,7 @@ class AdminController extends AbstractController
     private CreateTrailService $createTrail;
     private SharedService $sharedService;
     private EmailService $emailService;
+    private CacheFileService $cacheFile;
 
     public function __construct(
         SerializerInterface $serializer,
@@ -37,7 +39,8 @@ class AdminController extends AbstractController
         AnnuaireService $annuaire,
         CreateTrailService $createTrail,
         SharedService $sharedService,
-        EmailService $emailService
+        EmailService $emailService,
+        CacheFileService $cacheFile
     )
     {
         $this->serializer = $serializer;
@@ -47,6 +50,7 @@ class AdminController extends AbstractController
         $this->createTrail = $createTrail;
         $this->sharedService = $sharedService;
         $this->emailService = $emailService;
+        $this->cacheFile = $cacheFile;
     }
 
     /**
@@ -178,6 +182,8 @@ class AdminController extends AbstractController
 
         $this->em->persist($trail);
         $this->em->flush();
+
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
 
         if ($trail->getAuteurEmail()) {
             $url = "https://www.tela-botanica.org/proposer-une-actualite/";
@@ -341,6 +347,8 @@ class AdminController extends AbstractController
         $this->em->persist($trail);
         $this->em->flush();
 
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
+
         $admins = $this->annuaire->listAdmin();
         $url = $this->sharedService->getSentierFrontUrl($trail);
         foreach ($admins as $admin) {
@@ -417,6 +425,8 @@ class AdminController extends AbstractController
         $trail->setDateSuppression(null);
         $this->em->persist($trail);
         $this->em->flush();
+
+        $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
 
         return new JsonResponse($this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']), Response::HTTP_OK, [], true);
 
