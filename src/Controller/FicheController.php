@@ -176,7 +176,9 @@ class FicheController extends AbstractController
             $occurrence->setTaxon($taxon);
             $occurrence->setCardTag($newFiche->getTag());
 
-            // --- Invalidation du cache taxon lié (le texte de la card a changé) ---
+            // --- Invalidation du cache taxon et sentier lié (le texte de la card a changé) ---
+            $trail = $occurrence->getSentier();
+            $this->cacheFile->deleteTrail($trail->getId());
             $this->cacheFile->deleteTaxon($referentiel,  $taxon["accepted_scientific_name_id"]);
 
             $this->em->persist($occurrence);
@@ -255,7 +257,9 @@ class FicheController extends AbstractController
             $occurrence->setTaxon($taxon);
             $occurrence->setCardTag($fiche->getTag());
 
-            // --- Invalidation du cache taxon lié (le texte de la card a changé) ---
+            // --- Invalidation du cache taxon et trail lié (le texte de la card a changé) ---
+            $trail = $occurrence->getSentier();
+            $this->cacheFile->deleteTrail($trail->getId());
             $this->cacheFile->deleteTaxon($referentiel,  $taxon["accepted_scientific_name_id"]);
 
             $this->em->persist($occurrence);
