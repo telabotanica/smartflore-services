@@ -7,23 +7,13 @@ use App\Entity\Sentier;
 use App\Entity\Image;
 use App\Model\Taxon;
 use App\Model\Trail;
-use App\Service\ImageService;
 use App\Repository\SentierRepository;
 use Symfony\Component\HttpFoundation\Request;
 use League\Geotools\Coordinate\Coordinate;
 use League\Geotools\Geotools;
 use League\Geotools\Polygon\Polygon;
-use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
-use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 
@@ -39,6 +29,7 @@ class TrailsService
     private ImageService $imageService;
     private SerializerInterface $serializer;
     private SharedService $sharedService;
+    private CacheFileService $cacheFile;
 
     public function __construct(
         string $smartfloreLegacyApiBaseUrl,
@@ -49,7 +40,8 @@ class TrailsService
         SentierRepository $sentierRepository,
         ImageService $imageService,
         SerializerInterface $serializer,
-        SharedService $sharedService
+        SharedService $sharedService,
+        CacheFileService $cacheFile
     ) {
         $this->client = HttpClient::create();
         $this->cache = $cache;
@@ -61,6 +53,7 @@ class TrailsService
         $this->imageService = $imageService;
         $this->serializer = $serializer;
         $this->sharedService = $sharedService;
+        $this->cacheFile = $cacheFile;
     }
 
     /**
@@ -418,5 +411,14 @@ class TrailsService
         }
 
         return $criterias;
+    }
+
+    public function rebuildTrailsList(): void
+    {
+        $validatedTrails = $this->sentierRepository->findBy(
+            ['status' => 'Validé', 'date_suppression' => null],
+            ['nom' => 'ASC']
+        );
+        $this->cacheFile->saveTrailsList($validatedTrails, ['list_trail']);
     }
 }

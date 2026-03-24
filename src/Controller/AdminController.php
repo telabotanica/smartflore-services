@@ -31,6 +31,7 @@ class AdminController extends AbstractController
     private SharedService $sharedService;
     private EmailService $emailService;
     private CacheFileService $cacheFile;
+    private TrailsService $trailsService;
 
     public function __construct(
         SerializerInterface $serializer,
@@ -40,7 +41,8 @@ class AdminController extends AbstractController
         CreateTrailService $createTrail,
         SharedService $sharedService,
         EmailService $emailService,
-        CacheFileService $cacheFile
+        CacheFileService $cacheFile,
+        TrailsService $trailsService
     )
     {
         $this->serializer = $serializer;
@@ -51,6 +53,7 @@ class AdminController extends AbstractController
         $this->sharedService = $sharedService;
         $this->emailService = $emailService;
         $this->cacheFile = $cacheFile;
+        $this->trailsService = $trailsService;
     }
 
     /**
@@ -184,6 +187,7 @@ class AdminController extends AbstractController
         $this->em->flush();
 
         $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
+        $this->trailsService->rebuildTrailsList();
 
         if ($trail->getAuteurEmail()) {
             $url = "https://www.tela-botanica.org/proposer-une-actualite/";

@@ -49,3 +49,18 @@ Import eFloreRedaction_triples.sql file into the new database then:
 ```bash
 symfony console app:import:sentiers
 ```
+
+### Build cache for trails list
+#### V1
+```bash
+symfony console app:cache:refresh all
+```
+
+#### V2 (2026)
+```bash
+# Première construction ou reconstruction complète
+symfony console app:cache:build-trails-list
+
+# En production (sans interaction)
+php bin/console app:cache:build-trails-list --no-ansi -q
+```

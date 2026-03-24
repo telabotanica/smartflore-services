@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+//use App\Service\ImageService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -20,6 +21,7 @@ class CacheFileService
     private Filesystem $filesystem;
     private SerializerInterface $serializer;
     private LoggerInterface $logger;
+//    private ImageService $imageService;
 
     public function __construct(
         string $cachePath,
@@ -269,5 +271,53 @@ class CacheFileService
                 }
             }
         }
+    }
+
+    // -------------------------------------------------------------------------
+// Trails List (smartflore_trails.json)
+// -------------------------------------------------------------------------
+
+    public function getTrailsListCachePath(): string
+    {
+        return $this->cachePath . '/smartflore_trails.json';
+    }
+
+    /**
+     * Retourne la liste des sentiers validés depuis le cache, ou null si absente/invalide.
+     * @return array<int, array<string, mixed>>|null
+     */
+    public function getTrailsList(): ?array
+    {
+        return $this->readJsonFile($this->getTrailsListCachePath());
+    }
+
+    /**
+     * Construit et écrit la liste complète des sentiers validés en cache.
+     * Chaque sentier est également sauvegardé individuellement via saveTrail().
+     *
+     * @param object[] $trails  Entités Sentier avec status='Validé'
+     * @param array<string> $groups Groupes de sérialisation
+     */
+    public function saveTrailsList(array $trails, array $groups = ['list_trail']): bool
+    {
+        // Sauvegarde individuelle de chaque sentier
+        foreach ($trails as $trail) {
+            // Compatibilité avec ancien service,
+            //A voir si c'est encore utilisé, charger imageService fait planté
+//            $this->imageService->findOneImagePlease($trail);
+            $this->saveTrail($trail->getId(), $trail, ['show_trail']);
+        }
+
+        $json = $this->serializer->serialize($trails, 'json', ['groups' => $groups]);
+
+        return $this->writeJsonFile($this->getTrailsListCachePath(), $json);
+    }
+
+    /**
+     * Supprime le fichier de liste des sentiers.
+     */
+    public function deleteTrailsList(): bool
+    {
+        return $this->deleteFile($this->getTrailsListCachePath());
     }
 }

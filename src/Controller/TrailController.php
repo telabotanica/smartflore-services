@@ -2,24 +2,18 @@
 
 namespace App\Controller;
 
-use App\Entity\Image;
 use App\Entity\Sentier;
-use App\Model\CreateTrailDto;
 use App\Model\Taxon;
-use App\Model\Trail;
 use App\Repository\ImageRepository;
 use App\Repository\SentierRepository;
 use App\Service\AnnuaireService;
 use App\Service\BoundingBoxPolygonFactory;
 use App\Service\CacheFileService;
-use App\Service\CookieAwareClient;
 use App\Service\CreateTrailService;
 use App\Service\EfloreService;
 use App\Service\EmailService;
-use App\Service\ImageService;
 use App\Service\SharedService;
 use App\Service\TrailsService;
-use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -27,11 +21,9 @@ use OpenApi\Annotations as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Symfony\Component\HttpFoundation\Cookie;
 
 class TrailController extends AbstractController
 {
@@ -43,7 +35,6 @@ class TrailController extends AbstractController
     private EntityManagerInterface $em;
     private EmailService $emailService;
     private SharedService $sharedService;
-    private ImageService $imageService;
     private CacheFileService $cacheFile;
 
     public function __construct(
@@ -55,7 +46,6 @@ class TrailController extends AbstractController
         EntityManagerInterface $em,
         EmailService $emailService,
         SharedService $sharedService,
-        ImageService $imageService,
         CacheFileService $cacheFile
     ) {
         $this->serializer = $serializer;
@@ -66,7 +56,6 @@ class TrailController extends AbstractController
         $this->em = $em;
         $this->emailService = $emailService;
         $this->sharedService = $sharedService;
-        $this->imageService = $imageService;
         $this->cacheFile = $cacheFile;
     }
 
@@ -113,30 +102,30 @@ class TrailController extends AbstractController
         BoundingBoxPolygonFactory $polygonFactory
     ) {
         $searchCriterias = $trails->getSearchCriterias($request);
+        $hasBbox = (bool) $request->query->get('bbox');
 
-        $list = $trails->getTrailsList();
-        if (!$list || !empty($searchCriterias)) {
-            $searchCriterias['status'] = 'Validé';
-            $searchCriterias['show_deleted'] = false;
-            $list = $this->sentierRepository->findByCriterias($searchCriterias);
-        }
-
-        // filter list with given coords bounding box
-        if ($bbox = $request->query->get('bbox')) {
-            // we need two coordinates to build a bounding box: northEast and southWest
-            $coords = explode(',', $bbox);
-            $list = $trails->getTrailsInsideBoundaries(
-                $polygonFactory->createBoundingBoxPolygon($coords), $list
-            );
-
-            // fallback si rien trouvé dans la bbox
-            if (!$list) {
-                $list = [];
+        // Cache fichier uniquement si pas de critères de recherche et pas de bbox
+        if (empty($searchCriterias) && !$hasBbox) {
+            $cached = $this->cacheFile->getTrailsList();
+            if ($cached !== null) {
+                return new JsonResponse(json_encode($cached), Response::HTTP_OK, [], true);
             }
         }
 
-        $json = $serializer->serialize($list, 'json', ['groups' => 'list_trail']);
+        // Fallback BDD
+        $searchCriterias['status'] = 'Validé';
+        $searchCriterias['show_deleted'] = false;
+        $list = $this->sentierRepository->findByCriterias($searchCriterias);
 
+        if ($hasBbox) {
+            $coords = explode(',', $request->query->get('bbox'));
+            $list = $trails->getTrailsInsideBoundaries(
+                $polygonFactory->createBoundingBoxPolygon($coords), $list
+            );
+            $list = $list ?: [];
+        }
+
+        $json = $serializer->serialize($list, 'json', ['groups' => 'list_trail']);
         return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 
