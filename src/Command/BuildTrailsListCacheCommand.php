@@ -85,7 +85,7 @@ class BuildTrailsListCacheCommand extends Command
                                 $this->cacheFile->saveTaxon($referentiel, $nameId, $taxon, ['show_taxon', 'full_images']);
                             }
                         } catch (\Exception $e) {
-                            $errors[] = sprintf('Taxon %s/%d : %s', $referentiel, $nameId, $e->getMessage());
+                            $errors[] = sprintf('Trail %d,Taxon %s/%d : %s', $trail->getId(), $referentiel, $nameId, $e->getMessage());
                         }
                     }
 
