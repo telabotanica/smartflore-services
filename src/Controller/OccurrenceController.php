@@ -310,6 +310,8 @@ class OccurrenceController extends AbstractController
         $this->em->persist($trail);
         $this->em->flush();
 
+        $trail->reindexOccurrences();
+
         // --- Mise à jour du cache trail après suppression d'occurrence ---
         $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
 

@@ -628,5 +628,10 @@ class Sentier
         return $this;
     }
 
-
+    public function reindexOccurrences(): self
+    {
+        $occurrences = array_values($this->occurrences->toArray());
+        $this->occurrences = new ArrayCollection($occurrences);
+        return $this;
+    }
 }
