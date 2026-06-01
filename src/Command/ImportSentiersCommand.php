@@ -152,7 +152,7 @@ class ImportSentiersCommand extends Command
             }
 
             // On vérifie si le sentier a déjà été importé
-            $existingSentier = $this->entityManager->getRepository(Sentier::class)->findOneBy(['ancienId' => $trail['id']]);
+            $existingSentier = $this->entityManager->getRepository(Sentier::class)->findOneBy(['ancien_id' => $trail['id']]);
             if ($existingSentier) {
                 $io->note(sprintf('Sentier "%s" (ancien_id: %s) déjà importé, on passe.', $trail['nom'], $trail['id']));
                 continue;
