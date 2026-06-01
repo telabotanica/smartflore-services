@@ -205,8 +205,8 @@ class CacheFileService
     {
         try {
             $dir = dirname($path);
-            if (!$this->filesystem->exists($dir)) {
-                $this->filesystem->mkdir($dir, 0755);
+            if (!is_dir($dir)) {
+                $this->filesystem->mkdir($dir, 0755, true);
             }
 
             // Écriture atomique : on écrit dans un fichier temporaire puis on le déplace
