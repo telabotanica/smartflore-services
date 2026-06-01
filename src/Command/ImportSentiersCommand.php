@@ -151,6 +151,13 @@ class ImportSentiersCommand extends Command
                 }
             }
 
+            // On vérifie si le sentier a déjà été importé
+            $existingSentier = $this->entityManager->getRepository(Sentier::class)->findOneBy(['ancienId' => $trail['id']]);
+            if ($existingSentier) {
+                $io->note(sprintf('Sentier "%s" (ancien_id: %s) déjà importé, on passe.', $trail['nom'], $trail['id']));
+                continue;
+            }
+
             $positionJson = json_decode($trail['position'] ?? '', true);
             $sentierCoords = $positionJson['sentier'] ?? null;
             $individusWithPosition = $positionJson['individus'] ?? [];
