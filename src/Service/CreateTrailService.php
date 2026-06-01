@@ -231,15 +231,15 @@ class CreateTrailService
            $taxonInfos = $this->eflore->getTaxonRawInfo($taxonRepository, $occurrence->getTaxon()['name_id']);
 
             $taxon
-                ->setEspece($taxonInfos['nom_sci'])
-                ->setFullScientificName($taxonInfos['nom_complet'])
+                ->setEspece($taxonInfos['nom_sci'] ?? "")
+                ->setFullScientificName($taxonInfos['nom_complet'] ?? "")
                 ->setHtmlFullScientificName($taxonInfos['nom_sci_html_complet'] ?? '')
                 ->setGenre($taxonInfos['genre'] ?? '')
                 ->setFamille($taxonInfos['famille'] ?? '')
-                ->setReferentiel($taxonRepository)
+                ->setReferentiel($taxonRepository ?? "")
                 ->setNumNom($taxonInfos['id'])
-                ->setAcceptedScientificNameId($taxonInfos['nom_retenu.id'])
-                ->setTaxonomicId($taxonInfos['num_taxonomique'])
+                ->setAcceptedScientificNameId($taxonInfos['nom_retenu.id'] ?? 0)
+                ->setTaxonomicId($taxonInfos['num_taxonomique'] ?? 0)
             ;
 
             $vernacularInfos = $this->eflore->getVernacularName(
