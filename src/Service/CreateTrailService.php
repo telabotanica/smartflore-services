@@ -358,18 +358,22 @@ class CreateTrailService
     }
 
     public function setImagesToOccurrence(Occurrence $occurrence, $image_id) {
-        $image = new Image();
-        $image->setCelImageId($image_id);
+        if (!is_int($image_id) && !is_numeric($image_id)) {
+            return $occurrence;
+        }
 
-        $image_api_id = str_pad($image_id, 9, '0', STR_PAD_LEFT);
+        $imageIdInt = (int) $image_id;
+
+        $image = new Image();
+        $image->setCelImageId($imageIdInt);
+        $image_api_id = str_pad((string) $imageIdInt, 9, '0', STR_PAD_LEFT);
         $image->setMini(sprintf($this->imageMiniatureUrl, $image_api_id));
         $image->setUrl(sprintf($this->imageUrl, $image_api_id));
 
-        // On récupère les infos de l'image
-        $response = $this->client->request('GET', sprintf($this->ipApiV2Image, $image_id), []);
-        if (200 == $response->getStatusCode()) {
+        $response = $this->client->request('GET', sprintf($this->ipApiV2Image, $imageIdInt), []);
+        if (200 === $response->getStatusCode()) {
             $image_data = json_decode($response->getContent());
-            $author = $image_data->observation->{'auteur.nom'};
+            $author = $image_data->observation->{'auteur.nom'} ?? "";
             $image->setAuthor($author);
         }
 
