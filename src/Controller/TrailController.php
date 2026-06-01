@@ -706,8 +706,19 @@ class TrailController extends AbstractController
     ): Response {
         $cached = $this->cacheFile->getTrail($id);
         if ($cached !== null) {
-            $trail = $this->serializer->deserialize(json_encode($cached, true), Sentier::class, 'json', ['groups' => 'show_trail']);
-        } else {
+            try {
+                $trail = $this->serializer->deserialize(
+                    json_encode($cached),
+                    Sentier::class,
+                    'json',
+                    ['groups' => 'show_trail']
+                );
+            } catch (\Exception $e) {
+                $trail = null;
+            }
+        }
+
+        if ($trail === null) {
             $trail = $this->sentierRepository->findOneBy(['id' => $id, 'date_suppression' => null]);
         }
 
@@ -720,16 +731,15 @@ class TrailController extends AbstractController
         $taxons = [];
         foreach ($taxonsData as $taxonData) {
             try {
-                $cached = $this->cacheFile->getTaxon($taxonData['taxon_repository'], $taxonData['name_id']);
-                if ($cached !== null) {
-                    $taxon = $this->serializer->deserialize(json_encode($cached, true), Taxon::class, 'json', ['groups' => 'show_taxon']);
+                $cachedTaxon = $this->cacheFile->getTaxon($taxonData['taxon_repository'], $taxonData['name_id']);
+                if ($cachedTaxon !== null) {
+                    $taxon = $this->serializer->deserialize(json_encode($cachedTaxon, true), Taxon::class, 'json', ['groups' => 'show_taxon']);
                 } else {
                     $taxon = $eflore->getTaxon(
                         $taxonData['taxon_repository'],
                         $taxonData['name_id'],
                         true
                     );
-
                     $this->cacheFile->saveTaxon($taxonData['taxon_repository'], $taxonData['name_id'], $taxon, ['show_taxon', 'full_images']);
                 }
 
@@ -739,7 +749,6 @@ class TrailController extends AbstractController
             } catch (\Exception $e) {
                 $taxons[] = $taxonData;
             }
-
         }
 
         $json = $serializer->serialize($taxons, 'json', ['groups' => ['show_taxon', 'full_images']]);

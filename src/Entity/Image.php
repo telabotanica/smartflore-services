@@ -23,7 +23,7 @@ class Image
      *     type="int",
      *     example="131269"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
+     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "update_occurrence"})
      */
     private $id;
 
