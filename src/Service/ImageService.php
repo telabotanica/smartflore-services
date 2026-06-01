@@ -183,7 +183,7 @@ class ImageService
 
         if ($image && $image->getCelImageId()) {
             $imageModel = new Image();
-            $imageModel->setCelImageId($image->getCelImageId());
+            $imageModel->setCelImageId($image->getId());
             $imageModel->setUrl($image->getUrl());
             $imageModel->setAuthor($image->getAuthor() ?? '');
             $imageModel->setMini($image->getMini() ?? '');
