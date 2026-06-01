@@ -196,7 +196,7 @@ class importService
         $num_nom = array_pop($keys);
 
         $taxon = new Taxon();
-        $taxon->setFullScientificName($infos['resultat'][$num_nom]['nom_sci']);
+        $taxon->setFullScientificName($infos['resultat'][$num_nom]['nom_sci'] ?? "");
         $taxon->setReferentiel($referentiel);
         $taxon->setNumNom($num_nom);
 
