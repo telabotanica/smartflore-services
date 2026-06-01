@@ -237,7 +237,7 @@ class CreateTrailService
                 ->setGenre($taxonInfos['genre'] ?? '')
                 ->setFamille($taxonInfos['famille'] ?? '')
                 ->setReferentiel($taxonRepository ?? "")
-                ->setNumNom($taxonInfos['id'])
+                ->setNumNom($taxonInfos['id'] ?? 0)
                 ->setAcceptedScientificNameId($taxonInfos['nom_retenu.id'] ?? 0)
                 ->setTaxonomicId($taxonInfos['num_taxonomique'] ?? 0)
             ;
