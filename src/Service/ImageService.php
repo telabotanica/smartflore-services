@@ -181,7 +181,7 @@ class ImageService
             }
         }
 
-        if ($image && $image->getCelImageId()) {
+        if ($image && $image->getId()) {
             $imageModel = new Image();
             $imageModel->setCelImageId($image->getId());
             $imageModel->setUrl($image->getUrl());
