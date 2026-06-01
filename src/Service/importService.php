@@ -197,8 +197,8 @@ class importService
 
         $taxon = new Taxon();
         $taxon->setFullScientificName($infos['resultat'][$num_nom]['nom_sci'] ?? "");
-        $taxon->setReferentiel($referentiel);
-        $taxon->setNumNom($num_nom);
+        $taxon->setReferentiel($referentiel ?? "");
+        $taxon->setNumNom($num_nom ?? 0);
 
         return $taxon;
     }
