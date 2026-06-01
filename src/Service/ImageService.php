@@ -182,11 +182,12 @@ class ImageService
         }
 
         if ($image && $image->getCelImageId()) {
-            $imageModel = new \App\Model\Image(
-                $image->getCelImageId(),
-                $image->getUrl(),
-                $image->getAuthor() ?? '',
-                $image->getMini() ?? '');
+            $imageModel = new Image();
+            $imageModel->setCelImageId($image->getCelImageId());
+            $imageModel->setUrl($image->getUrl());
+            $imageModel->setAuthor($image->getAuthor() ?? '');
+            $imageModel->setMini($image->getMini() ?? '');
+            
             $trail->setImage($imageModel);
         }
 
