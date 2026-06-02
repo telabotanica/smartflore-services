@@ -41,15 +41,21 @@ class OccurrenceRepository extends ServiceEntityRepository
 
     public function findByTaxon(string $taxonRepository, int $taxonId): array
     {
-        return $this->createQueryBuilder('o')
-            ->andWhere("JSON_EXTRACT(o.taxon, '$.taxon_repository') = :taxonRepository")
-            ->andWhere("JSON_EXTRACT(o.taxon, '$.taxonomic_id') = :taxonId")
-            ->setParameter('taxonRepository', $taxonRepository)
-            ->setParameter('taxonId', $taxonId)
-            ->getQuery()
-            ->getResult()
-            ;
+        $occurrences = $this->findAll();
 
+        return array_filter(
+            $occurrences,
+            static function (Occurrence $occurrence) use ($taxonRepository, $taxonId) {
+                $taxon = $occurrence->getTaxon();
+
+                return isset(
+                        $taxon['taxon_repository'],
+                        $taxon['taxonomic_id']
+                    )
+                    && $taxon['taxon_repository'] === $taxonRepository
+                    && (int) $taxon['taxonomic_id'] === $taxonId;
+            }
+        );
     }
 
 //    /**
