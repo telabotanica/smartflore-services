@@ -228,7 +228,7 @@ class CreateTrailService
             //    7 => "Bois-chaud"
             //  ]
             //  -tabs: null
-           $taxonInfos = $this->eflore->getTaxonRawInfo($taxonRepository, $occurrence->getTaxon()['name_id']);
+            $taxonInfos = $this->eflore->getTaxonRawInfo($taxonRepository, $occurrence->getTaxon()['name_id']);
 
             $taxon
                 ->setEspece($taxonInfos['nom_sci'] ?? "")
@@ -445,44 +445,147 @@ class CreateTrailService
         return true;
     }
 
+    /**
+     * Vérifie les fiches associées aux occurrences et retourne celles qui sont incomplètes
+     *
+     * @param Sentier $trail
+     * @return array Liste des fiches incomplètes avec détails
+     */
     private function checkEmptyFiches(Sentier $trail): array
     {
         $emptyFiches = [];
-        foreach ($trail->getOccurrences() as $occurrence) {
-            if (!$occurrence->getCardTag() ||
-                strpos($occurrence->getCardTag(), 'SmartFlore') === false
-            ) {
-                //TODO: réparer le strpos
-                $emptyFiches[] = [
-                    'occurrence_id' => $occurrence->getId(),
-                    'fiche_tag' => $occurrence->getCardTag(),
-                    'taxon' => [
-                        'scientific_name' => $occurrence->getTaxon()['scientific_name'],
-                        'taxon_repository' => $occurrence->getTaxon()['taxon_repository'],
-                        'name_id' => $occurrence->getTaxon()['name_id'],
-                        'taxonomic_id' => $occurrence->getTaxon()['taxonomic_id']
-                        ],
-                    'error' => 'La fiche n\'existe pas et doit être créée puis remplie avec au moins une description et les sources'
-                    ];
-                continue;
-            }
 
-            $fiche = $this->ficheRepository->findOneBy(['tag' => $occurrence->getCardTag(), 'derniere_version' => 1]);
-            if ($fiche && (!$fiche->getDescription() || !$fiche->getSources())) {
-                $emptyFiches[] = [
-                    'occurrence_id' => $occurrence->getId(),
-                    'fiche_tag' => $occurrence->getCardTag(),
-                    'taxon' => [
-                        'scientific_name' => $occurrence->getTaxon()['scientific_name'],
-                        'taxon_repository' => $occurrence->getTaxon()['taxon_repository'],
-                        'name_id' => $occurrence->getTaxon()['name_id'],
-                        'taxonomic_id' => $occurrence->getTaxon()['taxonomic_id']
-                    ],
-                    'error' => 'La fiche doit être remplie avec au moins une description et les sources'
-                ];
+        foreach ($trail->getOccurrences() as $occurrence) {
+            try {
+                // Valider les données de base
+                if (!$occurrence instanceof Occurrence) {
+                    continue;
+                }
+
+                $cardTag = $occurrence->getCardTag();
+                $taxonData = $occurrence->getTaxon();
+
+                // Vérifier si la fiche tag est manquante ou invalide
+                if (!$this->isValidCardTag($cardTag)) {
+                    $emptyFiches[] = $this->buildEmptyFicheError(
+                        $occurrence,
+                        $taxonData,
+                        'La fiche n\'existe pas et doit être créée puis remplie avec au moins une description et les sources'
+                    );
+                    continue;
+                }
+
+                // Chercher la fiche avec gestion d'erreurs
+                try {
+                    $fiche = $this->ficheRepository->findOneBy([
+                        'tag' => $cardTag,
+                        'derniere_version' => 1
+                    ]);
+                } catch (\Exception $e) {
+                    throw new \Exception("Erreur lors de la recherche de la fiche avec tag: {$cardTag}", 0, $e);
+                }
+
+                // Vérifier si la fiche est incomplète
+                if ($fiche === null) {
+                    $emptyFiches[] = $this->buildEmptyFicheError(
+                        $occurrence,
+                        $taxonData,
+                        'La fiche n\'a pas pu être trouvée en base de données'
+                    );
+                    continue;
+                }
+
+                if (!$this->isFicheComplete($fiche)) {
+                    $emptyFiches[] = $this->buildEmptyFicheError(
+                        $occurrence,
+                        $taxonData,
+                        'La fiche doit être remplie avec au moins une description et les sources'
+                    );
+                }
+            } catch (\Exception $e) {
+                // Logger l'erreur mais continuer le traitement
+                error_log("Erreur lors de la vérification de la fiche: " . $e->getMessage());
+                continue;
             }
         }
 
         return $emptyFiches;
+    }
+
+    /**
+     * Vérifie si le tag de fiche est valide
+     *
+     * @param string|null $cardTag
+     * @return bool
+     */
+    private function isValidCardTag(?string $cardTag): bool
+    {
+        if (empty($cardTag)) {
+            return false;
+        }
+
+        // Utiliser str_contains au lieu de strpos pour plus de clarté (PHP 8+)
+        // Pour PHP 7, utiliser: strpos($cardTag, 'SmartFlore') !== false
+        return strpos($cardTag, 'SmartFlore') !== false;
+    }
+
+    /**
+     * Vérifie si une fiche est complète (a une description et des sources)
+     *
+     * @param mixed $fiche
+     * @return bool
+     */
+    private function isFicheComplete($fiche): bool
+    {
+        if ($fiche === null) {
+            return false;
+        }
+
+        // Vérifier que les méthodes existent et retournent des valeurs valides
+        try {
+            $description = $fiche->getDescription();
+            $sources = $fiche->getSources();
+
+            return !empty($description) && !empty($sources);
+        } catch (\Exception $e) {
+            error_log("Erreur lors de la vérification de complétude de la fiche: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Construit un tableau d'erreur de fiche incomplète avec gestion des données manquantes
+     *
+     * @param Occurrence $occurrence
+     * @param array|null $taxonData
+     * @param string $error
+     * @return array
+     */
+    private function buildEmptyFicheError(Occurrence $occurrence, ?array $taxonData, string $error): array
+    {
+        $result = [
+            'occurrence_id' => $occurrence->getId(),
+            'fiche_tag' => $occurrence->getCardTag(),
+            'error' => $error
+        ];
+
+        // Construire les données taxon de manière sécurisée
+        if (is_array($taxonData)) {
+            $result['taxon'] = [
+                'scientific_name' => $taxonData['scientific_name'] ?? 'Inconnu',
+                'taxon_repository' => $taxonData['taxon_repository'] ?? 'Inconnu',
+                'name_id' => $taxonData['name_id'] ?? null,
+                'taxonomic_id' => $taxonData['taxonomic_id'] ?? null
+            ];
+        } else {
+            $result['taxon'] = [
+                'scientific_name' => 'Inconnu',
+                'taxon_repository' => 'Inconnu',
+                'name_id' => null,
+                'taxonomic_id' => null
+            ];
+        }
+
+        return $result;
     }
 }
