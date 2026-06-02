@@ -131,7 +131,8 @@ class importService
                 $occurrence->setTaxon([
                     'scientific_name' => $taxon->getFullScientificName(),
                     'taxon_repository' => $taxon->getReferentiel(),
-                    'name_id' => $taxon->getNumNom()
+                    'name_id' => $taxon->getNumNom(),
+                    'taxonomic_id' => $taxon->getTaxonomicId()
                 ]);
                 // Besoin de $occurrence->getTaxon()['taxon_repository'] et $occurrence->getTaxon()['name_id']
                 $this->createTrailService->getCardTag($occurrence);
@@ -199,6 +200,7 @@ class importService
         $taxon->setFullScientificName($infos['resultat'][$num_nom]['nom_sci'] ?? "");
         $taxon->setReferentiel($referentiel ?? "");
         $taxon->setNumNom($num_nom ?? 0);
+        $taxon->setTaxonomicId($infos['resultat'][$num_nom]['num_taxonomique'] ?? null);
 
         return $taxon;
     }

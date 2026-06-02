@@ -205,41 +205,46 @@ class CreateTrailService
 
     public function getCardTag(Occurrence $occurrence): void
     {
-        $taxonRepository = $occurrence->getTaxon()['taxon_repository'];
+        $ficheTag = $occurrence->getCardTag();
+        $taxonFromOccurrence = $occurrence->getTaxon();
+
+        $taxonRepository = $taxonFromOccurrence['taxon_repository'];
+        $nt = $taxonFromOccurrence['taxonomic_id'];
+        $name_id = $taxonFromOccurrence['name_id'];
+        $espece = $taxonFromOccurrence['scientific_name'];
+
         $taxon = new Taxon();
         $taxonArray = [];
         try {
-            //-espece: "Acer campestre"
-            //  -fullScientificName: "Acer campestre L."
-            //  -htmlFullScientificName: "<span class="sci"><span class="gen">Acer</span> <span class="sp">campestre</span></span> <span class="auteur">L.</span> [<span class="annee">1753</span>, <span class="biblio">Sp. Pl., 2 : 1055</span>]"
-            //  -genre: "Acer"
-            //  -famille: "Sapindaceae"
-            //  -referentiel: "bdtfx"
-            //  -numNom: 141
-            //  -acceptedScientificNameId: 141
-            //  -taxonomicId: 8522
-            //  -vernacularNames: array:7 [
-            //    1 => "Érable champêtre"
-            //    2 => "Petit Érable"
-            //    3 => "Acéraille"
-            //    4 => "Auzerole"
-            //    5 => "Azeraille"
-            //    6 => "Bois de poule"
-            //    7 => "Bois-chaud"
-            //  ]
-            //  -tabs: null
-            $taxonInfos = $this->eflore->getTaxonRawInfo($taxonRepository, $occurrence->getTaxon()['name_id']);
+            //eg. https://api.tela-botanica.org/service:eflore:0.1/bdtfx/taxons/28211
+            $taxonInfos = $this->eflore->getTaxonRawInfo($taxonRepository, $name_id);
+
+            if (!$taxonRepository){
+                $taxonRepository = $taxonInfos['referentiel'] ?? "";
+            }
+
+            if (!$nt) {
+                $nt = $taxonInfos['num_taxonomique'] ?? 0;
+            }
+
+            if (!$name_id) {
+                $name_id = $taxonInfos['id'] ?? 0;
+            }
+
+            if (!$espece) {
+                $espece = $taxonInfos['nom_sci'] ?? "";
+            }
 
             $taxon
-                ->setEspece($taxonInfos['nom_sci'] ?? "")
+                ->setEspece($espece)
+                ->setReferentiel($taxonRepository)
+                ->setNumNom($name_id)
+                ->setTaxonomicId($nt)
                 ->setFullScientificName($taxonInfos['nom_complet'] ?? "")
                 ->setHtmlFullScientificName($taxonInfos['nom_sci_html_complet'] ?? '')
                 ->setGenre($taxonInfos['genre'] ?? '')
                 ->setFamille($taxonInfos['famille'] ?? '')
-                ->setReferentiel($taxonRepository ?? "")
-                ->setNumNom($taxonInfos['id'] ?? 0)
                 ->setAcceptedScientificNameId($taxonInfos['nom_retenu.id'] ?? 0)
-                ->setTaxonomicId($taxonInfos['num_taxonomique'] ?? 0)
             ;
 
             $vernacularInfos = $this->eflore->getVernacularName(
@@ -251,25 +256,28 @@ class CreateTrailService
             }
 
             $taxonArray = [
-                'name_id' => $taxon->getNumNom() ?? null,
-                'scientific_name' => $taxon->getFullScientificName() ?? null,
-                'html_full_scientific_name' => $taxon->getHtmlFullScientificName() ?? null,
-                'genus' => $taxon->getGenre() ?? null,
-                'family' => $taxon->getFamille() ?? null,
-                'taxon_repository' => $taxon->getReferentiel() ?? null,
-                'accepted_scientific_name_id' => $taxon->getAcceptedScientificNameId() ?? null,
-                'taxonomic_id' => $taxon->getTaxonomicId() ?? null,
+                'name_id' => $taxon->getNumNom(),
+                'scientific_name' => $taxon->getFullScientificName(),
+                'html_full_scientific_name' => $taxon->getHtmlFullScientificName(),
+                'genus' => $taxon->getGenre(),
+                'family' => $taxon->getFamille(),
+                'taxon_repository' => $taxon->getReferentiel(),
+                'accepted_scientific_name_id' => $taxon->getAcceptedScientificNameId(),
+                'taxonomic_id' => $taxon->getTaxonomicId(),
                 'vernacular_names' => $taxon->getVernacularNames() ?? []
             ];
         } catch (\Exception $e) {
             throw new \Exception('Erreur lors de la récupération de la taxon.');
         }
 
-        $fiche = $this->sharedService->chercherFiche($taxonRepository, $taxon->getTaxonomicId());
-
-        if ($fiche) {
-            $taxonArray['tabs'] = $fiche->getTag();
-            $occurrence->setCardTag($fiche->getTag());
+        if ($ficheTag) {
+            $taxonArray['tabs'] = $ficheTag;
+        } else {
+            $fiche = $this->sharedService->chercherFiche($taxonRepository, $taxon->getTaxonomicId());
+            if ($fiche) {
+                $taxonArray['tabs'] = $fiche->getTag();
+                $occurrence->setCardTag($fiche->getTag());
+            }
         }
         $occurrence->setTaxon($taxonArray);
     }
