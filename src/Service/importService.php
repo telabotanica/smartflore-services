@@ -126,7 +126,7 @@ class importService
             $num_taxonomique = $taxonFromFiche[1];
             try {
                 $infos = $this->efloreService->getInfosTaxons($referentiel, $num_taxonomique);
-                $taxon = $this->mapTaxonInfos($infos, $referentiel);
+                $taxon = $this->mapTaxonInfos($infos, $referentiel, $num_taxonomique);
 
                 $occurrence->setTaxon([
                     'scientific_name' => $taxon->getFullScientificName(),
@@ -182,7 +182,7 @@ class importService
             $num_taxonomique = $taxonFromFiche[1];
             try {
                 $infos = $this->efloreService->getInfosTaxons($referentiel, $num_taxonomique);
-                $taxon = $this->mapTaxonInfos($infos, $referentiel);
+                $taxon = $this->mapTaxonInfos($infos, $referentiel, $num_taxonomique);
             }  catch (\Exception $e) {
                 echo (" || ". "erreur lors de la récupération du taxon" . ": ". $referentiel ." ". $num_taxonomique ." ". $e->getMessage()) ;
             }
@@ -191,7 +191,7 @@ class importService
         return $taxon;
     }
 
-    public function mapTaxonInfos(array $infos, string $referentiel): Taxon
+    public function mapTaxonInfos(array $infos, string $referentiel, int $num_taxonomique): Taxon
     {
         $keys = array_keys($infos['resultat']);
         $num_nom = array_pop($keys);
@@ -200,9 +200,7 @@ class importService
         $taxon->setFullScientificName($infos['resultat'][$num_nom]['nom_sci'] ?? "");
         $taxon->setReferentiel($referentiel ?? "");
         $taxon->setNumNom($num_nom ?? 0);
-        if (isset($infos['resultat'][$num_nom]['num_taxonomique'])) {
-            $taxon->setTaxonomicId($infos['resultat'][$num_nom]['num_taxonomique']);
-        }
+        $taxon->setTaxonomicId($num_taxonomique);
 
         return $taxon;
     }
