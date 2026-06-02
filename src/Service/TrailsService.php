@@ -224,11 +224,13 @@ class TrailsService
     {
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxon();
-            $taxon = $this->efloreService->getTaxon(
-                $taxon['taxon_repository'], $taxon['name_id'], true);
+            if ($taxon['taxon_repository'] & $taxon['name_id']) {
+                $taxon = $this->efloreService->getTaxon(
+                    $taxon['taxon_repository'], $taxon['name_id'], true);
 
-            $json = $this->serializer->serialize($taxon, 'json', );
-            $taxon = json_decode($json, true);
+                $json = $this->serializer->serialize($taxon, 'json', );
+                $taxon = json_decode($json, true);
+            }
 
             $occurrence->setTaxon($taxon);
         }
