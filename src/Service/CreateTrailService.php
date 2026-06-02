@@ -490,7 +490,7 @@ class CreateTrailService
                     $emptyFiches[] = $this->buildEmptyFicheError(
                         $occurrence,
                         $taxonData,
-                        'La fiche n\'a pas pu être trouvée en base de données'
+                        'La fiche n\'existe pas'
                     );
                     continue;
                 }
