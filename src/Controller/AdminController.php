@@ -112,10 +112,7 @@ class AdminController extends AbstractController
 
         $searchCriterias = $trails->getSearchCriterias($request);
 
-        $list = $trails->getTrailsList();
-        if (!$list || !empty($searchCriterias)) {
-            $list = $this->sentierRepository->findByCriterias($searchCriterias);
-        }
+        $list = $this->sentierRepository->findByCriterias($searchCriterias);
 
         $json = $serializer->serialize($list, 'json', ['groups' => 'list_trail']);
 
