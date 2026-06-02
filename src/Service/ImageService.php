@@ -108,7 +108,7 @@ class ImageService
     {
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxon();
-            if (count($occurrence->getImages()) == 0){
+            if (count($occurrence->getImages()) == 0 && $taxon["taxon_repository"] && $taxon["name_id"]){
                 $images = $this->efloreService->getCardSpeciesImages(
                     $taxon["taxon_repository"], $taxon["name_id"]
                 );
