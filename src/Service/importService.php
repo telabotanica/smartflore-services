@@ -200,7 +200,9 @@ class importService
         $taxon->setFullScientificName($infos['resultat'][$num_nom]['nom_sci'] ?? "");
         $taxon->setReferentiel($referentiel ?? "");
         $taxon->setNumNom($num_nom ?? 0);
-        $taxon->setTaxonomicId($infos['resultat'][$num_nom]['num_taxonomique'] ?? null);
+        if (isset($infos['resultat'][$num_nom]['num_taxonomique'])) {
+            $taxon->setTaxonomicId($infos['resultat'][$num_nom]['num_taxonomique']);
+        }
 
         return $taxon;
     }
