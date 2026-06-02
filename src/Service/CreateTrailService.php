@@ -468,7 +468,7 @@ class CreateTrailService
             }
 
             $fiche = $this->ficheRepository->findOneBy(['tag' => $occurrence->getCardTag(), 'derniere_version' => 1]);
-            if (!$fiche->getDescription() || !$fiche->getSources()) {
+            if ($fiche && (!$fiche->getDescription() || !$fiche->getSources())) {
                 $emptyFiches[] = [
                     'occurrence_id' => $occurrence->getId(),
                     'fiche_tag' => $occurrence->getCardTag(),
