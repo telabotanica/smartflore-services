@@ -96,6 +96,56 @@ class TaxonomyController extends AbstractController
     /**
      * @OA\Response (
      *     response="200",
+     *     description="Taxonomic info from num taxonomic",
+     *     @OA\JsonContent(
+     *         type="object",
+     *         ref=@Model(type=Taxon::class, groups={"show_taxon", "full_images"})
+     *     )
+     * )
+     * @OA\Parameter(
+     *     name="taxonRepository",
+     *     in="path",
+     *     description="The taxon repository code (""référentiel"")",
+     *     example="bdtfx",
+     *     @OA\Schema(type="string")
+     * )
+     * @OA\Parameter(
+     *     name="taxonId",
+     *     in="path",
+     *     description="The taxonomic id (""num tax"")",
+     *     example="8522",
+     *     @OA\Schema(type="integer")
+     * )
+     * @OA\Tag(name="Taxon")
+     * @OA\Get(
+     *     summary="Get taxon infos (public)",
+     * )
+     * @Route("/taxon/{taxonRepository}/nt/{taxonId}", name="show_taxon_from_nt", methods={"GET"})
+     */
+    public function taxonInfoFromNt(
+        SerializerInterface $serializer,
+        EfloreService $eflore,
+        string $taxonRepository,
+        int $taxonId
+    ) {
+        $taxon = $eflore->getInfosTaxons($taxonRepository, $taxonId);
+
+        if (!$taxon) {
+            return new JsonResponse(
+                [
+                    'error' => 'No taxon found (réferentiel: '. $taxonRepository .', num nom: '. $taxonId .')',
+                    'message' => 'No taxon found (réferentiel: '. $taxonRepository .', num nom: '. $taxonId .')'
+                ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $json = $serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
+
+        return new JsonResponse($json, 200, [], true);
+    }
+
+    /**
+     * @OA\Response (
+     *     response="200",
      *     description="get the taxon repository codes (referentiels)",
      *     @OA\JsonContent(
      *         type="array",
