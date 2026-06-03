@@ -272,22 +272,30 @@ class TrailsService
     {
         $trail = new Trail();
         $trail->setId($sentier->getId())
-            ->setNom($sentier->getNom())
-            ->setDisplayName($sentier->getDisplayName())
-            ->setAuteur($sentier->getAuteur())
-            ->setAuthorId($sentier->getAuthorId())
+            ->setNom($sentier->getNom() ?? '')
+            ->setDisplayName($sentier->getDisplayName() ?? '')
+            ->setAuteur($sentier->getAuteur() ?? '')
+            ->setAuthorId($sentier->getAuthorId() ?? '')
             ->setStatus($sentier->getStatus() ?? 'draft')
             ->setOccurrencesCount($sentier->getOccurrencesCount() ?? 0)
             ->setPathLength($sentier->getPathLength() ?? 0)
-            ->setDetails($sentier->getDetails());
+            ->setDetails($sentier->getDetails() ?? '');
 
-        if ($sentier->getPosition()) {
-            $trail->setPosition($sentier->getPosition());
-        }
+//        if ($sentier->getPosition()) {
+//            $trail->setPosition($sentier->getPosition());
+//        }
 
-        if ($sentier->getImage()) {
-            $trail->setImage($sentier->getImage());
-        }
+        // Sentier::$image est un array JSON, Trail::$image attend un objet Image
+        // On passe le tableau brut, à adapter selon ce que Trail::setImage() accepte
+//        $imageData = $sentier->getImage();
+//        if ($imageData && isset($imageData['url'])) {
+//            $image = new Image();
+//            $image->setUrl($imageData['url']);
+//            if (isset($imageData['mini'])) {
+//                $image->setMini($imageData['mini']);
+//            }
+//            $trail->setImage($image);
+//        }
 
         return $trail;
     }
