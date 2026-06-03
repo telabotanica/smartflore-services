@@ -265,7 +265,7 @@ class TrailsService
             ->setDisplayName($sentier->getDisplayName() ?? '')
             ->setAuteur($sentier->getAuteur() ?? '')
             ->setAuthorId($sentier->getAuthorId() ?? '')
-            ->setStatus($sentier->getStatus() ?? 'draft')
+            ->setStatus($sentier->getStatus() ?? 'brouillon')
             ->setOccurrencesCount($sentier->getOccurrencesCount() ?? 0)
             ->setPathLength($sentier->getPathLength() ?? 0)
             ->setDetails($sentier->getDetails() ?? '')

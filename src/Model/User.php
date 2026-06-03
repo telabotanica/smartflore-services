@@ -3,6 +3,7 @@
 namespace App\Model;
 
 use App\Entity\Sentier;
+use App\Model\Trail;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -45,7 +46,7 @@ class User
      * @var Trail[]
      * @OA\Property(
      *     type="array",
-     *     @OA\Items(ref=@Model(type=Sentier::class))
+     *     @OA\Items(ref=@Model(type=Trail::class))
      * )
      * @Groups({"user_trail"})
      */
