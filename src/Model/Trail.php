@@ -142,24 +142,28 @@ class Trail
     /**
      * @var \DateTimeInterface|null
      * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @SerializedName("date_creation")
      */
     private $date_creation;
 
     /**
      * @var \DateTimeInterface|null
      * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @SerializedName("date_modification")
      */
     private $date_modification;
 
     /**
      * @var \DateTimeInterface|null
      * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @SerializedName("date_suppression")
      */
     private $date_suppression;
 
     /**
      * @var \DateTimeInterface|null
      * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @SerializedName("date_publication")
      */
     private $date_publication;
 
@@ -466,7 +470,7 @@ class Trail
         return $this->date_creation;
     }
 
-    public function setDateCreation(\DateTimeInterface $date_creation): self
+    public function setDateCreation(?\DateTimeInterface $date_creation): self
     {
         $this->date_creation = $date_creation;
 
