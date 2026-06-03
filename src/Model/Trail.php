@@ -141,21 +141,25 @@ class Trail
 
     /**
      * @var \DateTimeInterface|null
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $date_creation;
 
     /**
      * @var \DateTimeInterface|null
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $date_modification;
 
     /**
      * @var \DateTimeInterface|null
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $date_suppression;
 
     /**
      * @var \DateTimeInterface|null
+     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
     private $date_publication;
 
