@@ -237,7 +237,7 @@ class Sentier
      *     type="array",
      *     @OA\Items(ref=@Model(type=Occurrence::class)),
      * )
-     * @Groups({"show_trail", "list_trail", "create_trail", "user_trail"})
+     * @Groups({"show_trail", "list_trail", "create_trail"})
      */
     private $occurrences;
 
