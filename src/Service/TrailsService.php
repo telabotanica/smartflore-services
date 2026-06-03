@@ -239,16 +239,57 @@ class TrailsService
     /**
      * Call private route for user's trails list (for /me route)
      */
-    public function getAllUserTrails($user): array
-    {
-        $trails = [];
-        $trails = $this->sentierRepository->findBy(['authorId' => $user->getId(), 'date_suppression' => null], ['nom' => 'ASC']);
+//    public function getAllUserTrails($user): array
+//    {
+//        $trails = [];
+//        $trails = $this->sentierRepository->findBy(['authorId' => $user->getId(), 'date_suppression' => null], ['nom' => 'ASC']);
+//
+//        if (!$trails){
+//            $trails = $this->sentierRepository->findBy(['auteur_email' => $user->getEmail(), 'date_suppression' => null], ['nom' => 'ASC']);
+//        }
+//
+//        return $trails;
+//    }
 
-        if (!$trails){
-            $trails = $this->sentierRepository->findBy(['auteur_email' => $user->getEmail(), 'date_suppression' => null], ['nom' => 'ASC']);
+    public function getAllUserTrails(User $user): array
+    {
+        $sentiers = $this->sentierRepository->findBy(
+            ['authorId' => $user->getId(), 'date_suppression' => null],
+            ['nom' => 'ASC']
+        );
+
+        if (!$sentiers) {
+            $sentiers = $this->sentierRepository->findBy(
+                ['auteur_email' => $user->getEmail(), 'date_suppression' => null],
+                ['nom' => 'ASC']
+            );
         }
 
-        return $trails;
+        return array_map(fn(Sentier $sentier): Trail => $this->mapSentierToTrail($sentier), $sentiers);
+    }
+
+    private function mapSentierToTrail(Sentier $sentier): Trail
+    {
+        $trail = new Trail();
+        $trail->setId($sentier->getId())
+            ->setNom($sentier->getNom())
+            ->setDisplayName($sentier->getDisplayName())
+            ->setAuteur($sentier->getAuteur())
+            ->setAuthorId($sentier->getAuthorId())
+            ->setStatus($sentier->getStatus() ?? 'draft')
+            ->setOccurrencesCount($sentier->getOccurrencesCount() ?? 0)
+            ->setPathLength($sentier->getPathLength() ?? 0)
+            ->setDetails($sentier->getDetails());
+
+        if ($sentier->getPosition()) {
+            $trail->setPosition($sentier->getPosition());
+        }
+
+        if ($sentier->getImage()) {
+            $trail->setImage($sentier->getImage());
+        }
+
+        return $trail;
     }
 	
 	public function getDraftTrailInfo($id){
