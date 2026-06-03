@@ -240,18 +240,6 @@ class TrailsService
     /**
      * Call private route for user's trails list (for /me route)
      */
-//    public function getAllUserTrails($user): array
-//    {
-//        $trails = [];
-//        $trails = $this->sentierRepository->findBy(['authorId' => $user->getId(), 'date_suppression' => null], ['nom' => 'ASC']);
-//
-//        if (!$trails){
-//            $trails = $this->sentierRepository->findBy(['auteur_email' => $user->getEmail(), 'date_suppression' => null], ['nom' => 'ASC']);
-//        }
-//
-//        return $trails;
-//    }
-
     public function getAllUserTrails(User $user): array
     {
         $sentiers = $this->sentierRepository->findBy(
@@ -280,23 +268,11 @@ class TrailsService
             ->setStatus($sentier->getStatus() ?? 'draft')
             ->setOccurrencesCount($sentier->getOccurrencesCount() ?? 0)
             ->setPathLength($sentier->getPathLength() ?? 0)
-            ->setDetails($sentier->getDetails() ?? '');
-
-//        if ($sentier->getPosition()) {
-//            $trail->setPosition($sentier->getPosition());
-//        }
-
-        // Sentier::$image est un array JSON, Trail::$image attend un objet Image
-        // On passe le tableau brut, à adapter selon ce que Trail::setImage() accepte
-//        $imageData = $sentier->getImage();
-//        if ($imageData && isset($imageData['url'])) {
-//            $image = new Image();
-//            $image->setUrl($imageData['url']);
-//            if (isset($imageData['mini'])) {
-//                $image->setMini($imageData['mini']);
-//            }
-//            $trail->setImage($image);
-//        }
+            ->setDetails($sentier->getDetails() ?? '')
+            ->setDateCreation($sentier->getDateCreation())
+            ->setDateModification($sentier->getDateModification())
+            ->setDateSuppression($sentier->getDateSuppression())
+        ;
 
         return $trail;
     }
