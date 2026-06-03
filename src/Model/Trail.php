@@ -430,10 +430,6 @@ class Trail
      */
     public function getPathLength(): int
     {
-        if (!$this->pathLength) {
-            $this->setPathLength(round(TrailsService::getTrailLength($this)));
-        }
-
         return $this->pathLength;
     }
 
