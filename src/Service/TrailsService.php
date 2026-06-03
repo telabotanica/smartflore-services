@@ -7,6 +7,7 @@ use App\Entity\Sentier;
 use App\Entity\Image;
 use App\Model\Taxon;
 use App\Model\Trail;
+use App\Model\User;
 use App\Repository\SentierRepository;
 use Symfony\Component\HttpFoundation\Request;
 use League\Geotools\Coordinate\Coordinate;
