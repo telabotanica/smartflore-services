@@ -22,7 +22,7 @@ class Occurrence
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @Groups({"show_trail", "list_trail", "user_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
+     * @Groups({"show_trail", "list_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
      */
     private $id;
 
@@ -33,7 +33,7 @@ class Occurrence
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"show_trail", "list_trail", "user_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
+     * @Groups({"show_trail", "list_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
      */
     private $card_tag;
 
@@ -45,7 +45,7 @@ class Occurrence
      *     @OA\Property(property="lat", type="number", format="float"),
      *     @OA\Property(property="lng", type="number", format="float")
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
+     * @Groups({"show_trail", "list_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
      */
     private $position;
 
@@ -55,7 +55,7 @@ class Occurrence
      *     type="text",
      *     example="Cet arbre a été planté par Napoléon"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
+     * @Groups({"show_trail", "list_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
      */
     private $anecdotes;
 
@@ -72,7 +72,7 @@ class Occurrence
     /**
      * @ORM\Column(type="json", nullable=true)
      * @OA\Property(ref=@Model(type=Taxon::class))
-     * @Groups({"show_trail", "list_trail", "user_trail", "create_trail", "add_occurrence"})
+     * @Groups({"show_trail", "list_trail", "create_trail", "add_occurrence"})
      * @SerializedName("taxon")
      */
     private $taxon = [];
@@ -84,7 +84,7 @@ class Occurrence
      *     type="integer",
      *     example=131269
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail", "create_trail", "update_occurrence"})
+     * @Groups({"show_trail", "list_trail", "create_trail", "update_occurrence"})
      */
     private $images;
 

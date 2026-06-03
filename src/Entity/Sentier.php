@@ -44,7 +44,7 @@ class Sentier
      *     type="string",
      *     example="Arbres Remarquables"
      * )
-     * @Groups({"create_trail", "update_trail", "list_trail"})
+     * @Groups({"create_trail", "update_trail", "list_trail", "user_trail"})
      * @SerializedName("name")
      */
     private $nom;
