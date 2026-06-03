@@ -3,7 +3,7 @@ nelmio_api_doc:
         info:
             title: Smart'Flore services
             description: Trails, card species and other details
-            version: "0.2.0"
+            version: "2.0.0"
         components:
             securitySchemes:
                 Bearer:
@@ -19,7 +19,13 @@ nelmio_api_doc:
             - ^/trail
             - ^/taxon
             - ^/login
+            - ^/logout
             - ^/register
             - ^/me
             - ^/ping
             - ^/favoris
+            - ^/occurrence
+            - ^/fiche
+            - ^/admincheck
+            - ^/admin
+            - ^/export

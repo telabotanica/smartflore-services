@@ -21,7 +21,7 @@ class Image
      * @var string
      * @OA\Property(
      *     type="string",
-     *     example="https://api.tela-botanica.org/img:002221908M.jpg"
+     *     example="https://api.tela-botanica.org/img:002221908O"
      * )
      * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail"})
      */
@@ -37,14 +37,26 @@ class Image
      */
     private $author;
 
+    /**
+     * @var string|null
+     * @OA\Property(
+     *     type="string",
+     *     example="https://api.tela-botanica.org/img:002221908CXS"
+     * )
+     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
+     */
+    private $mini;
+
     public function __construct(
         int $id,
         string $url,
-        string $author
+        string $author,
+        ?string $mini = null
     ) {
         $this->id = $id;
         $this->url = $url;
         $this->author = $author;
+        $this->mini = $mini;
     }
 
     /**
@@ -100,4 +112,24 @@ class Image
         $this->author = $author;
         return $this;
     }
+
+    /**
+     * @return ?string
+     */
+    public function getMini(): ?string
+    {
+        return $this->mini;
+    }
+
+    /**
+     * @param string $mini
+     * @return Image
+     */
+    public function setMini(?string $mini): Image
+    {
+        $this->mini = $mini;
+        return $this;
+    }
+
+
 }

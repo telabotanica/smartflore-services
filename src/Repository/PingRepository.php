@@ -39,6 +39,22 @@ class PingRepository extends ServiceEntityRepository
         }
     }
 
+    public function findTodayPingByIpAndTrail(string $ip, int $trailId): ?Ping
+    {
+        $start = (new \DateTime())->setTime(0, 0, 0)->format('Y-m-d');
+
+        return $this->createQueryBuilder('p')
+            ->where('p.trail = :trail')
+            ->andWhere('p.ip = :ip')
+            ->andWhere('p.date LIKE :today')
+            ->setParameter('trail', $trailId)
+            ->setParameter('ip', $ip)
+            ->setParameter('today', $start . '%')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
 //    /**
 //     * @return Ping[] Returns an array of Ping objects
 //     */

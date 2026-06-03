@@ -6,10 +6,12 @@ use App\Model\Login;
 use App\Service\AnnuaireService;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
+use phpDocumentor\Reflection\Types\Boolean;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -81,7 +83,10 @@ class LoginController extends AbstractController
      */
     public function refresh(AnnuaireService $annuaire, Request $request)
     {
-        $token = $request->query->get('token', '');
+        $token = $request->query->get('token', null);
+        if (!$token) {
+            $token = $request->headers->get('Authorization') ?? '';
+        }
         $cookie = $request->cookies->all() ?? [];
 
         if (!trim($token)) {
@@ -93,6 +98,48 @@ class LoginController extends AbstractController
         return $this->json(
             $error ?? $token
         );
+    }
+
+    /**
+     * @OA\Response (
+     *     response="200",
+     *     description="Refreshed token: don't throw away your old token! Give it to us and get a new one :)",
+     *     @OA\JsonContent(
+     *         @OA\Schema(type="string", example="thisisatokenlol")
+     *     )
+     * )
+     * @OA\Parameter(
+     *     name="token",
+     *     in="query",
+     *     description="Old token",
+     *     example="thisisatokenlol",
+     *     @OA\Schema(type="string")
+     * )
+     * @OA\Tag(name="Login")
+     * @Route("/login/refreshv2", methods={"GET"})
+     */
+    public function refreshV2(AnnuaireService $annuaire, Request $request)
+    {
+        $forceCookie = $request->query->get('cookie', null);
+
+        if (!$forceCookie){
+            $token = $request->query->get('token', null);
+            if (!$token) {
+                $token = $request->headers->get('Authorization') ?? '';
+            }
+        } else {
+            $token = $annuaire->getRequestToken($request);
+        }
+
+        $cookie = $request->cookies->all() ?? [];
+
+        ['token' => $token, 'duration' => $duration, 'token_id' => $token_id, 'error' => $error] = $annuaire->refreshToken($token, $cookie);
+
+        if ($error) {
+            return new Response($error, Response::HTTP_BAD_REQUEST);
+        }
+
+        return $this->json(['token' => $token, 'duration' => $duration, 'token_id' => $token_id, 'error' => $error]);
     }
 
     /**
@@ -116,5 +163,60 @@ class LoginController extends AbstractController
             'redirect' => $annuaire->getRegisterUrl(),
             'text' => 'Smart’Flore propose la connexion avec un compte Tela Botanica, si besoin créez donc le votre depuis le site tela-botanica.org. Un mail de validation vous parviendra pour valider votre email et activer votre compte. Une fois votre compte actif vous pourrez vous connecter ici.'
         ]);
+    }
+
+    /**
+     * @OA\Response (
+     *     response="200",
+     *     description="Check if user is admin or not",
+     *     @OA\JsonContent(
+     *         @OA\Schema(type="boolean", example="true")
+     *     )
+     * )
+     * @OA\Tag(name="Login")
+     * @OA\get(
+     *     summary="check if user is admin or not",
+     * )
+     * @Route("/admincheck", name="user_admincheck", methods={"GET"})
+     */
+    public function checkIfAdmin(AnnuaireService $annuaire, Request $request): Response
+    {
+        try {
+            $token = $annuaire->getRequestToken($request);
+            if (!$token) {
+                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+            }
+            $user = $annuaire->getUserInfos($token);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification lors de la recherche des droits utilisateurs: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $isAdmin = $annuaire->isAdmin($user);
+
+        return new JsonResponse(json_encode($isAdmin), Response::HTTP_OK, [], true);
+    }
+
+    /**
+     * @OA\Response(
+     *     response=200,
+     *     description="Logout successful"
+     * )
+     * @OA\Tag(name="Login")
+     * @Route("/logout", name="user_logout", methods={"GET"})
+     */
+    public function logout(AnnuaireService $annuaire): Response
+    {
+        ['data' => $data, 'cookie' => $cookie, 'error' => $error] = $annuaire->logout();
+
+        $response = new JsonResponse(
+            $error ?? $data,
+            $error ? Response::HTTP_BAD_REQUEST : Response::HTTP_OK
+        );
+
+        if ($cookie) {
+            $response->headers->setCookie($cookie);
+        }
+
+        return $response;
     }
 }

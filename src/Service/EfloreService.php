@@ -2,12 +2,16 @@
 
 namespace App\Service;
 
+use App\Entity\Fiche;
 use App\Model\CardTab;
-use App\Model\Image;
+use App\Entity\Image;
+//use App\Model\Image;
 use App\Model\Referentiel;
 use App\Model\Taxon;
+use App\Service\SharedService;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\NativeHttpClient;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 
 class EfloreService
@@ -25,15 +29,28 @@ class EfloreService
     private $imagesApiUrlTemplate;
     private $imageCosteApiUrlTemplate;
     private $vernacularNameApiUrlTemplate;
+    private $rechercheNomsVernaEfloreUrl;
+    private $rechercheNomUrl;
+    private $infosTaxonsUrl;
+    private $smartflorefronturl;
+    private SharedService $sharedService;
+    private CacheFileService $cacheFile;
+    private SerializerInterface $serializer;
 
     public function __construct(
-        string $taxonApiBaseUrl,
-        string $cardApiBaseUrl,
-        string $imagesApiUrlTemplate,
-        string $imageCosteApiUrlTemplate,
-        string $vernacularNameApiUrlTemplate,
-        bool $useNativeHttpClient,
-        CacheInterface $trailsCache
+        string           $taxonApiBaseUrl,
+        string           $cardApiBaseUrl,
+        string           $imagesApiUrlTemplate,
+        string           $imageCosteApiUrlTemplate,
+        string           $vernacularNameApiUrlTemplate,
+        bool             $useNativeHttpClient,
+        string           $rechercheNomsVernaEfloreUrl,
+        string           $rechercheNomUrl,
+        string           $infosTaxonsUrl,
+        string           $smartflorefronturl,
+        SharedService    $sharedService,
+        CacheFileService $cacheFile,
+        CacheInterface   $trailsCache, SerializerInterface $serializer
     ) {
         if ($useNativeHttpClient) {
             $this->client = new NativeHttpClient();
@@ -47,6 +64,13 @@ class EfloreService
         $this->imagesApiUrlTemplate = $imagesApiUrlTemplate;
         $this->imageCosteApiUrlTemplate = $imageCosteApiUrlTemplate;
         $this->vernacularNameApiUrlTemplate = $vernacularNameApiUrlTemplate;
+        $this->rechercheNomsVernaEfloreUrl = $rechercheNomsVernaEfloreUrl;
+        $this->rechercheNomUrl = $rechercheNomUrl;
+        $this->infosTaxonsUrl = $infosTaxonsUrl;
+        $this->smartflorefronturl = $smartflorefronturl;
+        $this->sharedService = $sharedService;
+        $this->cacheFile = $cacheFile;
+        $this->serializer = $serializer;
     }
 
     public function getTaxonRawInfo(string $taxonRepository, int $taxonNameId, bool $refresh = false)
@@ -72,20 +96,39 @@ class EfloreService
         return $taxonCache->get();
     }
 
-    public function getCardText(string $taxonRepository, string $taxonId, bool $refresh = false)
+    public function getCardText(string $taxonRepository, string $taxonId,string $taxon_num_nom = null,  bool $refresh = false)
     {
         $cardCache = $this->cache->getItem('taxon.card.SmartFlore'.strtoupper($taxonRepository).'nt'.$taxonId);
 
-        if ($refresh || !$cardCache->isHit()) {
-            // eg. https://www.tela-botanica.org/wikini/eFloreRedaction/api/rest/0.5/pages/SmartFloreBDTFXnt6293?txt.format=text/html&txt.section.titre=Description%2CUsages%2C%C3%89cologie+%26+habitat%2CSources
-            $cardApiUrl = $this->cardApiBaseUrl.'SmartFlore'.strtoupper($taxonRepository).'nt'.$taxonId
-                .'?txt.format=text/html&txt.section.titre='.urlencode('Description,Usages,Écologie & habitat,Sources');
-            $response = $this->client->request('GET', $cardApiUrl, ['timeout' => 120]);
+        $cached = $this->cacheFile->getFiche($taxonRepository, $taxonId); //For Smarflore v2
+        if ($cached) {
+            $fiche = $this->serializer->deserialize(json_encode($cached, true), Fiche::class, 'json');
+            $card['id'] = $fiche->getId();
+            $card['titre'] = $fiche->getTag();
+            //TODO: voir comment ajouter le num nom du taxon
+            $card['href'] = $this->smartflorefronturl . "/fiche/" . $fiche->getReferentiel() . "/" . $fiche->getNt() ."/" . $taxon_num_nom;
+            $card['sections']['description'] = $fiche->getDescription();
+            $card['sections']['usages'] = $fiche->getUsages();
+            $card['sections']['ecologie'] = $fiche->getEcologie();
+            $card['sections']['sources'] = $fiche->getSources();
 
-            if (200 !== $response->getStatusCode()) {
-                throw new \Exception('Response status code is different than expected.');
+            return $card;
+        }
+
+        if ($refresh || !$cached || !$cardCache->isHit() ) {
+            $fiche = $this->sharedService->chercherFiche($taxonRepository, $taxonId);
+
+            if (!$fiche) {
+                throw new \Exception('No page found for taxon '.$taxonId.' in referentiel '.$taxonRepository);
             }
-            $card = json_decode($response->getContent(), true);
+
+            $card['id'] = $fiche->getId();
+            $card['titre'] = $fiche->getTag();
+            $card['href'] = 'https://www.tela-botanica.org/wikini/eFloreRedaction/wakka.php?wiki=' . $fiche->getTag();
+            $card['sections']['description'] = $fiche->getDescription();
+            $card['sections']['usages'] = $fiche->getUsages();
+            $card['sections']['ecologie'] = $fiche->getEcologie();
+            $card['sections']['sources'] = $fiche->getSources();
 
             $cardCache->set($card);
             $this->cache->save($cardCache);
@@ -111,7 +154,11 @@ class EfloreService
 
             $res = [];
             foreach ($images as $image) {
-                $res[] = new Image($image['id_image'], $image['binaire.href'], $image['observation']['auteur.nom'] ?? 'Inconnu');
+                $newImae = new Image();
+                $newImae->setCelImageId($image['id_image']);
+                $newImae->setUrl($image['binaire.href']);
+                $newImae->setAuthor($image['observation']['auteur.nom'] ?? 'Inconnu');
+                $res[] = $newImae;
             }
 
             $cardImagesCache->set($res);
@@ -183,10 +230,88 @@ class EfloreService
         return $vernacularNameCache->get();
     }
 
+    public function consulterRechercheNomsVernaEflore($filtres) {
+        $vernacularReferential = $this::REFERENTIALS[$filtres['referentiel']] ?? null;
+        $vernacularNames = [];
+
+        $url_eflore_verna_tpl = $this->taxonApiBaseUrl . $this->rechercheNomsVernaEfloreUrl;
+
+        if ($vernacularReferential) {
+            // eg. https://api.tela-botanica.org/service:eflore:0.1/nvjfl/noms-vernaculaires?masque=erable%25&recherche=etendue&retour.champs=num_taxon&masque.lg=fra&navigation.depart=10&navigation.limite=10
+            $vernacularNameApiUrl = sprintf($url_eflore_verna_tpl, $vernacularReferential, urlencode($filtres['recherche'].'%'), $filtres['debut'], $filtres['limite']);
+
+            $response = $this->client->request('GET', $vernacularNameApiUrl);
+
+            if (200 !== $response->getStatusCode() && !(
+                    404 === $response->getStatusCode()
+                    && 'Les données recherchées sont introuvables.' === $response->getContent(false)
+                )) {
+                throw new \Exception('Response status code is different than expected.');
+            }
+            $vernacularNames = json_decode($response->getContent(false), true) ?? [];
+        }
+
+        return $vernacularNames;
+    }
+
+    public function consulterRechercheNomsSciEflore($filtres) {
+        $url_eflore_tpl = $this->taxonApiBaseUrl . $this->rechercheNomUrl;
+        $url = sprintf($url_eflore_tpl , strtolower($filtres['referentiel']), 'etendue', urlencode($filtres['recherche'].'%'), $filtres['debut'], $filtres['limite']);
+
+        if (isset($filtres['filtre'])) {
+            $url .= '&masque.ref='.$filtres['filtre'];
+        }
+
+        $response = $this->client->request('GET', $url);
+
+        if (200 !== $response->getStatusCode() && !(
+                404 === $response->getStatusCode()
+                && 'Les données recherchées sont introuvables.' === $response->getContent(false)
+            )) {
+            throw new \Exception('Response status code is different than expected.');
+        }
+
+        $infos = json_decode($response->getContent(false), true) ?? [];
+
+        if (empty($infos)){
+            $url = sprintf($url_eflore_tpl, strtolower($filtres['referentiel']), 'floue', urlencode($filtres['recherche'].'%'), $filtres['debut'], $filtres['limite']);
+            $response = $this->client->request('GET', $url);
+            if (200 !== $response->getStatusCode() && !(
+                    404 === $response->getStatusCode()
+                    && 'Les données recherchées sont introuvables.' === $response->getContent(false)
+                )) {
+                throw new \Exception('Response status code is different than expected.');
+            }
+
+            $infos = json_decode($response->getContent(false), true) ?? [];
+        }
+
+        return $infos;
+    }
+
+    public function getInfosTaxons($referentiel, $num_tax): array
+    {
+        $url_eflore_tpl = $this->taxonApiBaseUrl . $this->infosTaxonsUrl;
+        $url = sprintf($url_eflore_tpl, strtolower($referentiel), $num_tax);
+        $response = $this->client->request('GET', $url);
+        if (200 !== $response->getStatusCode() && !(
+                404 === $response->getStatusCode()
+                && 'Les données recherchées sont introuvables.' === $response->getContent(false)
+            )) {
+            throw new \Exception('Response status code is different than expected.');
+        }
+
+        return json_decode($response->getContent(false), true) ?? [];
+    }
+
     public function getTaxon(string $taxonRepository, string $taxonNameId, bool $refresh = false)
     {
-        $taxonInfos = $this->getTaxonRawInfo(
-            $taxonRepository, $taxonNameId, $refresh);
+        try {
+            $taxonInfos = $this->getTaxonRawInfo(
+                $taxonRepository, $taxonNameId, $refresh);
+        } catch (\Exception $e) {
+            return null;
+        }
 
         $taxon = new Taxon();
         $taxon
@@ -213,12 +338,16 @@ class EfloreService
         $card->setTitle('Fiche Smart’Flore')
             ->setType('card')
             ->setIcon('card');
-        $cardSections = $this->getCardText($taxon->getReferentiel(), $taxon->getTaxonomicId(), $refresh);
+        $cardSections = $this->getCardText($taxon->getReferentiel(), $taxon->getTaxonomicId(), $taxon->getNumNom(), $refresh);
+
         if (!isset($cardSections['sections'])) {
+            //TO update ?
             $card->addSection('Fiche vide', 'Pas de contenu, cette fiche est vide.');
         } else {
             foreach ($cardSections['sections'] as $sectionTitle => $sectionText) {
-                $card->addSection($sectionTitle, $sectionText);
+                if ($sectionText && $sectionTitle) {
+                    $card->addSection($sectionTitle, $sectionText);
+                }
             }
         }
         $images = $this->getCardSpeciesImages(

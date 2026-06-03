@@ -2,6 +2,8 @@
 
 namespace App\Model;
 
+use App\Entity\Sentier;
+use App\Model\Trail;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -10,6 +12,7 @@ class User
 {
     /**
      * @var string
+     * @Groups({"user_trail"})
      */
     private $id;
 
@@ -25,6 +28,7 @@ class User
 
     /**
      * @var string
+     * @Groups({"user_trail"})
      */
     private $email;
 

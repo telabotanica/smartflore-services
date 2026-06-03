@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Model\Trail;
 use App\Model\User;
 use App\Service\AnnuaireService;
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -10,6 +9,7 @@ use OpenApi\Annotations as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -28,41 +28,33 @@ class MeController extends AbstractController
      * @OA\Parameter(
      *     name="token",
      *     in="query",
-     *     description="Token",
+     *     description="Token (optional)",
      *     example="thisisatokenlol",
      *     @OA\Schema(type="string")
      * )
      * @OA\Tag(name="Login")
+     * @OA\get(
+     *     summary="get user infos & trails",
+     * )
      * @Route("/me", name="user_trail", methods={"GET"})
      */
-    public function me(AnnuaireService $annuaire, SerializerInterface $serializer, Request $request)
+    public function me(AnnuaireService $annuaire, SerializerInterface $serializer, Request $request): Response
     {
-        $token = $request->query->get('token', '');
-//        $cookie = null;
-        // cookie is optional, used only if token is expired
-        // get full cookie values is strange :
-        // get(tb_auth) retrieve only cookie[tb_auth] instead of full cookie info
-        // so, we need to check if cookie is set to get all its props
-        // I wonder how it behaves with multiples cookies, but it shouldn't happen
-//        if ($request->cookies->get($annuaire->getCookieName())) {
-//            $cookie = $request->cookies->all();
-//        }
-	
-		$cookie = $request->cookies->get($annuaire->getCookieName()) ?? null;
-	
-		if ($cookie){
-			$token = $request->cookies->get($annuaire->getCookieName());
-		}
+        try {
+            $token = $annuaire->getRequestToken($request);
+            if (!$token) {
+                return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
+            }
 
-        if (!trim($token)) {
-            throw new BadRequestHttpException('Token is empty');
+            $cookie = $request->cookies->get($annuaire->getCookieName()) ?? null;
+            $cookie = [
+                $annuaire->getCookieName() => $token
+            ];
+            $user = $annuaire->getUser($token, $cookie);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur d\'authentification sur la route /me: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
-	
-		$cookie = [
-			$annuaire->getCookieName() => $token
-		];
 
-        $user = $annuaire->getUser($token, $cookie);
         if (is_string($user)) {
             // if it's a string, then it's an error (yes, could be handled better)
             $json = json_encode($user);
@@ -70,6 +62,6 @@ class MeController extends AbstractController
             $json = $serializer->serialize($user, 'json', ['groups' => 'user_trail']);
         }
 
-        return new JsonResponse($json, 200, [], true);
+        return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 }

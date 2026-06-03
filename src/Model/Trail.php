@@ -134,10 +134,38 @@ class Trail
      */
     private $pathLength;
 
+//    /**
+//     * @var int
+//     */
+//    private $dateModification;
+
     /**
-     * @var int
+     * @var \DateTimeInterface|null
+     * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @SerializedName("date_creation")
      */
-    private $dateModification;
+    private $date_creation;
+
+    /**
+     * @var \DateTimeInterface|null
+     * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @SerializedName("date_modification")
+     */
+    private $date_modification;
+
+    /**
+     * @var \DateTimeInterface|null
+     * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @SerializedName("date_suppression")
+     */
+    private $date_suppression;
+
+    /**
+     * @var \DateTimeInterface|null
+     * @Groups({"show_trail", "list_trail", "user_trail"})
+     * @SerializedName("date_publication")
+     */
+    private $date_publication;
 
     /**
      * @return int|string
@@ -402,10 +430,6 @@ class Trail
      */
     public function getPathLength(): int
     {
-        if (!$this->pathLength) {
-            $this->setPathLength(round(TrailsService::getTrailLength($this)));
-        }
-
         return $this->pathLength;
     }
 
@@ -419,21 +443,69 @@ class Trail
         return $this;
     }
 
-    /**
-     * @return int
-     */
-    public function getDateModification(): int
+//    /**
+//     * @return int
+//     */
+//    public function getDateModification(): int
+//    {
+//        return $this->dateModification;
+//    }
+//
+//    /**
+//     * @param int $dateModification
+//     * @return Trail
+//     */
+//    public function setDateModification(int $dateModification): Trail
+//    {
+//        $this->dateModification = $dateModification;
+//        return $this;
+//    }
+
+    public function getDateCreation(): ?\DateTimeInterface
     {
-        return $this->dateModification;
+        return $this->date_creation;
     }
 
-    /**
-     * @param int $dateModification
-     * @return Trail
-     */
-    public function setDateModification(int $dateModification): Trail
+    public function setDateCreation(?\DateTimeInterface $date_creation): self
     {
-        $this->dateModification = $dateModification;
+        $this->date_creation = $date_creation;
+
+        return $this;
+    }
+
+    public function getDateModification(): ?\DateTimeInterface
+    {
+        return $this->date_modification;
+    }
+
+    public function setDateModification(?\DateTimeInterface $date_modification): self
+    {
+        $this->date_modification = $date_modification;
+
+        return $this;
+    }
+
+    public function getDateSuppression(): ?\DateTimeInterface
+    {
+        return $this->date_suppression;
+    }
+
+    public function setDateSuppression(?\DateTimeInterface $date_suppression): self
+    {
+        $this->date_suppression = $date_suppression;
+
+        return $this;
+    }
+
+    public function getDatePublication(): ?\DateTimeInterface
+    {
+        return $this->date_publication;
+    }
+
+    public function setDatePublication(?\DateTimeInterface $date_publication): self
+    {
+        $this->date_publication = $date_publication;
+
         return $this;
     }
 }

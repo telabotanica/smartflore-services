@@ -2,87 +2,123 @@
 
 namespace App\Service;
 
+use App\Entity\Image;
+use App\Entity\Occurrence;
+use App\Entity\Sentier;
 use App\Model\CreateOccurrenceDto;
 use App\Model\CreateTrailDto;
+use App\Model\Taxon;
+use App\Model\User;
+use App\Repository\FicheRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class CreateTrailService
 {
     private $client;
     private $smartfloreLegacyApiBaseUrl;
+    private $efloreApiBaseUrl;
+    private $infosTaxonsUrl;
+    private $imageUrl;
+    private $imageMiniatureUrl;
+    private $ipApiV2Image;
     private $authorizeToken;
     private $annuaire;
+    private EntityManagerInterface $em;
+    private EfloreService $eflore;
+    private SharedService $sharedService;
+    private ImageService $imageService;
+    private SerializerInterface $serializer;
+    private FicheRepository $ficheRepository;
+    private UrlGeneratorInterface $router;
 
     public function __construct(
         string $smartfloreLegacyApiBaseUrl,
-        AnnuaireService $annuaire
+        string $efloreApiBaseUrl,
+        string $infosTaxonsUrl,
+        string $imageUrl,
+        string $imageMiniatureUrl,
+        string $ipApiV2Image,
+        AnnuaireService $annuaire,
+        EntityManagerInterface $em,
+        EfloreService $eflore,
+        SharedService $sharedService,
+        ImageService $imageService,
+        FicheRepository $ficheRepository,
+        UrlGeneratorInterface $router
     ) {
         /**
          * @var $client HttpClientInterface
          */
         $this->client = HttpClient::create();
         $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
+        $this->efloreApiBaseUrl = $efloreApiBaseUrl;
+        $this->infosTaxonsUrl = $infosTaxonsUrl;
+        $this->imageUrl = $imageUrl;
+        $this->imageMiniatureUrl = $imageMiniatureUrl;
+        $this->ipApiV2Image = $ipApiV2Image;
         $this->annuaire = $annuaire;
+        $this->em = $em;
+        $this->eflore = $eflore;
+        $this->sharedService = $sharedService;
+        $this->imageService = $imageService;
+        $this->ficheRepository = $ficheRepository;
+        $this->router = $router;
     }
 
-    public function process(CreateTrailDto $trail): void
+    public function process(Sentier $trail): Sentier
     {
         $this->createTrail($trail);
-		if ($trail->getOccurrences()){
-			foreach ($trail->getOccurrences() as $occurrence) {
-				$this->getCardTag($occurrence);
-				$this->addSpeciesToTrail($trail, $occurrence);
-			}
-			$this->addLocation($trail);
-			if ($this->isTrailEligible($trail)) {
-				$email = $this->annuaire->getUser($this->getAuth())->getEmail();
-				$this->submitTrailToReview($trail, $email);
-			}
-		}
-        $this->addPmrAndSeasons($trail);
+
+        if ($trail->getOccurrences()){
+            foreach ($trail->getOccurrences() as $occurrence) {
+                $this->getCardTag($occurrence);
+                $occurrence->setUserId(($trail->getAuthorId()));
+            }
+
+            //			$this->addLocation($trail);
+//			if ($this->isTrailEligible($trail)) {
+//				$email = $this->annuaire->getUser($this->getAuth())->getEmail();
+//				$this->submitTrailToReview($trail, $email);
+//			}
+        }
+        $this->addNbTaxonsToTrail($trail);
+        $this->imageService->findImageForTrail($trail);
+
+        $this->em->persist($trail);
+        $this->em->flush();
+
+        $trail = $this->sharedService->addDetailToTrail($trail);
+
+        $this->em->persist($trail);
+        $this->em->flush();
+
+        return $trail;
     }
 
-    public function createTrail(CreateTrailDto $trail): void
+    public function createTrail(Sentier $trail): void
     {
-        $trailName = $trail->getName();
+        $trailName = $trail->getNom();
+
         if (!$this->isTrailNameAvailable($trailName)) {
             $trailName = $this->addRandomIntegerSuffixToAlreadyUsedTrailNameUntilNameIsFreeThisMethodNameIsTooLong($trailName);
         }
 
-        $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier/',
-            [
-            'body' => json_encode(['sentierTitre' => $trailName]),
-            'headers' => [
-                'Authorization: '.$this->getAuth(),
-                'Auth: '.$this->getAuth()
-            ]
-            ]);
-        if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Erreur lors de la création du sentier.');
-        }
+        $user = $this->annuaire->getUserInfos($this->getAuth());
+        $auteur = $user->getName() ? $user->getName() : $user->getEmail();
+
+        $trail->setPathLength(round(TrailsService::getTrailLength($trail)));
+        $trail->setAuteur($auteur);
+        $trail->setNom($trailName);
+        $trail->setAuthorId($user->getId());
+        $trail->setAuteurEmail($user->getEmail());
+        $trail->setDateCreation(new \DateTime());
     }
 
-    public function addSpeciesToTrail(CreateTrailDto $trail, CreateOccurrenceDto $occurrence): void
-    {
-        $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-fiche/', [
-            'body' => json_encode([
-                'sentierTitre' => $trail->getName(),
-                'pageTag' => $occurrence->getCardTag(),
-            ]),
-            'headers' => [
-                'Authorization: '.$this->getAuth(),
-                'Auth: '.$this->getAuth()
-            ],
-        ]);
-
-        if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Erreur lors de l\'ajout d\'espèces au sentier.');
-        }
-    }
-
-
-    public function addLocation(CreateTrailDto $trail): void
+    public function addLocation(Sentier $trail): void
     {
         // it's messy, sorry
         $array = [];
@@ -119,26 +155,7 @@ class CreateTrailService
         }
     }
 
-    public function addPmrAndSeasons(CreateTrailDto $trail): void
-    {
-        $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-pmr-seasons/', [
-            'body' => json_encode([
-                'sentierTitre' => $trail->getName(),
-                'pmr' => $trail->getPrm(),
-                'best_season' => $trail->getBestSeason()
-            ]),
-            'headers' => [
-                'Authorization: '.$this->getAuth(),
-                'Auth: '.$this->getAuth()
-            ],
-        ]);
-
-        if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Erreur lors de l\'ajout pmr et best-seasons.');
-        }
-    }
-
-    public function submitTrailToReview(CreateTrailDto $trail, string $authorEmail): void
+    public function submitTrailToReview(Sentier $trail, string $authorEmail): void
     {
         $response = $this->client->request('PUT', $this->smartfloreLegacyApiBaseUrl.'sentier-validation/', [
             'body' => json_encode([
@@ -156,56 +173,125 @@ class CreateTrailService
         }
     }
 
-    public function isTrailEligible(CreateTrailDto $trail): bool
+    public function isTrailEligible(Sentier $trail): array
     {
-        return (10 <= count($trail->getOccurrences()));
+        $errors = [];
+        if (!$this->checkMinimalOccurrences($trail)) {
+            $errors['nb_occurrences'] = 'Le sentier doit avoir au moins 10 occurrences';
+        }
+
+        if (!$this->checkTrailLocalisation($trail)) {
+            $errors['localisation'] = 'Le sentier doit avoir une localisation';
+        }
+
+        if (!$this->checkTrailPath($trail)) {
+            $errors['path'] = 'Le sentier doit avoir un chemin tracé';
+        }
+
+        if (!$this->checkOccurrencesLocalisation($trail)) {
+            $errors['occurrences_localisation'] = 'Toutes les occurrences doivent être localisées';
+        }
+
+        $emptyFiches = $this->checkEmptyFiches($trail);
+        if ($emptyFiches) {
+            $errors['fiches_incompletes'] = [];
+            foreach ($emptyFiches as $fiche) {
+                $errors['fiches_incompletes'][] =$fiche;
+            }
+        }
+
+        return $errors;
     }
 
-    public function getCardTag(CreateOccurrenceDto $occurrence): void
+    public function getCardTag(Occurrence $occurrence): void
     {
-        // https://beta.tela-botanica.org/smart-form/services/Pages.php?referentiel=BDTFX&referentiel_verna=nvjfl&recherche=Acer+campestre&pages_existantes=false&nom_verna=false&debut=0&limite=1
-        // {"pagination":{"total":"11"},"resultats":[{"existe":true,"favoris":false,"tag":"SmartFloreBDTFXnt8522","time":"2015-09-10 11:14:08","owner":"AdelineMoreau","user":"adansonia","nb_revisions":"1","infos_taxon":{"num_taxonomique":"8522","nom_sci":"Acer campestre","nom_sci_complet":"Acer campestre L. [1753, Sp. Pl., 2 : 1055]","retenu":"true","num_nom":"141","referentiel":"BDTFX","noms_vernaculaires":[]},"id":"43415","latest":"Y"}]}
-        $url = str_replace('Sentiers', 'Pages', $this->smartfloreLegacyApiBaseUrl);
-        $response = $this->client->request('GET', $url.'sentier/', [
-            'query' => [
-                'recherche' => $occurrence->getScientificName(),
-                'referentiel' => $occurrence->getTaxonRepository(),
-                'limite' => 1,
-            ],
-        ]);
+        $ficheTag = $occurrence->getCardTag();
+        $taxonFromOccurrence = $occurrence->getTaxon();
 
-        if (200 !== $response->getStatusCode()) {
-            throw new \Exception('Erreur lors de la récupération de la card.');
+        $taxonRepository = $taxonFromOccurrence['taxon_repository'];
+        $nt = $taxonFromOccurrence['taxonomic_id'];
+        $name_id = $taxonFromOccurrence['name_id'];
+        $espece = $taxonFromOccurrence['scientific_name'];
+
+        $taxon = new Taxon();
+        $taxonArray = [];
+        try {
+            //eg. https://api.tela-botanica.org/service:eflore:0.1/bdtfx/taxons/28211
+            $taxonInfos = $this->eflore->getTaxonRawInfo($taxonRepository, $name_id);
+
+            if (!$taxonRepository){
+                $taxonRepository = $taxonInfos['referentiel'] ?? "";
+            }
+
+            if (!$nt) {
+                $nt = $taxonInfos['num_taxonomique'] ?? 0;
+            }
+
+            if (!$name_id) {
+                $name_id = $taxonInfos['id'] ?? 0;
+            }
+
+            if (!$espece) {
+                $espece = $taxonInfos['nom_sci'] ?? "";
+            }
+
+            $taxon
+                ->setEspece($espece)
+                ->setReferentiel($taxonRepository)
+                ->setNumNom($name_id)
+                ->setTaxonomicId($nt)
+                ->setFullScientificName($taxonInfos['nom_complet'] ?? "")
+                ->setHtmlFullScientificName($taxonInfos['nom_sci_html_complet'] ?? '')
+                ->setGenre($taxonInfos['genre'] ?? '')
+                ->setFamille($taxonInfos['famille'] ?? '')
+                ->setAcceptedScientificNameId($taxonInfos['nom_retenu.id'] ?? 0)
+            ;
+
+            $vernacularInfos = $this->eflore->getVernacularName(
+                $taxon->getReferentiel(), $taxon->getTaxonomicId());
+            foreach ($vernacularInfos as $vernacularInfo) {
+                if ('fra' === ($vernacularInfo['code_langue'] ?? '')) {
+                    $taxon->addVernacularName($vernacularInfo['nom'], $vernacularInfo['num_statut'] ?? 0);
+                }
+            }
+
+            $taxonArray = [
+                'name_id' => $taxon->getNumNom(),
+                'scientific_name' => $taxon->getFullScientificName(),
+                'html_full_scientific_name' => $taxon->getHtmlFullScientificName(),
+                'genus' => $taxon->getGenre(),
+                'family' => $taxon->getFamille(),
+                'taxon_repository' => $taxon->getReferentiel(),
+                'accepted_scientific_name_id' => $taxon->getAcceptedScientificNameId(),
+                'taxonomic_id' => $taxon->getTaxonomicId(),
+                'vernacular_names' => $taxon->getVernacularNames() ?? []
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception('Erreur lors de la récupération de la taxon.');
         }
 
-        $fiches = json_decode($response->getContent(), true)['resultats'];
-        if (!count($fiches)) {
-            throw new \Exception('No card tag found for '.$occurrence->getTaxonRepository().':'.$occurrence->getScientificName());
+        if ($ficheTag) {
+            $taxonArray['tabs'] = $ficheTag;
+        } else {
+            $fiche = $this->sharedService->chercherFiche($taxonRepository, $taxon->getTaxonomicId());
+            if ($fiche) {
+                $taxonArray['tabs'] = $fiche->getTag();
+                $occurrence->setCardTag($fiche->getTag());
+            }
         }
-
-        $occurrence->setCardTag($fiches[0]['tag']);
+        $occurrence->setTaxon($taxonArray);
     }
 
     public function isTrailNameAvailable(string $trailName): bool
     {
-        $response = $this->client->request('GET', $this->smartfloreLegacyApiBaseUrl.'sentier-informations/?sentierTitre='.$trailName);
-        $statusCode = $response->getStatusCode();
-
-
-        switch ($statusCode) {
-            case 200:
-                return false; // trail name already used
-            case 404:
-                return true; // trail not found (or wrong service url... thx shitty status code)
-            default:
-                throw new \Exception("Unattended status code: $statusCode (instead of 200 or 404)");
-        }
+        $existingTrail = $this->em->getRepository(Sentier::class)->findBy(['nom' => $trailName, 'date_suppression' => null]);
+        return !$existingTrail;
     }
 
     public function addRandomIntegerSuffixToAlreadyUsedTrailNameUntilNameIsFreeThisMethodNameIsTooLong(string $trailName): string
     {
         do {
-            $trailName.=random_int(1,10);
+            $trailName.=random_int(1,100);
         } while (!$this->isTrailNameAvailable($trailName));
 
         return $trailName;
@@ -222,5 +308,292 @@ class CreateTrailService
             throw new \Exception('Missing authorize token, please set before using this service');
         }
         return $this->authorizeToken;
+    }
+
+    public function getUniqueCardTags(array $uniqueCardTags, Occurrence $occurrence): array
+    {
+        $cardTag = $occurrence->getCardTag();
+        if ($cardTag && !in_array($cardTag, $uniqueCardTags, true)) {
+            $uniqueCardTags[] = $cardTag;
+        }
+        return $uniqueCardTags;
+    }
+
+    public function getUniqueTaxons(Sentier $trail): array
+    {
+        $taxons = [];
+        $seenKeys = [];
+
+        foreach ($trail->getOccurrences() as $occurrence) {
+            $taxonData = $occurrence->getTaxon();
+            if (!$taxonData) {
+                continue;
+            }
+
+            $key = ($taxonData['taxon_repository'] ?? '') . '_' . ($taxonData['name_id'] ?? '');
+            if (!in_array($key, $seenKeys, true)) {
+                $seenKeys[] = $key;
+                $taxons[] = $taxonData;
+            }
+        }
+
+        return $taxons;
+    }
+
+    public function setTaxonToOccurrence(Occurrence $occurrence, $content) {
+        $taxon = new Taxon();
+        if (isset($content->taxon)) {
+            $taxon->setFullScientificName($content->taxon->scientific_name);
+            $taxon->setReferentiel($content->taxon->taxon_repository);
+            $taxon->setNumNom($content->taxon->name_id);
+            unset($content->taxon);
+        } elseif (isset($content->scientific_name) && isset($content->taxon_repository) && isset($content->name_id)) {
+            $taxon->setFullScientificName($content->scientific_name);
+            $taxon->setReferentiel($content->taxon_repository);
+            $taxon->setNumNom($content->name_id);
+
+            unset($content->scientific_name);
+            unset($content->taxon_repository);
+            unset($content->name_id);
+        }
+        $occurrence->setTaxon([
+            'scientific_name' => $taxon->getFullScientificName(),
+            'taxon_repository' => $taxon->getReferentiel(),
+            'name_id' => $taxon->getNumNom()
+        ]);
+
+        return $occurrence;
+    }
+
+    public function setImagesToOccurrence(Occurrence $occurrence, $image_id) {
+        if (!is_int($image_id) && !is_numeric($image_id)) {
+            return $occurrence;
+        }
+
+        $imageIdInt = (int) $image_id;
+
+        $image = new Image();
+        $image->setCelImageId($imageIdInt);
+        $image_api_id = str_pad((string) $imageIdInt, 9, '0', STR_PAD_LEFT);
+        $image->setMini(sprintf($this->imageMiniatureUrl, $image_api_id));
+        $image->setUrl(sprintf($this->imageUrl, $image_api_id));
+
+        $response = $this->client->request('GET', sprintf($this->ipApiV2Image, $imageIdInt), []);
+        if (200 === $response->getStatusCode()) {
+            $image_data = json_decode($response->getContent());
+            $author = $image_data->observation->{'auteur.nom'} ?? "";
+            $image->setAuthor($author);
+        }
+
+        $image->setOccurrence($occurrence);
+        $occurrence->addImage($image);
+
+        return $occurrence;
+    }
+
+    public function getImageFromContent($content): Image {
+        $image = new Image();
+        $image->setCelImageId($content->id);
+        $image->setUrl($content->url);
+        if (isset($content->author)) {
+            $image->setAuthor($content->author);
+        }
+
+        return $image;
+    }
+
+    public function addNbTaxonsToTrail(Sentier $trail): void
+    {
+        $nb_taxons = 0;
+        if ($trail->getOccurrences()) {
+            $uniqueTaxons = $this->getUniqueTaxons($trail);
+            $nb_taxons = count($uniqueTaxons);
+        }
+
+        $trail->setOccurrencesCount(count($trail->getOccurrences()));
+        $trail->setNbTaxons($nb_taxons);
+    }
+
+    private function checkMinimalOccurrences(Sentier $trail): bool
+    {
+        $occurrences = $trail->getOccurrences();
+        if (count($occurrences) < 10) {
+            return false;
+        }
+        return true;
+    }
+
+    private function checkOccurrencesLocalisation(Sentier $trail): bool
+    {
+        $occurrences = $trail->getOccurrences();
+        foreach ($occurrences as $occurrence) {
+            if (!$occurrence->getPosition()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function checkTrailLocalisation(Sentier $trail): bool
+    {
+        $position = $trail->getPosition();
+        if (!$position) {
+            return false;
+        }
+        return true;
+    }
+
+    private function checkTrailPath(Sentier $trail): bool
+    {
+        $path = $trail->getChemin();
+        if (!$path) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Vérifie les fiches associées aux occurrences et retourne celles qui sont incomplètes
+     *
+     * @param Sentier $trail
+     * @return array Liste des fiches incomplètes avec détails
+     */
+    private function checkEmptyFiches(Sentier $trail): array
+    {
+        $emptyFiches = [];
+
+        foreach ($trail->getOccurrences() as $occurrence) {
+            try {
+                // Valider les données de base
+                if (!$occurrence instanceof Occurrence) {
+                    continue;
+                }
+
+                $cardTag = $occurrence->getCardTag();
+                $taxonData = $occurrence->getTaxon();
+
+                // Vérifier si la fiche tag est manquante ou invalide
+                if (!$this->isValidCardTag($cardTag)) {
+                    $emptyFiches[] = $this->buildEmptyFicheError(
+                        $occurrence,
+                        $taxonData,
+                        'La fiche n\'existe pas et doit être créée puis remplie avec au moins une description et les sources'
+                    );
+                    continue;
+                }
+
+                // Chercher la fiche avec gestion d'erreurs
+                try {
+                    $fiche = $this->ficheRepository->findOneBy([
+                        'tag' => $cardTag,
+                        'derniere_version' => 1
+                    ]);
+                } catch (\Exception $e) {
+                    throw new \Exception("Erreur lors de la recherche de la fiche avec tag: {$cardTag}", 0, $e);
+                }
+
+                // Vérifier si la fiche est incomplète
+                if ($fiche === null) {
+                    $emptyFiches[] = $this->buildEmptyFicheError(
+                        $occurrence,
+                        $taxonData,
+                        'La fiche n\'existe pas'
+                    );
+                    continue;
+                }
+
+                if (!$this->isFicheComplete($fiche)) {
+                    $emptyFiches[] = $this->buildEmptyFicheError(
+                        $occurrence,
+                        $taxonData,
+                        'La fiche doit être remplie avec au moins une description et les sources'
+                    );
+                }
+            } catch (\Exception $e) {
+                // Logger l'erreur mais continuer le traitement
+                error_log("Erreur lors de la vérification de la fiche: " . $e->getMessage());
+                continue;
+            }
+        }
+
+        return $emptyFiches;
+    }
+
+    /**
+     * Vérifie si le tag de fiche est valide
+     *
+     * @param string|null $cardTag
+     * @return bool
+     */
+    private function isValidCardTag(?string $cardTag): bool
+    {
+        if (empty($cardTag)) {
+            return false;
+        }
+
+        // Utiliser str_contains au lieu de strpos pour plus de clarté (PHP 8+)
+        // Pour PHP 7, utiliser: strpos($cardTag, 'SmartFlore') !== false
+        return strpos($cardTag, 'SmartFlore') !== false;
+    }
+
+    /**
+     * Vérifie si une fiche est complète (a une description et des sources)
+     *
+     * @param mixed $fiche
+     * @return bool
+     */
+    private function isFicheComplete($fiche): bool
+    {
+        if ($fiche === null) {
+            return false;
+        }
+
+        // Vérifier que les méthodes existent et retournent des valeurs valides
+        try {
+            $description = $fiche->getDescription();
+            $sources = $fiche->getSources();
+
+            return !empty($description) && !empty($sources);
+        } catch (\Exception $e) {
+            error_log("Erreur lors de la vérification de complétude de la fiche: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Construit un tableau d'erreur de fiche incomplète avec gestion des données manquantes
+     *
+     * @param Occurrence $occurrence
+     * @param array|null $taxonData
+     * @param string $error
+     * @return array
+     */
+    private function buildEmptyFicheError(Occurrence $occurrence, ?array $taxonData, string $error): array
+    {
+        $result = [
+            'occurrence_id' => $occurrence->getId(),
+            'fiche_tag' => $occurrence->getCardTag(),
+            'error' => $error
+        ];
+
+        // Construire les données taxon de manière sécurisée
+        if (is_array($taxonData)) {
+            $result['taxon'] = [
+                'scientific_name' => $taxonData['scientific_name'] ?? 'Inconnu',
+                'taxon_repository' => $taxonData['taxon_repository'] ?? 'Inconnu',
+                'name_id' => $taxonData['name_id'] ?? null,
+                'taxonomic_id' => $taxonData['taxonomic_id'] ?? null
+            ];
+        } else {
+            $result['taxon'] = [
+                'scientific_name' => 'Inconnu',
+                'taxon_repository' => 'Inconnu',
+                'name_id' => null,
+                'taxonomic_id' => null
+            ];
+        }
+
+        return $result;
     }
 }

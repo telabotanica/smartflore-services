@@ -34,6 +34,9 @@ class PingController extends AbstractController
      *     )
      * )
      * @OA\Tag(name="Ping")
+     * @OA\Post(
+     *     summary="Save trails access (public)",
+     * )
      * @Route("/ping", name="Ping",methods={"POST"})
      */
     public function ping(Request $request, EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator): Response
@@ -44,9 +47,57 @@ class PingController extends AbstractController
             throw new BadRequestHttpException((string)$errors);
         }
 
+        if ($ping->isFromWebsite() === true) {
+            $ip = $request->getClientIp();
+
+            $existingPing = $entityManager
+                ->getRepository(Ping::class)
+                ->findTodayPingByIpAndTrail($ip, $ping->getTrail());
+
+            if ($existingPing !== null) {
+                return new JsonResponse('Ping already registered today', Response::HTTP_OK);
+            }
+
+            $ping->setIp($ip);
+        }
+
         $entityManager->persist($ping);
         $entityManager->flush();
 
         return new JsonResponse('Ping saved in Database', 201);
+    }
+
+    /**
+     * @OA\Response(
+     *     response="200",
+     *     description="Trail consultation",
+     *     @OA\JsonContent(
+     *         type="object",
+     *         ref=@Model(type=Ping::class, groups={"show_ping"})
+     *     )
+     * )
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="The trail ID",
+     *     @OA\Schema(type="integer"),
+     *     example="146"
+     * )
+     * @OA\Tag(name="Ping")
+     * @OA\Get(
+     *     summary="Get a trail number of consultations",
+     * )
+     * @Route("/ping/{id}", name="show_ping", methods={"GET"})
+     */
+    public function pingDetails(
+        SerializerInterface $serializer,
+        EntityManagerInterface $entityManager,
+        $id
+    ) {
+        $pings = $entityManager->getRepository(Ping::class)->findBy(['trail' => $id]);
+
+        $json = $serializer->serialize($pings, 'json', ['groups' => 'show_ping']);
+
+        return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 }
