@@ -178,8 +178,14 @@ class FicheController extends AbstractController
 
             // --- Invalidation du cache taxon et sentier lié (le texte de la card a changé) ---
             $trail = $occurrence->getSentier();
-            $this->cacheFile->deleteTrail($trail->getId());
-            $this->cacheFile->deleteTaxon($referentiel,  $taxon["accepted_scientific_name_id"]);
+            if ($trail) {
+                $this->cacheFile->deleteTrail($trail->getId());
+            }
+
+            $cachedTaxon = $this->cacheFile->getTaxon($referentiel,  $taxon["name_id"]);
+            if ($cachedTaxon) {
+                $this->cacheFile->deleteTaxon($referentiel,  $taxon["name_id"]);
+            }
 
             $this->em->persist($occurrence);
         }
@@ -259,8 +265,15 @@ class FicheController extends AbstractController
 
             // --- Invalidation du cache taxon et trail lié (le texte de la card a changé) ---
             $trail = $occurrence->getSentier();
-            $this->cacheFile->deleteTrail($trail->getId());
-            $this->cacheFile->deleteTaxon($referentiel,  $taxon["accepted_scientific_name_id"]);
+
+            if ($trail) {
+                $this->cacheFile->deleteTrail($trail->getId());
+            }
+
+            $cachedTaxon = $this->cacheFile->getTaxon($referentiel,  $taxon["name_id"]);
+            if ($cachedTaxon) {
+                $this->cacheFile->deleteTaxon($referentiel,  $taxon["name_id"]);
+            }
 
             $this->em->persist($occurrence);
         }
