@@ -91,6 +91,8 @@ class EfloreService
 
             $taxonCache->set($taxon);
             $this->cache->save($taxonCache);
+
+            return $taxon;
         }
 
         return $taxonCache->get();

@@ -209,7 +209,7 @@ class CreateTrailService
         $taxonFromOccurrence = $occurrence->getTaxon();
 
         $taxonRepository = $taxonFromOccurrence['taxon_repository'];
-        $nt = $taxonFromOccurrence['taxonomic_id'];
+        $nt = isset($taxonFromOccurrence['taxonomic_id']) ? $taxonFromOccurrence['taxonomic_id'] : null;
         $name_id = $taxonFromOccurrence['name_id'];
         $espece = $taxonFromOccurrence['scientific_name'];
 
@@ -267,7 +267,7 @@ class CreateTrailService
                 'vernacular_names' => $taxon->getVernacularNames() ?? []
             ];
         } catch (\Exception $e) {
-            throw new \Exception('Erreur lors de la récupération de la taxon.');
+            throw new \Exception('Erreur lors de la récupération de la taxon.'.$e->getMessage());
         }
 
         if ($ficheTag) {
