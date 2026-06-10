@@ -21,3 +21,6 @@
 
 .idea/
 fiche_incompletes.csv
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###
