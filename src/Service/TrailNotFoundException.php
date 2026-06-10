@@ -2,7 +2,9 @@
 
 namespace App\Service;
 
-class TrailNotFoundException extends \Exception
+use Exception;
+
+class TrailNotFoundException extends Exception
 {
 
 }

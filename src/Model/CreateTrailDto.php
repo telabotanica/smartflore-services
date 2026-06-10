@@ -2,6 +2,7 @@
 
 namespace App\Model;
 
+use InvalidArgumentException;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -17,24 +18,22 @@ class CreateTrailDto
     ];
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="Arbres Remarquables"
      * )
-     * @Assert\NotBlank
-     * @Assert\Length(max=255)
-     * @Groups({"create_trail"})
      */
-    private $name;
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 255)]
+    #[Groups(['create_trail'])]
+    private ?string $name = null;
 
     /**
-     * @var StartEnd
      * @OA\Property(ref=@Model(type=StartEnd::class))
-     * @Assert\Type(StartEnd::class)
-     * @Groups({"create_trail"})
      */
-    private $position;
+    #[Assert\Type(StartEnd::class)]
+    #[Groups(['create_trail'])]
+    private ?StartEnd $position = null;
 
     /**
      * @var CreateOccurrenceDto[] $occurrences
@@ -45,33 +44,27 @@ class CreateTrailDto
      * @Assert\All(
      *     @Assert\Type(CreateOccurrenceDto::class)
      * )
-     * @Groups({"create_trail"})
      */
+    #[Groups(['create_trail'])]
     private $occurrences;
 
     /**
-     * @var Path
      * @OA\Property(ref=@Model(type=Path::class))
-     * @Assert\Type(Path::class)
-     * @Groups({"create_trail"})
      */
-    private $path;
+    #[Assert\Type(Path::class)]
+    #[Groups(['create_trail'])]
+    private ?Path $path = null;
 
     /**
-     * @var int
      * @OA\Property(
      *     type="int",
      *     example="-1"
      * )
-     * @Assert\Type("int")
-     * @Assert\Range(
-     *     min = -1,
-     *     max = 1
-     * )
-     * @Groups({"create_trail"})
-     * values : // -1 = don't know // 0 = no // 1 = yes
      */
-    private $prm;
+    #[Assert\Type('int')]
+    #[Assert\Range(min: -1, max: 1)]
+    #[Groups(['create_trail'])]
+    private ?int $prm = null;
 
     /**
      * @var bool[]
@@ -83,15 +76,10 @@ class CreateTrailDto
      * @Assert\All(
      *     @Assert\Type("bool")
      * )
-     * @Assert\Count(
-     *     min = 4,
-     *     max = 4
-     * )
-     * @Groups({"create_trail"})
-     * Which seasons are the best to visit this sentier?
-     * 4 booleans list, one for each season. First is spring, then summer, etc.
      */
-    private $bestSeason;
+    #[Assert\Count(min: 4, max: 4)]
+    #[Groups(['create_trail'])]
+    private ?array $bestSeason = null;
 
     /**
      * @return string
@@ -180,7 +168,7 @@ class CreateTrailDto
     public function setPrm(int $prm): CreateTrailDto
     {
         if (!in_array($prm, self::PRM_VALUES)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "Given PRM value : $prm is not in allowed range : ".implode(', ', self::PRM_VALUES));
         }
         $this->prm = $prm;
@@ -202,12 +190,12 @@ class CreateTrailDto
     public function setBestSeason(array $bestSeason): CreateTrailDto
     {
         if (count($bestSeason) !== 4) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Best season array should contain exactly 4 elements instead of given '.count($bestSeason));
         }
         foreach ($bestSeason as $season) {
             if (!is_bool($season)) {
-                throw new \InvalidArgumentException(
+                throw new InvalidArgumentException(
                     'Best season array should contain only boolean instead of given '.gettype($season));
             }
         }

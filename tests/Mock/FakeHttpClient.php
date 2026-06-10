@@ -47,7 +47,7 @@ class FakeHttpClient implements HttpClientInterface
         throw new \LogicException(sprintf('%s() is not implemented', __METHOD__));
     }
 
-    public function withOptions(): self
+    public function withOptions(array $options): static
     {
         return $this;
     }

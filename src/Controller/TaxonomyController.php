@@ -20,24 +20,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class TaxonomyController extends AbstractController
 {
-    private SerializerInterface $serializer;
-    private FicheService $ficheService;
-    private CacheFileService $cacheFile;
-    /**
-     * @var \App\Service\EfloreService
-     */
-    private $eflore;
-
-    public function __construct(
-        SerializerInterface $serializer,
-        FicheService $ficheService,
-        CacheFileService $cacheFile,
-        \App\Service\EfloreService $eflore
-    ) {
-        $this->serializer = $serializer;
-        $this->ficheService = $ficheService;
-        $this->cacheFile = $cacheFile;
-        $this->eflore = $eflore;
+    public function __construct(private readonly SerializerInterface $serializer, private readonly FicheService $ficheService, private readonly CacheFileService $cacheFile, private readonly EfloreService $eflore)
+    {
     }
 
     /**
@@ -67,12 +51,12 @@ class TaxonomyController extends AbstractController
      * @OA\Get(
      *     summary="Get taxon infos (public)",
      * )
-     * @Route("/taxon/{taxonRepository}/{taxonNameId}", name="show_taxon", methods={"GET"})
      */
+    #[Route(path: '/taxon/{taxonRepository}/{taxonNameId}', name: 'show_taxon', methods: ['GET'])]
     public function taxonInfo(
         string $taxonRepository,
         int $taxonNameId
-    ): \Symfony\Component\HttpFoundation\JsonResponse {
+    ): JsonResponse {
         // --- Lecture cache fichier ---
         $cached = $this->cacheFile->getTaxon($taxonRepository, $taxonNameId);
         if ($cached !== null) {
@@ -94,7 +78,7 @@ class TaxonomyController extends AbstractController
 
         $json = $this->serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
 
-        return new JsonResponse($json, \Symfony\Component\HttpFoundation\Response::HTTP_OK, [], true);
+        return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 
     /**
@@ -124,12 +108,12 @@ class TaxonomyController extends AbstractController
      * @OA\Get(
      *     summary="Get taxon infos (public)",
      * )
-     * @Route("/taxon/{taxonRepository}/nt/{taxonId}", name="show_taxon_from_nt", methods={"GET"})
      */
+    #[Route(path: '/taxon/{taxonRepository}/nt/{taxonId}', name: 'show_taxon_from_nt', methods: ['GET'])]
     public function taxonInfoFromNt(
         string $taxonRepository,
         int $taxonId
-    ): \Symfony\Component\HttpFoundation\JsonResponse {
+    ): JsonResponse {
         $taxon = $this->eflore->getInfosTaxons($taxonRepository, $taxonId);
 
         if (!$taxon) {
@@ -142,7 +126,7 @@ class TaxonomyController extends AbstractController
 
         $json = $this->serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
 
-        return new JsonResponse($json, \Symfony\Component\HttpFoundation\Response::HTTP_OK, [], true);
+        return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 
     /**
@@ -158,13 +142,13 @@ class TaxonomyController extends AbstractController
      * @OA\Get(
      *     summary="Get referentiels available (public)",
      * )
-     * @Route("/taxon/referentiels", name="list_referentiel", methods={"GET"})
      */
-    public function referentielInfo(): \Symfony\Component\HttpFoundation\JsonResponse
+    #[Route(path: '/taxon/referentiels', name: 'list_referentiel', methods: ['GET'])]
+    public function referentielInfo(): JsonResponse
     {
         $referentiels= $this->eflore->getTaxonRepositories();
         $json = $this->serializer->serialize($referentiels, 'json', ['groups' => 'list_referentiel']);
-        return new JsonResponse($json, \Symfony\Component\HttpFoundation\Response::HTTP_OK, [], true);
+        return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 
     /**
@@ -190,8 +174,8 @@ class TaxonomyController extends AbstractController
      * @OA\Get(
      *     summary="Search taxons with corresponding pages (public)",
      * )
-     * @Route("/taxons", name="list_fiche", methods={"GET"})
      */
+    #[Route(path: '/taxons', name: 'list_fiche', methods: ['GET'])]
     public function getFiches(Request $request): Response
     {
         $filtres = $this->ficheService->mapRequestFilters($request);
@@ -255,9 +239,9 @@ class TaxonomyController extends AbstractController
      * @OA\Get(
      *     summary="Search and return taxon names for reactive autocomplete search (public)",
      * )
-     * @Route("/taxons/search", name="search_fiche", methods={"GET"})
      */
     //eg. http://127.0.0.1:8000/fiche?referentiel=bdtfx&debut=10&num_tax=141&recherche=acer&retour=min&nom_verna=false&limite=10&referentiel_verna=nvjfl&filtre=acer&pages_existantes=true
+    #[Route(path: '/taxons/search', name: 'search_fiche', methods: ['GET'])]
     public function RechercheTaxon(Request $request): Response
     {
         $filtres = $this->ficheService->mapRequestFilters($request);

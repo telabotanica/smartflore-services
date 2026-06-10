@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use DateTimeInterface;
 use App\Model\Taxon;
 use App\Repository\OccurrenceRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -10,83 +11,70 @@ use Doctrine\ORM\Mapping as ORM;
 use OpenApi\Annotations as OA;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Serializer\Annotation\Ignore;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 
-/**
- * @ORM\Entity(repositoryClass=OccurrenceRepository::class)
- */
+#[ORM\Entity(repositoryClass: OccurrenceRepository::class)]
 class Occurrence
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     * @Groups({"show_trail", "list_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
+    #[Groups(['show_trail', 'list_trail', 'create_trail', 'update_occurrence', 'occurrence_without_image', 'add_occurrence'])]
     private $id;
 
-    /**
-     * @ORM\ManyToOne(targetEntity=Sentier::class, inversedBy="occurrences")
-     */
-    private $sentier;
+    #[ORM\ManyToOne(targetEntity: Sentier::class, inversedBy: 'occurrences')]
+    private ?Sentier $sentier = null;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'create_trail', 'update_occurrence', 'occurrence_without_image', 'add_occurrence'])]
+    private ?string $card_tag = null;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"show_trail", "list_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
-     */
-    private $card_tag;
-
-    /**
-     * @ORM\Column(type="json", nullable=true)
      * @OA\Property(
      *     type="object",
      *     example={"lat":43.610769, "lng":3.876716},
      *     @OA\Property(property="lat", type="number", format="float"),
      *     @OA\Property(property="lng", type="number", format="float")
      * )
-     * @Groups({"show_trail", "list_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
      */
-    private $position;
+    #[ORM\Column(type: 'json', nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'create_trail', 'update_occurrence', 'occurrence_without_image', 'add_occurrence'])]
+    private ?array $position = null;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
      * @OA\Property(
      *     type="text",
      *     example="Cet arbre a été planté par Napoléon"
      * )
-     * @Groups({"show_trail", "list_trail", "create_trail", "update_occurrence", "occurrence_without_image", "add_occurrence"})
      */
-    private $anecdotes;
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'create_trail', 'update_occurrence', 'occurrence_without_image', 'add_occurrence'])]
+    private ?string $anecdotes = null;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $user_id = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?DateTimeInterface $date_suppression = null;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
-    private $user_id;
-
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
-    private $date_suppression;
-
-    /**
-     * @ORM\Column(type="json", nullable=true)
      * @OA\Property(ref=@Model(type=Taxon::class))
-     * @Groups({"show_trail", "list_trail", "create_trail", "add_occurrence"})
-     * @SerializedName("taxon")
      */
-    private $taxon = [];
+    #[ORM\Column(type: 'json', nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'create_trail', 'add_occurrence'])]
+    #[SerializedName('taxon')]
+    private ?array $taxon = [];
 
     /**
-     * @ORM\OneToMany(targetEntity=Image::class, mappedBy="occurrence", cascade={"persist"}, fetch="EAGER")
      * @OA\Property(
      *     property="image_id",
      *     type="integer",
      *     example=131269
      * )
-     * @Groups({"show_trail", "list_trail", "create_trail", "update_occurrence"})
      */
-    private $images;
+    #[ORM\OneToMany(targetEntity: Image::class, mappedBy: 'occurrence', cascade: ['persist'], fetch: 'EAGER')]
+    #[Groups(['show_trail', 'list_trail', 'create_trail', 'update_occurrence'])]
+    private ArrayCollection|array $images;
 
     public function __construct()
     {
@@ -158,12 +146,12 @@ class Occurrence
         return $this;
     }
 
-    public function getDateSuppression(): ?\DateTimeInterface
+    public function getDateSuppression(): ?DateTimeInterface
     {
         return $this->date_suppression;
     }
 
-    public function setDateSuppression(?\DateTimeInterface $date_suppression): self
+    public function setDateSuppression(?DateTimeInterface $date_suppression): self
     {
         $this->date_suppression = $date_suppression;
 

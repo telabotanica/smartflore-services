@@ -18,13 +18,10 @@ class StartEnd
      * @Assert\All(
      *     @Assert\Type("float")
      * )
-     * @Assert\Count(
-     *     min = 2,
-     *     max = 2
-     * )
-     * @Groups({"create_trail"})
      */
-    private $start;
+    #[Assert\Count(min: 2, max: 2)]
+    #[Groups(['create_trail'])]
+    private ?array $start = null;
 
     /**
      * @var float[]
@@ -36,13 +33,10 @@ class StartEnd
      * @Assert\All(
      *     @Assert\Type("float")
      * )
-     * @Assert\Count(
-     *     min = 2,
-     *     max = 2
-     * )
-     * @Groups({"create_trail"})
      */
-    private $end;
+    #[Assert\Count(min: 2, max: 2)]
+    #[Groups(['create_trail'])]
+    private ?array $end = null;
 
     public function getStart(): array
     {

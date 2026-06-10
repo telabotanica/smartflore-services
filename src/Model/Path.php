@@ -8,17 +8,15 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class Path
 {
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="LineString"
      * )
-     * @Groups({"show_trail", "list_trail", "create_trail"})
      */
-    private $type;
+    #[Groups(['show_trail', 'list_trail', 'create_trail'])]
+    private ?string $type = null;
 
     /**
-     * @var array
      * @OA\Property(
      *     type="array",
      *     @OA\Items(
@@ -32,9 +30,9 @@ class Path
      *         {"lat":43.610769, "lng":3.876716}
      *     }
      * )
-     * @Groups({"show_trail", "list_trail", "create_trail"})
      */
-    private $coordinates;
+    #[Groups(['show_trail', 'list_trail', 'create_trail'])]
+    private ?array $coordinates = null;
 
     public function getType(): string
     {

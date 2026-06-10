@@ -30,7 +30,7 @@ return RectorConfig::configure()
         __DIR__ . '/vendor',
     ])
 
-//    ->withImportNames(removeUnusedImports: true) //Remove Unused Imports
+    ->withImportNames(removeUnusedImports: true) //Remove Unused Imports
 
     // ============================================================================
     // PHP VERSION: Auto-detect from composer.json (targets PHP 8.1)
@@ -52,9 +52,10 @@ return RectorConfig::configure()
     // SYMFONY 6.4 INTEGRATION: Code quality + best practices
     // Handles: annotations→attributes, route changes, form updates, etc.
     // ============================================================================
-    ->withSets([
-        SymfonySetList::SYMFONY_CODE_QUALITY,
-    ])
+//    ->withSets([
+//        SymfonySetList::SYMFONY_CODE_QUALITY,
+//    ])
+    ->withPreparedSets(symfonyCodeQuality: true)
 
     // ============================================================================
     // SYMFONY CONTAINER XML: Advanced service/form refactoring
@@ -74,7 +75,7 @@ return RectorConfig::configure()
     // Projects like Symfony, Doctrine, Twig or Laravel have lots of versions.
     // Instead of adding dozens of sets for each of those, you can make use of composer-based set resolution
     // =============================================================================
-//    ->withComposerBased(twig: true, doctrine: true, phpunit: true, symfony: true)
+    ->withComposerBased(twig: true, doctrine: true, phpunit: true, symfony: true)
 
     // ============================================================================
     // POST-UPGRADE VERIFICATION STEPS (execute these AFTER rector finishes):

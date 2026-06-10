@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use Exception;
+use DateTime;
 use App\Entity\Sentier;
 use App\Model\Taxon;
 use App\Repository\ImageRepository;
@@ -27,60 +29,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class TrailController extends AbstractController
 {
-    private SerializerInterface $serializer;
-    private ValidatorInterface $validator;
-    private AnnuaireService $annuaire;
-    private SentierRepository $sentierRepository;
-    private CreateTrailService $createTrail;
-    private EntityManagerInterface $em;
-    private EmailService $emailService;
-    private SharedService $sharedService;
-    private CacheFileService $cacheFile;
-    /**
-     * @var \App\Service\TrailsService
-     */
-    private $trails;
-    /**
-     * @var \App\Service\BoundingBoxPolygonFactory
-     */
-    private $polygonFactory;
-    /**
-     * @var \App\Repository\ImageRepository
-     */
-    private $imageRepository;
-    /**
-     * @var \App\Service\EfloreService
-     */
-    private $eflore;
-
-    public function __construct(
-        SerializerInterface $serializer,
-        ValidatorInterface $validator,
-        AnnuaireService $annuaire,
-        SentierRepository $sentierRepository,
-        CreateTrailService $createTrail,
-        EntityManagerInterface $em,
-        EmailService $emailService,
-        SharedService $sharedService,
-        CacheFileService $cacheFile,
-        \App\Service\TrailsService $trails,
-        \App\Service\BoundingBoxPolygonFactory $polygonFactory,
-        \App\Repository\ImageRepository $imageRepository,
-        \App\Service\EfloreService $eflore
-    ) {
-        $this->serializer = $serializer;
-        $this->validator = $validator;
-        $this->annuaire = $annuaire;
-        $this->sentierRepository = $sentierRepository;
-        $this->createTrail = $createTrail;
-        $this->em = $em;
-        $this->emailService = $emailService;
-        $this->sharedService = $sharedService;
-        $this->cacheFile = $cacheFile;
-        $this->trails = $trails;
-        $this->polygonFactory = $polygonFactory;
-        $this->imageRepository = $imageRepository;
-        $this->eflore = $eflore;
+    public function __construct(private readonly SerializerInterface $serializer, private readonly ValidatorInterface $validator, private readonly AnnuaireService $annuaire, private readonly SentierRepository $sentierRepository, private readonly CreateTrailService $createTrail, private readonly EntityManagerInterface $em, private readonly EmailService $emailService, private readonly SharedService $sharedService, private readonly CacheFileService $cacheFile, private readonly TrailsService $trails, private readonly BoundingBoxPolygonFactory $polygonFactory, private readonly ImageRepository $imageRepository, private readonly EfloreService $eflore)
+    {
     }
 
     /**
@@ -117,11 +67,11 @@ class TrailController extends AbstractController
      * @OA\Get(
      *     summary="Get all published trails (public)",
      * )
-     * @Route("/trails", name="list_trail", methods={"GET"})
      */
+    #[Route(path: '/trails', name: 'list_trail', methods: ['GET'])]
     public function trailsList(
         Request $request
-    ): \Symfony\Component\HttpFoundation\JsonResponse {
+    ): JsonResponse {
         $searchCriterias = $this->trails->getSearchCriterias($request);
         $hasBbox = (bool) $request->query->get('bbox');
 
@@ -170,11 +120,11 @@ class TrailController extends AbstractController
      * @OA\Get(
      *     summary="Get a trail (public)",
      * )
-     * @Route("/trail/{id}", name="show_trail", methods={"GET"})
      */
+    #[Route(path: '/trail/{id}', name: 'show_trail', methods: ['GET'])]
     public function trailDetails(
         int $id
-    ): \Symfony\Component\HttpFoundation\JsonResponse {
+    ): JsonResponse {
         // --- Lecture cache fichier ---
         $cached = $this->cacheFile->getTrail($id);
         if ($cached !== null) {
@@ -211,11 +161,11 @@ class TrailController extends AbstractController
      *     example="146"
      * )
      * @OA\Tag(name="Trails")
-     * @Route("/batch/trail/{id}", name="batch_trail", methods={"GET"})
      */
+    #[Route(path: '/batch/trail/{id}', name: 'batch_trail', methods: ['GET'])]
     public function trailDetailsBatch(
         string $id
-    ): \Symfony\Component\HttpFoundation\JsonResponse {
+    ): JsonResponse {
         $trail = $this->sentierRepository->findOneBy(['id' => $id]);
         if (!$trail) {
             return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
@@ -241,8 +191,8 @@ class TrailController extends AbstractController
      *     )
      * )
      * @OA\Tag(name="Trails")
-     * @Route("/trail", name="post_trail", methods={"POST"})
      */
+    #[Route(path: '/trail', name: 'post_trail', methods: ['POST'])]
     public function createTrail(Request $request): Response
     {
         $content = json_decode($request->getContent());
@@ -285,7 +235,7 @@ class TrailController extends AbstractController
 
         try {
             $trail = $this->createTrail->process($newTrail);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur lors de la création du sentier: '. $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
 
@@ -320,8 +270,8 @@ class TrailController extends AbstractController
      * @OA\Put(
      *     summary="update a trail localisation, name, path, prm access or best seasons information"
      * )
-     * @Route("/trail/{id}", name="update_trail", methods={"PUT"})
      */
+    #[Route(path: '/trail/{id}', name: 'update_trail', methods: ['PUT'])]
     public function updateTrail(Request $request, string $id): Response
     {
         try {
@@ -331,7 +281,7 @@ class TrailController extends AbstractController
             }
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -357,7 +307,7 @@ class TrailController extends AbstractController
         $trail = $this->serializer->deserialize(json_encode($content), Sentier::class, 'json', ['groups' => 'update_trail', 'object_to_populate' => $trail]);
 
         $trail->setPathLength((int) round(TrailsService::getTrailLength($trail)));
-        $trail->setDateModification(new \DateTime());
+        $trail->setDateModification(new DateTime());
 
         if (isset($content->image)){
             $newImage = $this->createTrail->getImageFromContent($content->image);
@@ -400,15 +350,15 @@ class TrailController extends AbstractController
      * @OA\Delete(
      *     summary="Delete a trail",
      * )
-     * @Route("/trail/{id}", name="delete_trail", methods={"DELETE"})
      */
+    #[Route(path: '/trail/{id}', name: 'delete_trail', methods: ['DELETE'])]
     public function deleteTrail(Request $request, int $id): Response
     {
         try {
             $token = $this->annuaire->getRequestToken($request);
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -421,7 +371,7 @@ class TrailController extends AbstractController
             return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
-        $trail->setDateSuppression(new \DateTime());
+        $trail->setDateSuppression(new DateTime());
         $this->em->persist($trail);
         $this->em->flush();
 
@@ -448,8 +398,8 @@ class TrailController extends AbstractController
      * @OA\Post(
      *     summary="send trail to review"
      * )
-     * @Route("/trail/{id}/review", name="review_trail", methods={"POST"})
      */
+    #[Route(path: '/trail/{id}/review', name: 'review_trail', methods: ['POST'])]
     public function reviewTrail(Request $request, string $id): Response
     {
         try {
@@ -459,7 +409,7 @@ class TrailController extends AbstractController
             }
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -511,7 +461,7 @@ class TrailController extends AbstractController
                     "Demande de validation d'un sentier",
                     $message
                 );
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return new JsonResponse(['error' => 'Erreur lors de l\'envoi de l\'email: '. $e->getMessage()], Response::HTTP_BAD_REQUEST);
             }
         }
@@ -544,8 +494,8 @@ class TrailController extends AbstractController
      * @OA\Put(
      *     summary="update a trail default image"
      * )
-     * @Route("/trail/{id}/update-image", name="update_trail_image", methods={"PUT"})
      */
+    #[Route(path: '/trail/{id}/update-image', name: 'update_trail_image', methods: ['PUT'])]
     public function updateTrailImage(Request $request, string $id): Response
     {
         try {
@@ -555,7 +505,7 @@ class TrailController extends AbstractController
             }
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -606,8 +556,8 @@ class TrailController extends AbstractController
      * @OA\Put(
      *     summary="delete a trail default image"
      * )
-     * @Route("/trail/{id}/delete-image", name="delete_trail_image", methods={"DELETE"})
      */
+    #[Route(path: '/trail/{id}/delete-image', name: 'delete_trail_image', methods: ['DELETE'])]
     public function deleteTrailImage(Request $request, string $id): Response
     {
         try {
@@ -617,7 +567,7 @@ class TrailController extends AbstractController
             }
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour du sentier: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -673,8 +623,8 @@ class TrailController extends AbstractController
      * @OA\Get(
      *     summary="Check if trail can be published"
      * )
-     * @Route("/trail/{id}/check", name="check_trail", methods={"GET"})
      */
+    #[Route(path: '/trail/{id}/check', name: 'check_trail', methods: ['GET'])]
     public function checkTrail(string $id): Response
     {
         $trail = $this->sentierRepository->findOneBy(['id' => $id]);
@@ -714,8 +664,8 @@ class TrailController extends AbstractController
      * @OA\Get(
      *     summary="Get unique taxons for a trail"
      * )
-     * @Route("/trail/{id}/taxons", name="trail_taxons", methods={"GET"})
      */
+    #[Route(path: '/trail/{id}/taxons', name: 'trail_taxons', methods: ['GET'])]
     public function trailTaxons(
         int $id
     ): Response {
@@ -729,7 +679,7 @@ class TrailController extends AbstractController
                     'json',
                     ['groups' => 'show_trail']
                 );
-            } catch (\Exception $e) {
+            } catch (Exception) {
                 $trail = null;
             }
         }
@@ -762,7 +712,7 @@ class TrailController extends AbstractController
                 if ($taxon) {
                     $taxons[] = $taxon;
                 }
-            } catch (\Exception $e) {
+            } catch (Exception) {
                 $taxons[] = $taxonData;
             }
         }

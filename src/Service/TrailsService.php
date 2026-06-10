@@ -2,10 +2,9 @@
 
 namespace App\Service;
 
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Exception;
 use App\Entity\Sentier;
-//use App\Model\Image;
-use App\Entity\Image;
-use App\Model\Taxon;
 use App\Model\Trail;
 use App\Model\User;
 use App\Repository\SentierRepository;
@@ -20,41 +19,21 @@ use Symfony\Contracts\Cache\CacheInterface;
 
 class TrailsService
 {
-    private $client;
-    private $cache;
-    private $smartfloreLegacyApiBaseUrl;
-    private $userHashSecret;
-    private $router;
-    private $efloreService;
-    private SentierRepository $sentierRepository;
-    private ImageService $imageService;
-    private SerializerInterface $serializer;
-    private SharedService $sharedService;
-    private CacheFileService $cacheFile;
+    private readonly HttpClientInterface $client;
 
     public function __construct(
-        string $smartfloreLegacyApiBaseUrl,
-        string $userHashSecret,
-        CacheInterface $cache,
-        UrlGeneratorInterface $router,
-        EfloreService $efloreService,
-        SentierRepository $sentierRepository,
-        ImageService $imageService,
-        SerializerInterface $serializer,
-        SharedService $sharedService,
-        CacheFileService $cacheFile
+        private readonly string $smartfloreLegacyApiBaseUrl,
+        private readonly string $userHashSecret,
+        private readonly CacheInterface $cache,
+        private readonly UrlGeneratorInterface $router,
+        private readonly EfloreService $efloreService,
+        private readonly SentierRepository $sentierRepository,
+        private readonly ImageService $imageService,
+        private readonly SerializerInterface $serializer,
+        private readonly SharedService $sharedService,
+        private readonly CacheFileService $cacheFile
     ) {
         $this->client = HttpClient::create();
-        $this->cache = $cache;
-        $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
-        $this->userHashSecret = $userHashSecret;
-        $this->router = $router;
-        $this->efloreService = $efloreService;
-        $this->sentierRepository = $sentierRepository;
-        $this->imageService = $imageService;
-        $this->serializer = $serializer;
-        $this->sharedService = $sharedService;
-        $this->cacheFile = $cacheFile;
     }
 
     /**
@@ -157,7 +136,7 @@ class TrailsService
             return urldecode(end($parts));
         }
 
-        throw new \Exception('missing trail name');
+        throw new Exception('missing trail name');
     }
 
     public static function getTrailLength(Sentier $trail): float
@@ -254,7 +233,7 @@ class TrailsService
             );
         }
 
-        return array_map(fn(Sentier $sentier): Trail => $this->mapSentierToTrail($sentier), $sentiers);
+        return array_map($this->mapSentierToTrail(...), $sentiers);
     }
 
     private function mapSentierToTrail(Sentier $sentier): Trail
@@ -385,7 +364,7 @@ class TrailsService
 					$this->buildOccurrencesTaxonInfos($trail);
 //					$this->imageService->buildTrailImagesCache($trail);
 				}
-			} catch (\Exception $e){
+			} catch (Exception $e){
 				print_r(' Erreur lors de la création du build trail cache du sentier: ');
 				print_r($trailName);
 				print_r(' '. $e->getMessage() . '/////');
@@ -419,7 +398,7 @@ class TrailsService
                 if ($trail) {
                     $this->buildOccurrencesTaxonInfos($trail);
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 print_r(' Erreur lors de la maj du cache (cards)du sentier: ');
                 print_r($trail->getNom(), $trail->getId());
                 print_r(' ' . $e->getMessage() . '/////');

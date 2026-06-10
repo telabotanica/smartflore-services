@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use DateTime;
+use Exception;
 use App\Entity\Sentier;
 use App\Repository\SentierRepository;
 use App\Service\AnnuaireService;
@@ -23,49 +25,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class AdminController extends AbstractController
 {
-    private SerializerInterface $serializer;
-    private EntityManagerInterface $em;
-    private SentierRepository $sentierRepository;
-    private AnnuaireService $annuaire;
-    private CreateTrailService $createTrail;
-    private SharedService $sharedService;
-    private EmailService $emailService;
-    private CacheFileService $cacheFile;
-    private TrailsService $trailsService;
-    /**
-     * @var \App\Service\TrailsService
-     */
-    private $trails;
-    /**
-     * @var \App\Service\BoundingBoxPolygonFactory
-     */
-    private $polygonFactory;
-
-    public function __construct(
-        SerializerInterface $serializer,
-        EntityManagerInterface $em,
-        SentierRepository $sentierRepository,
-        AnnuaireService $annuaire,
-        CreateTrailService $createTrail,
-        SharedService $sharedService,
-        EmailService $emailService,
-        CacheFileService $cacheFile,
-        TrailsService $trailsService,
-        \App\Service\TrailsService $trails,
-        \App\Service\BoundingBoxPolygonFactory $polygonFactory
-    )
+    public function __construct(private readonly SerializerInterface $serializer, private readonly EntityManagerInterface $em, private readonly SentierRepository $sentierRepository, private readonly AnnuaireService $annuaire, private readonly CreateTrailService $createTrail, private readonly SharedService $sharedService, private readonly EmailService $emailService, private readonly CacheFileService $cacheFile, private readonly TrailsService $trailsService, private readonly TrailsService $trails, private readonly BoundingBoxPolygonFactory $polygonFactory)
     {
-        $this->serializer = $serializer;
-        $this->em = $em;
-        $this->sentierRepository = $sentierRepository;
-        $this->annuaire = $annuaire;
-        $this->createTrail = $createTrail;
-        $this->sharedService = $sharedService;
-        $this->emailService = $emailService;
-        $this->cacheFile = $cacheFile;
-        $this->trailsService = $trailsService;
-        $this->trails = $trails;
-        $this->polygonFactory = $polygonFactory;
     }
 
     /**
@@ -101,11 +62,11 @@ class AdminController extends AbstractController
      * @OA\Get(
      *     summary="Get alltrails",
      * )
-     * @Route("/admin/trails", name="admin_list_trail", methods={"GET"})
      */
+    #[Route(path: '/admin/trails', name: 'admin_list_trail', methods: ['GET'])]
     public function trailsList(
         Request $request
-    ): \Symfony\Component\HttpFoundation\JsonResponse {
+    ): JsonResponse {
         ['user' => $user, 'token'=> $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
         if ($error) {
             return new JsonResponse(['error' => $error], Response::HTTP_UNAUTHORIZED);
@@ -145,8 +106,8 @@ class AdminController extends AbstractController
      * @OA\Post(
      *     summary="Publish a trail"
      * )
-     * @Route("/admin/trail/{id}/publish", name="publish_trail", methods={"POST"})
      */
+    #[Route(path: '/admin/trail/{id}/publish', name: 'publish_trail', methods: ['POST'])]
     public function publishTrail(Request $request, string $id): Response
     {
         ['user' => $user, 'token'=> $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
@@ -183,7 +144,7 @@ class AdminController extends AbstractController
             return new JsonResponse(['error' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
-        $trail->setDatePublication(new \DateTime());
+        $trail->setDatePublication(new DateTime());
         $trail->setStatus('Validé');
         if (!$trail->getDetails()){
             $trail = $this->sharedService->addDetailToTrail($trail);
@@ -217,7 +178,7 @@ class AdminController extends AbstractController
                     $message,
                     'contact-smartflore@tela-botanica.org'
                 );
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return new JsonResponse(['error' => 'Erreur lors de l\'envoi de l\'email: ' . $e->getMessage()], Response::HTTP_BAD_REQUEST);
             }
         }
@@ -242,8 +203,8 @@ class AdminController extends AbstractController
      * @OA\Post(
      *     summary="Unpublish a trail"
      * )
-     * @Route("/admin/trail/{id}/unpublish", name="unpublish_trail", methods={"POST"})
      */
+    #[Route(path: '/admin/trail/{id}/unpublish', name: 'unpublish_trail', methods: ['POST'])]
     public function unPublishTrail(Request $request, string $id): Response
     {
         ['user' => $user, 'token'=> $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
@@ -300,7 +261,7 @@ class AdminController extends AbstractController
                     $message,
                     'contact-smartflore@tela-botanica.org'
                 );
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return new JsonResponse(['error' => 'Erreur lors de l\'envoi de l\'email: ' . $e->getMessage()], Response::HTTP_BAD_REQUEST);
             }
         }
@@ -325,8 +286,8 @@ class AdminController extends AbstractController
      * @OA\Post(
      *     summary="Reject a trail waiting admin approval"
      * )
-     * @Route("/admin/trail/{id}/reject", name="reject_trail", methods={"POST"})
      */
+    #[Route(path: '/admin/trail/{id}/reject', name: 'reject_trail', methods: ['POST'])]
     public function rejectTrail(Request $request, string $id): Response
     {
         ['user' => $user, 'token'=> $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
@@ -382,7 +343,7 @@ class AdminController extends AbstractController
                     $message,
                     'contact-smartflore@tela-botanica.org'
                 );
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return new JsonResponse(['error' => 'Erreur lors de l\'envoi de l\'email: ' . $e->getMessage()], Response::HTTP_BAD_REQUEST);
             }
         }
@@ -407,8 +368,8 @@ class AdminController extends AbstractController
      * @OA\Post(
      *     summary="Reactivate a deleted trail"
      * )
-     * @Route("/admin/trail/{id}/reactivate", name="reactivate_trail", methods={"POST"})
      */
+    #[Route(path: '/admin/trail/{id}/reactivate', name: 'reactivate_trail', methods: ['POST'])]
     public function reactivateTrail(Request $request, string $id): Response
     {
         ['user' => $user, 'token' => $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);

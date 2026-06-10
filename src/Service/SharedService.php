@@ -8,13 +8,8 @@ use App\Repository\FicheRepository;
 
 class SharedService
 {
-    private string $smartfloreFrontUrl;
-    private FicheRepository $ficheRepository;
-
-    public function __construct(string $smartfloreFrontUrl, FicheRepository $ficheRepository)
+    public function __construct(private readonly string $smartfloreFrontUrl, private readonly FicheRepository $ficheRepository)
     {
-        $this->smartfloreFrontUrl = $smartfloreFrontUrl;
-        $this->ficheRepository = $ficheRepository;
     }
     public function chercherFiche(string $referentiel, int $num_taxonomique): ?Fiche {
         $nom_page = $this->formaterPageNom($referentiel, (string) $num_taxonomique); // Fiche SmartFlore eg. SmartFloreBDTFXnt6200
@@ -29,11 +24,11 @@ class SharedService
     }
 
     public function formaterPageNom($referentiel, string $nt): string {
-        return 'SmartFlore'.strtoupper($referentiel).'nt'.$nt;
+        return 'SmartFlore'.strtoupper((string) $referentiel).'nt'.$nt;
     }
 
     public function formaterPageNomGlobal($referentiel, string $nt): string {
-        return strtoupper($referentiel).'nt'.$nt;
+        return strtoupper((string) $referentiel).'nt'.$nt;
     }
 
     /**
@@ -46,7 +41,7 @@ class SharedService
         $infos = str_replace('smartflore', '', strtolower($individu_id));
         $infos = preg_replace('/#\d+$/i', '', $infos);
 
-        return explode("nt", $infos);
+        return explode("nt", (string) $infos);
     }
 
     public function splitNt($page): array {

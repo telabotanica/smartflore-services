@@ -11,30 +11,20 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class ImageService
 {
-    private $client;
-    private $imageUrl;
-    private $imageMiniatureUrl;
-    private $ipApiV2Image;
-    private $cache;
-    private $efloreService;
+    private readonly HttpClientInterface $client;
 
 
     public function __construct(
-        string $imageUrl,
-        string $imageMiniatureUrl,
-        string $ipApiV2Image,
-        CacheInterface $cache,
-        EfloreService $efloreService
+        private readonly string $imageUrl,
+        private readonly string $imageMiniatureUrl,
+        private readonly string $ipApiV2Image,
+        private readonly CacheInterface $cache,
+        private readonly EfloreService $efloreService
     ) {
         /**
          * @var $client HttpClientInterface
          */
         $this->client = HttpClient::create();
-        $this->imageUrl = $imageUrl;
-        $this->imageMiniatureUrl = $imageMiniatureUrl;
-        $this->ipApiV2Image = $ipApiV2Image;
-        $this->cache = $cache;
-        $this->efloreService = $efloreService;
     }
 /*
     public function buildTrailImagesCache(Sentier $trail): void

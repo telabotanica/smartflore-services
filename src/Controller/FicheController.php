@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use Exception;
+use DateTime;
 use App\Entity\Fiche;
 use App\Repository\FicheRepository;
 use App\Repository\OccurrenceRepository;
@@ -21,33 +23,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class FicheController extends AbstractController
 {
-    private SerializerInterface $serializer;
-    private EntityManagerInterface $em;
-    private FicheRepository $ficheRepository;
-    private OccurrenceRepository $occurrenceRepository;
-    private FicheService $ficheService;
-    private SharedService $sharedService;
-    private AnnuaireService $annuaire;
-    private CacheFileService $cacheFile;
-
-    public function __construct(
-        SerializerInterface $serializer,
-        EntityManagerInterface $em,
-        FicheRepository $ficheRepository,
-        OccurrenceRepository $occurrenceRepository,
-        FicheService $ficheService,
-        SharedService $sharedService,
-        AnnuaireService $annuaire,
-        CacheFileService $cacheFile
-    ) {
-        $this->serializer = $serializer;
-        $this->em = $em;
-        $this->ficheRepository = $ficheRepository;
-        $this->occurrenceRepository = $occurrenceRepository;
-        $this->ficheService = $ficheService;
-        $this->sharedService = $sharedService;
-        $this->annuaire = $annuaire;
-        $this->cacheFile = $cacheFile;
+    public function __construct(private readonly SerializerInterface $serializer, private readonly EntityManagerInterface $em, private readonly FicheRepository $ficheRepository, private readonly OccurrenceRepository $occurrenceRepository, private readonly FicheService $ficheService, private readonly SharedService $sharedService, private readonly AnnuaireService $annuaire, private readonly CacheFileService $cacheFile)
+    {
     }
 
     /**
@@ -77,8 +54,8 @@ class FicheController extends AbstractController
      * @OA\Get(
      *     summary="Get one page (public)",
      * )
-     * @Route("/fiche/{referentiel}/{num_tax}", name="single_fiche", methods={"GET"})
      */
+    #[Route(path: '/fiche/{referentiel}/{num_tax}', name: 'single_fiche', methods: ['GET'])]
     public function getFiche(string $referentiel, int $num_tax): Response
     {
         // --- Lecture cache fichier ---
@@ -122,8 +99,8 @@ class FicheController extends AbstractController
      * @OA\Put(
      *     summary="Update page",
      * )
-     * @Route("/fiche/{referentiel}/{num_tax}", name="update_fiche", methods={"PUT"})
      */
+    #[Route(path: '/fiche/{referentiel}/{num_tax}', name: 'update_fiche', methods: ['PUT'])]
     public function updateFiche(string $referentiel, int $num_tax, Request $request): Response
     {
         $user = null;
@@ -133,7 +110,7 @@ class FicheController extends AbstractController
                 return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
             }
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour de la fiche: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -153,19 +130,19 @@ class FicheController extends AbstractController
         $newFiche = clone $fiche;
         $newFiche = $this->serializer->deserialize(json_encode($content), Fiche::class, 'json', ['groups' => ['update_fiche'],  'object_to_populate' => $newFiche]);
 
-        if (empty(trim($newFiche->getDescription()))) {
+        if (empty(trim((string) $newFiche->getDescription()))) {
             return new JsonResponse(['error' => 'A description is required'], Response::HTTP_BAD_REQUEST);
         }
 
         try {
             $newFiche->setProprietaire($user->getName() ?? 'anonyme');
             $newFiche->setUser($user->getId());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur lors de la maj du propriétaire de la fiche: '. $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
 
         $newFiche->setDerniereVersion(true);
-        $newFiche->setDateModification(new \DateTime());
+        $newFiche->setDateModification(new DateTime());
         $newFiche->setTag($this->sharedService->formaterPageNom($newFiche->getReferentiel(), $newFiche->getNt()));
 
         $occurrences = $this->occurrenceRepository->findByTaxon($newFiche->getReferentiel(), $newFiche->getNt());
@@ -222,8 +199,8 @@ class FicheController extends AbstractController
      * @OA\Post(
      *     summary="Create a page",
      * )
-     * @Route("/fiche/{referentiel}/{num_tax}", name="create_fiche", methods={"POST"})
      */
+    #[Route(path: '/fiche/{referentiel}/{num_tax}', name: 'create_fiche', methods: ['POST'])]
     public function createFiche(string $referentiel, int $num_tax, Request $request): Response
     {
         ['user' => $user, 'token'=> $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
@@ -249,7 +226,7 @@ class FicheController extends AbstractController
         $fiche->setTag($this->sharedService->formaterPageNom($fiche->getReferentiel(), $fiche->getNt()));
         $fiche->setProprietaire($user->getName() ?? 'anonyme');
         $fiche->setUser($user->getId());
-        $fiche->setDateModification(new \DateTime());
+        $fiche->setDateModification(new DateTime());
         $fiche->setDerniereVersion(true);
 
         $this->em->persist($fiche);

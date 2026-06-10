@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use DateTime;
 use App\Entity\Ping;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -41,7 +42,7 @@ class PingRepository extends ServiceEntityRepository
 
     public function findTodayPingByIpAndTrail(string $ip, int $trailId): ?Ping
     {
-        $start = (new \DateTime())->setTime(0, 0, 0)->format('Y-m-d');
+        $start = (new DateTime())->setTime(0, 0, 0)->format('Y-m-d');
 
         return $this->createQueryBuilder('p')
             ->where('p.trail = :trail')

@@ -2,13 +2,13 @@
 
 namespace App\Service;
 
+use DateTime;
+use Exception;
 use App\Entity\Image;
 use App\Entity\Occurrence;
 use App\Entity\Sentier;
 use App\Model\CreateOccurrenceDto;
-use App\Model\CreateTrailDto;
 use App\Model\Taxon;
-use App\Model\User;
 use App\Repository\FicheRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpClient\HttpClient;
@@ -18,55 +18,29 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class CreateTrailService
 {
-    private $client;
-    private $smartfloreLegacyApiBaseUrl;
-    private $efloreApiBaseUrl;
-    private $infosTaxonsUrl;
-    private $imageUrl;
-    private $imageMiniatureUrl;
-    private $ipApiV2Image;
-    private $authorizeToken;
-    private $annuaire;
-    private EntityManagerInterface $em;
-    private EfloreService $eflore;
-    private SharedService $sharedService;
-    private ImageService $imageService;
-    private SerializerInterface $serializer;
-    private FicheRepository $ficheRepository;
-    private UrlGeneratorInterface $router;
+    private readonly HttpClientInterface $client;
+    private ?string $authorizeToken = null;
+    private readonly SerializerInterface $serializer;
 
     public function __construct(
-        string $smartfloreLegacyApiBaseUrl,
-        string $efloreApiBaseUrl,
-        string $infosTaxonsUrl,
-        string $imageUrl,
-        string $imageMiniatureUrl,
-        string $ipApiV2Image,
-        AnnuaireService $annuaire,
-        EntityManagerInterface $em,
-        EfloreService $eflore,
-        SharedService $sharedService,
-        ImageService $imageService,
-        FicheRepository $ficheRepository,
-        UrlGeneratorInterface $router
+        private readonly string $smartfloreLegacyApiBaseUrl,
+        private readonly string $efloreApiBaseUrl,
+        private readonly string $infosTaxonsUrl,
+        private readonly string $imageUrl,
+        private readonly string $imageMiniatureUrl,
+        private readonly string $ipApiV2Image,
+        private readonly AnnuaireService $annuaire,
+        private readonly EntityManagerInterface $em,
+        private readonly EfloreService $eflore,
+        private readonly SharedService $sharedService,
+        private readonly ImageService $imageService,
+        private readonly FicheRepository $ficheRepository,
+        private readonly UrlGeneratorInterface $router
     ) {
         /**
          * @var $client HttpClientInterface
          */
         $this->client = HttpClient::create();
-        $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
-        $this->efloreApiBaseUrl = $efloreApiBaseUrl;
-        $this->infosTaxonsUrl = $infosTaxonsUrl;
-        $this->imageUrl = $imageUrl;
-        $this->imageMiniatureUrl = $imageMiniatureUrl;
-        $this->ipApiV2Image = $ipApiV2Image;
-        $this->annuaire = $annuaire;
-        $this->em = $em;
-        $this->eflore = $eflore;
-        $this->sharedService = $sharedService;
-        $this->imageService = $imageService;
-        $this->ficheRepository = $ficheRepository;
-        $this->router = $router;
     }
 
     public function process(Sentier $trail): Sentier
@@ -115,7 +89,7 @@ class CreateTrailService
         $trail->setNom($trailName);
         $trail->setAuthorId($user->getId());
         $trail->setAuteurEmail($user->getEmail());
-        $trail->setDateCreation(new \DateTime());
+        $trail->setDateCreation(new DateTime());
     }
 
     public function addLocation(Sentier $trail): void
@@ -152,7 +126,7 @@ class CreateTrailService
         ]);
 
         if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Erreur lors de l\'ajout de la localisation.');
+            throw new Exception('Erreur lors de l\'ajout de la localisation.');
         }
     }
 
@@ -170,7 +144,7 @@ class CreateTrailService
         ]);
 
         if (200 !== $response->getStatusCode() || 'OK' !== $response->getContent()) {
-            throw new \Exception('Erreur lors de l\envoi du sentier en validation.');
+            throw new Exception('Erreur lors de l\envoi du sentier en validation.');
         }
     }
 
@@ -210,7 +184,7 @@ class CreateTrailService
         $taxonFromOccurrence = $occurrence->getTaxon();
 
         $taxonRepository = $taxonFromOccurrence['taxon_repository'];
-        $nt = isset($taxonFromOccurrence['taxonomic_id']) ? $taxonFromOccurrence['taxonomic_id'] : null;
+        $nt = $taxonFromOccurrence['taxonomic_id'] ?? null;
         $name_id = $taxonFromOccurrence['name_id'];
         $espece = $taxonFromOccurrence['scientific_name'];
 
@@ -267,8 +241,8 @@ class CreateTrailService
                 'taxonomic_id' => $taxon->getTaxonomicId(),
                 'vernacular_names' => $taxon->getVernacularNames() ?? []
             ];
-        } catch (\Exception $e) {
-            throw new \Exception('Erreur lors de la récupération de la taxon.'.$e->getMessage());
+        } catch (Exception $e) {
+            throw new Exception('Erreur lors de la récupération de la taxon.'.$e->getMessage());
         }
 
         if ($ficheTag) {
@@ -306,7 +280,7 @@ class CreateTrailService
     private function getAuth(): string
     {
         if (!$this->authorizeToken) {
-            throw new \Exception('Missing authorize token, please set before using this service');
+            throw new Exception('Missing authorize token, please set before using this service');
         }
         return $this->authorizeToken;
     }
@@ -490,8 +464,8 @@ class CreateTrailService
                         'tag' => $cardTag,
                         'derniere_version' => 1
                     ]);
-                } catch (\Exception $e) {
-                    throw new \Exception("Erreur lors de la recherche de la fiche avec tag: {$cardTag}", 0, $e);
+                } catch (Exception $e) {
+                    throw new Exception("Erreur lors de la recherche de la fiche avec tag: {$cardTag}", 0, $e);
                 }
 
                 // Vérifier si la fiche est incomplète
@@ -511,7 +485,7 @@ class CreateTrailService
                         'La fiche doit être remplie avec au moins une description et les sources'
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Logger l'erreur mais continuer le traitement
                 error_log("Erreur lors de la vérification de la fiche: " . $e->getMessage());
                 continue;
@@ -535,7 +509,7 @@ class CreateTrailService
 
         // Utiliser str_contains au lieu de strpos pour plus de clarté (PHP 8+)
         // Pour PHP 7, utiliser: strpos($cardTag, 'SmartFlore') !== false
-        return strpos($cardTag, 'SmartFlore') !== false;
+        return str_contains($cardTag, 'SmartFlore');
     }
 
     /**
@@ -556,7 +530,7 @@ class CreateTrailService
             $sources = $fiche->getSources();
 
             return !empty($description) && !empty($sources);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             error_log("Erreur lors de la vérification de complétude de la fiche: " . $e->getMessage());
             return false;
         }

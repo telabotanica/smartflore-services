@@ -7,28 +7,22 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use OpenApi\Annotations as OA;
 
-/**
- * @ORM\Entity()
- */
+#[ORM\Entity]
 class Path
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=255)
-     * @Groups({"show_trail", "list_trail", "create_trail", "update_trail", "user_trail",})
      * @OA\Property(type="string", example="LineString")
      */
-    private $type;
+    #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(['show_trail', 'list_trail', 'create_trail', 'update_trail', 'user_trail'])]
+    private ?string $type = null;
 
     /**
-     * @ORM\Column(type="json")
-     * @Groups({"show_trail", "list_trail", "create_trail", "update_trail", "user_trail",})
      * @OA\Property(
      *     type="array",
      *     @OA\Items(type="array", @OA\Items(type="float")),
@@ -38,7 +32,9 @@ class Path
      *     }
      * )
      */
-    private $coordinates = [];
+    #[ORM\Column(type: 'json')]
+    #[Groups(['show_trail', 'list_trail', 'create_trail', 'update_trail', 'user_trail'])]
+    private array $coordinates = [];
 
     public function getType(): string
     {

@@ -14,9 +14,9 @@ class Point
      *     @OA\Items(type="float"),
      *     example={"lat":43.610769, "lng":3.876716}
      * )
-     * @Groups({"create_trail"})
      */
-    private $position;
+    #[Groups(['create_trail'])]
+    private ?array $position = null;
 
     public function getPosition(): ?array
     {

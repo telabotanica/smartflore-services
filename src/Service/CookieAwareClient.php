@@ -8,7 +8,7 @@ use Symfony\Component\BrowserKit\HttpBrowser;
 
 class CookieAwareClient
 {
-    public static function create(array $cookie = null): \Symfony\Component\BrowserKit\HttpBrowser
+    public static function create(array $cookie = null): HttpBrowser
     {
         $cookieJar = new CookieJar();
         if ($cookie) {

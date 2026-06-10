@@ -19,61 +19,51 @@ class CreateOccurrenceDto
      * @Assert\All(
      *     @Assert\Type("float")
      * )
-     * @Assert\Count(
-     *     min = 2,
-     *     max = 2
-     * )
-     * @Groups({"create_trail"})
      */
-    private $position;
+    #[Assert\Count(min: 2, max: 2)]
+    #[Groups(['create_trail'])]
+    private ?array $position = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="Acer campestre"
      * )
-     * @Assert\NotNull
-     * @Groups({"create_trail"})
      */
-    private $scientificName;
+    #[Assert\NotNull]
+    #[Groups(['create_trail'])]
+    private ?string $scientificName = null;
 
     /**
-     * @var int
      * @OA\Property(
      *     type="int",
      *     example="141"
      * )
-     * @SerializedName("name_id")
-     * @Groups({"create_trail"})
      */
-    private $numNom;
+    #[SerializedName('name_id')]
+    #[Groups(['create_trail'])]
+    private ?int $numNom = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="bdtfx"
      * )
-     * @Assert\NotBlank
-     * @Groups({"create_trail"})
      */
-    private $taxonRepository;
+    #[Assert\NotBlank]
+    #[Groups(['create_trail'])]
+    private ?string $taxonRepository = null;
 
     /**
-     * @var int|null
      * @OA\Property(
      *     type="int",
      *     example="131269"
      * )
-     * @Groups({"create_trail"})
      */
-    private $imageId;
+    #[Groups(['create_trail'])]
+    private ?int $imageId = null;
 
-    /**
-     * @var string
-     */
-    private $cardTag;
+    private ?string $cardTag = null;
 
     /**
      * @return float[]

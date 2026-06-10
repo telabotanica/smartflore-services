@@ -5,68 +5,59 @@ namespace App\Entity;
 use App\Repository\ImageRepository;
 use Doctrine\ORM\Mapping as ORM;
 use OpenApi\Annotations as OA;
-use Nelmio\ApiDocBundle\Annotation\Model;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Serializer\Annotation\Ignore;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 
-/**
- * @ORM\Entity(repositoryClass=ImageRepository::class)
- */
+#[ORM\Entity(repositoryClass: ImageRepository::class)]
 class Image
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     *  @OA\Property(
+    /** @OA\Property(
      *     type="int",
      *     example="131269"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "update_occurrence"})
      */
-    private $id;
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
+    #[Groups(['show_trail', 'list_trail', 'user_trail', 'show_taxon', 'user_trail', 'update_occurrence'])]
+    private ?int $id = null;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
      * @OA\Property(
      *     type="string",
      *     example="https://api.tela-botanica.org/img:002221908M.jpg"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence", "update_image"})
      */
-    private $url;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail', 'show_taxon', 'user_trail', 'create_trail', 'update_occurrence', 'update_image'])]
+    private ?string $url = null;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
      * @OA\Property(
      *     type="string",
      *     example="Jean Michel Photographe"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence", "update_image"})
      */
-    private $author;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail', 'show_taxon', 'user_trail', 'create_trail', 'update_occurrence', 'update_image'])]
+    private ?string $author = null;
+
+    #[ORM\ManyToOne(targetEntity: Occurrence::class, inversedBy: 'images', cascade: ['persist'])]
+    private ?Occurrence $occurrence = null;
 
     /**
-     * @ORM\ManyToOne(targetEntity=Occurrence::class, inversedBy="images", cascade={"persist"})
-     */
-    private $occurrence;
-
-    /**
-     * @ORM\Column(type="integer", length=255, nullable=true)
      * @OA\Property(
      *     type="integer",
      *     example=131269
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence", "update_image"})
      */
-    private $cel_image_id;
+    #[ORM\Column(type: 'integer', length: 255, nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail', 'show_taxon', 'user_trail', 'create_trail', 'update_occurrence', 'update_image'])]
+    private ?int $cel_image_id = null;
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence", "update_image"})
-     */
-    private $mini;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail', 'show_taxon', 'user_trail', 'create_trail', 'update_occurrence', 'update_image'])]
+    private ?string $mini = null;
 
     public function getId(): ?int
     {
@@ -121,9 +112,9 @@ class Image
      *     type="integer",
      *     example=131269
      * )
-     * @SerializedName("image_id")
-     * @Groups({"create_trail", "update_occurrence"})
      */
+    #[SerializedName('image_id')]
+    #[Groups(['create_trail', 'update_occurrence'])]
     public function getCelImageId(): ?int
     {
         return $this->cel_image_id;

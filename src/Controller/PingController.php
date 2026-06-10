@@ -17,23 +17,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class PingController extends AbstractController
 {
-    /**
-     * @var \Doctrine\ORM\EntityManagerInterface
-     */
-    private $entityManager;
-    /**
-     * @var \Symfony\Component\Serializer\SerializerInterface
-     */
-    private $serializer;
-    /**
-     * @var \Symfony\Component\Validator\Validator\ValidatorInterface
-     */
-    private $validator;
-    public function __construct(\Doctrine\ORM\EntityManagerInterface $entityManager, \Symfony\Component\Serializer\SerializerInterface $serializer, \Symfony\Component\Validator\Validator\ValidatorInterface $validator)
+    public function __construct(private readonly EntityManagerInterface $entityManager, private readonly SerializerInterface $serializer, private readonly ValidatorInterface $validator)
     {
-        $this->entityManager = $entityManager;
-        $this->serializer = $serializer;
-        $this->validator = $validator;
     }
     /**
      * @OA\Response (
@@ -55,8 +40,8 @@ class PingController extends AbstractController
      * @OA\Post(
      *     summary="Save trails access (public)",
      * )
-     * @Route("/ping", name="Ping",methods={"POST"})
      */
+    #[Route(path: '/ping', name: 'Ping', methods: ['POST'])]
     public function ping(Request $request): Response
     {
         $ping = $this->serializer->deserialize($request->getContent(), Ping::class, 'json');
@@ -82,7 +67,7 @@ class PingController extends AbstractController
         $this->entityManager->persist($ping);
         $this->entityManager->flush();
 
-        return new JsonResponse('Ping saved in Database', \Symfony\Component\HttpFoundation\Response::HTTP_CREATED);
+        return new JsonResponse('Ping saved in Database', Response::HTTP_CREATED);
     }
 
     /**
@@ -105,11 +90,11 @@ class PingController extends AbstractController
      * @OA\Get(
      *     summary="Get a trail number of consultations",
      * )
-     * @Route("/ping/{id}", name="show_ping", methods={"GET"})
      */
+    #[Route(path: '/ping/{id}', name: 'show_ping', methods: ['GET'])]
     public function pingDetails(
         $id
-    ): \Symfony\Component\HttpFoundation\JsonResponse {
+    ): JsonResponse {
         $pings = $this->entityManager->getRepository(Ping::class)->findBy(['trail' => $id]);
 
         $json = $this->serializer->serialize($pings, 'json', ['groups' => 'show_ping']);

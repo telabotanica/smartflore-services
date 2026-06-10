@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use Exception;
+use DateTime;
 use App\Entity\Occurrence;
 use App\Entity\Sentier;
 use App\Repository\ImageRepository;
@@ -23,36 +25,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class OccurrenceController extends AbstractController
 {
-    private SerializerInterface $serializer;
-    private AnnuaireService $annuaire;
-    private CreateTrailService $createTrail;
-    private EntityManagerInterface $em;
-    private OccurrenceRepository $occurrenceRepository;
-    private ImageRepository $imageRepository;
-    private SentierRepository $sentierRepository;
-    private SharedService $sharedService;
-    private CacheFileService $cacheFile;
-
-    public function __construct(
-        SerializerInterface $serializer,
-        AnnuaireService $annuaire,
-        CreateTrailService $createTrail,
-        EntityManagerInterface $em,
-        OccurrenceRepository $occurrenceRepository,
-        ImageRepository $imageRepository,
-        SentierRepository $sentierRepository,
-        SharedService $sharedService,
-        CacheFileService $cacheFile
-    ) {
-        $this->serializer = $serializer;
-        $this->annuaire = $annuaire;
-        $this->createTrail = $createTrail;
-        $this->em = $em;
-        $this->occurrenceRepository = $occurrenceRepository;
-        $this->imageRepository = $imageRepository;
-        $this->sentierRepository = $sentierRepository;
-        $this->sharedService = $sharedService;
-        $this->cacheFile = $cacheFile;
+    public function __construct(private readonly SerializerInterface $serializer, private readonly AnnuaireService $annuaire, private readonly CreateTrailService $createTrail, private readonly EntityManagerInterface $em, private readonly OccurrenceRepository $occurrenceRepository, private readonly ImageRepository $imageRepository, private readonly SentierRepository $sentierRepository, private readonly SharedService $sharedService, private readonly CacheFileService $cacheFile)
+    {
     }
 
     /**
@@ -80,8 +54,8 @@ class OccurrenceController extends AbstractController
      * @OA\Post(
      *     summary="Add an occurrence to a trail"
      * )
-     * @Route("/occurrence/{sentier_id}", name="post_occurrence", methods={"POST"})
      */
+    #[Route(path: '/occurrence/{sentier_id}', name: 'post_occurrence', methods: ['POST'])]
     public function addOccurrence(Request $request, int $sentier_id): Response
     {
         try {
@@ -91,7 +65,7 @@ class OccurrenceController extends AbstractController
             }
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification lors de l\'ajout de l\'occurrence: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -132,7 +106,7 @@ class OccurrenceController extends AbstractController
         $occurrence->setUserId(($trail->getAuthorId()));
 
         $trail->addOccurrence($occurrence);
-        $trail->setDateModification(new \DateTime());
+        $trail->setDateModification(new DateTime());
         $this->createTrail->addNbTaxonsToTrail($trail);
 
         if (!$trail->getDetails()){
@@ -173,8 +147,8 @@ class OccurrenceController extends AbstractController
      * @OA\Put(
      *     summary="update an occurrence localisation, anecdote, or add an image"
      * )
-     * @Route("/occurrence/{id}", name="update_occurrence", methods={"PUT"})
      */
+    #[Route(path: '/occurrence/{id}', name: 'update_occurrence', methods: ['PUT'])]
     public function updateOccurrence(Request $request, string $id): Response
     {
         try {
@@ -184,7 +158,7 @@ class OccurrenceController extends AbstractController
             }
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification lors de la mise à jour de l\'occurrence: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -239,7 +213,7 @@ class OccurrenceController extends AbstractController
             $trail = $this->sharedService->addDetailToTrail($trail);
         }
 
-        $trail->setDateModification(new \DateTime());
+        $trail->setDateModification(new DateTime());
         $this->em->persist($trail);
 
         $this->em->persist($occurrence);
@@ -271,8 +245,8 @@ class OccurrenceController extends AbstractController
      * @OA\Delete(
      *     summary="Remove an occurrence from a trail"
      * )
-     * @Route("/occurrence/{id}", name="delete_occurrence", methods={"DELETE"})
      */
+    #[Route(path: '/occurrence/{id}', name: 'delete_occurrence', methods: ['DELETE'])]
     public function deleteOccurrence(Request $request, string $id): Response
     {
         try {
@@ -282,7 +256,7 @@ class OccurrenceController extends AbstractController
             }
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification lors de la suppression de l\'occurrence: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -302,8 +276,8 @@ class OccurrenceController extends AbstractController
             return new JsonResponse(['error' => 'This trail is already published (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
-        $occurrence->setDateSuppression(new \DateTime());
-        $trail->setDateModification(new \DateTime());
+        $occurrence->setDateSuppression(new DateTime());
+        $trail->setDateModification(new DateTime());
         $trail->removeOccurrence($occurrence);
         $this->createTrail->addNbTaxonsToTrail($trail);
 
@@ -335,8 +309,8 @@ class OccurrenceController extends AbstractController
      * @OA\Delete(
      *     summary="Remove an image from occurreence"
      * )
-     * @Route("/occurrence/image/{id}", name="delete_image", methods={"DELETE"})
      */
+    #[Route(path: '/occurrence/image/{id}', name: 'delete_image', methods: ['DELETE'])]
     public function deleteImage(Request $request, string $id): Response
     {
         try {
@@ -346,7 +320,7 @@ class OccurrenceController extends AbstractController
             }
             $this->createTrail->setAuth($token);
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification lors de la suppression de l\'occurrence: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 

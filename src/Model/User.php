@@ -2,7 +2,6 @@
 
 namespace App\Model;
 
-use App\Entity\Sentier;
 use App\Model\Trail;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
@@ -10,37 +9,29 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 class User
 {
-    /**
-     * @var string
-     * @Groups({"user_trail"})
-     */
-    private $id;
+    #[Groups(['user_trail'])]
+    private ?string $id = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="Pseudo"
      * )
-     * @Groups({"user_trail"})
      */
-    private $name;
+    #[Groups(['user_trail'])]
+    private ?string $name = null;
+
+    #[Groups(['user_trail'])]
+    private ?string $email = null;
 
     /**
-     * @var string
-     * @Groups({"user_trail"})
-     */
-    private $email;
-
-    /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="\/\/www.gravatar.com\/avatar\/a9b9b8484076540924c03af816c77fc8?s=50&r=g&d=mm"
      * )
-     * @Groups({"user_trail"})
      */
-    private $avatar;
+    #[Groups(['user_trail'])]
+    private ?string $avatar = null;
 
     /**
      * @var Trail[]
@@ -48,9 +39,9 @@ class User
      *     type="array",
      *     @OA\Items(ref=@Model(type=Trail::class))
      * )
-     * @Groups({"user_trail"})
      */
-    private $trails;
+    #[Groups(['user_trail'])]
+    private ?array $trails = null;
 
     public function getId(): string
     {

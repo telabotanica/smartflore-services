@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use InvalidArgumentException;
+use DateTimeInterface;
 use App\Entity\Path;
 use App\Entity\Image;
 use App\Repository\SentierRepository;
@@ -15,9 +17,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/**
- * @ORM\Entity(repositoryClass=SentierRepository::class)
- */
+#[ORM\Entity(repositoryClass: SentierRepository::class)]
 class Sentier
 {
     const PRM_VALUES = [
@@ -27,27 +27,27 @@ class Sentier
     ];
 
     /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
      * @OA\Property(
      *     type="int",
      *     example="146"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=255)
      * @OA\Property(
      *     type="string",
      *     example="Arbres Remarquables"
      * )
-     * @Groups({"create_trail", "update_trail", "list_trail", "user_trail"})
-     * @SerializedName("name")
      */
-    private $nom;
+    #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(['create_trail', 'update_trail', 'list_trail', 'user_trail'])]
+    #[SerializedName('name')]
+    private ?string $nom = null;
 
     /**
      * @var string
@@ -55,51 +55,48 @@ class Sentier
      *     type="string",
      *     example="Arbres vraiment remarquables mais genre de ouf tmtc"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     * @SerializedName("display_name")
      */
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    #[SerializedName('display_name')]
     private $displayName;
 
-    /**
-     * @ORM\Column(type="string", length=255)
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     */
-    private $authorId;
+    #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?string $authorId = null;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
      * @OA\Property(
      *     type="string",
      *     example="Tela Botanica"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     * @SerializedName("author")
      */
-    private $auteur;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    #[SerializedName('author')]
+    private ?string $auteur = null;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
      * @OA\Property(
      *     type="string",
      *     example="exemple@gmail.com"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     * @SerializedName("author_email")
      */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    #[SerializedName('author_email')]
     private $auteur_email;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
      * @OA\Property(
      *     type="string",
      *     example="Validé"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
-    private $status;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?string $status = null;
 
     /**
-     * @ORM\Column(type="json", nullable=true)
      * @OA\Property(
      *     type="object",
      *     @OA\Property(
@@ -119,69 +116,65 @@ class Sentier
      *         "end": {"lat": 43.610769, "lng": 3.876716}
      *     }
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail", "create_trail", "update_trail"})
      */
-    private $position = [];
+    #[ORM\Column(type: 'json', nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail', 'create_trail', 'update_trail'])]
+    private array $position = [];
 
     /**
-     * @ORM\OneToOne(targetEntity=Path::class, cascade={"persist", "remove"}, fetch="EAGER")
-     * @ORM\JoinColumn(nullable=true)
-     * @SerializedName("path")
-     * @Groups({"show_trail", "create_trail", "update_trail", "list_trail", "user_trail",})
      * @OA\Property(ref=@Model(type=Path::class))
      */
-    private $chemin;
+    #[ORM\OneToOne(targetEntity: Path::class, cascade: ['persist', 'remove'], fetch: 'EAGER')]
+    #[ORM\JoinColumn(nullable: true)]
+    #[SerializedName('path')]
+    #[Groups(['show_trail', 'create_trail', 'update_trail', 'list_trail', 'user_trail'])]
+    private ?Path $chemin = null;
 
     /**
-     * @ORM\Column(type="integer", nullable=true)
      * @OA\Property(
      *     type="int",
      *     example="420"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
-    private $pathLength;
+    #[ORM\Column(type: 'integer', nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?int $pathLength = null;
 
     /**
-     * @ORM\Column(type="integer", nullable=true)
      * @OA\Property(
      *     type="int",
      *     example="42"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
-    private $occurrencesCount;
+    #[ORM\Column(type: 'integer', nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?int $occurrencesCount = null;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
      * @OA\Property(
      *     type="string",
      *     example="https://example.com/link+to+trail+details"
      * )
-     * @Groups({"list_trail", "user_trail", "show_trail"})
      */
-    private $details;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['list_trail', 'user_trail', 'show_trail'])]
+    private ?string $details = null;
 
     /**
-     * @ORM\Column(type="integer", nullable=true)
      ** @OA\Property(
      *     type="int",
      *     example="-1",
      *     description="Is the trail accessible to person with reduced mobility ? -1 = don't know, 0 = no, 1 = yes"
      * )
-     * @Assert\Type("int")
-     * @Assert\Range(
-     *     min = -1,
-     *     max = 1
-     * )
-     * @Groups({"show_trail", "list_trail", "user_trail","create_trail", "update_trail"})
-     * @SerializedName("prm")
-     * values : // -1 = don't know // 0 = no // 1 = yes
      */
-    private $pmr;
+    #[ORM\Column(type: 'integer', nullable: true)]
+    #[Assert\Type('int')]
+    #[Assert\Range(min: -1, max: 1)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail', 'create_trail', 'update_trail'])]
+    #[SerializedName('prm')]
+    private ?int $pmr = null;
 
     /**
-     * @ORM\Column(type="json", nullable=true)
      * @OA\Property(
      *     type="array",
      *     @OA\Items(type="boolean"),
@@ -191,67 +184,52 @@ class Sentier
      * @Assert\All({
      *     @Assert\Type("bool")
      * })
-     * @Assert\Count(
-     *     min=4,
-     *     max=4,
-     *     exactMessage="Vous devez spécifier exactement 4 saisons"
-     * )
-     * @SerializedName("best_season")
-     * @Groups({"show_trail", "list_trail", "user_trail","create_trail", "update_trail"})
      */
-    private $meilleures_saisons = [];
+    #[ORM\Column(type: 'json', nullable: true)]
+    #[Assert\Count(min: 4, max: 4, exactMessage: 'Vous devez spécifier exactement 4 saisons')]
+    #[SerializedName('best_season')]
+    #[Groups(['show_trail', 'list_trail', 'user_trail', 'create_trail', 'update_trail'])]
+    private ?array $meilleures_saisons = [];
+
+    #[ORM\Column(type: 'datetime')]
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?DateTimeInterface $date_creation = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?DateTimeInterface $date_modification = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?DateTimeInterface $date_suppression = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?DateTimeInterface $date_publication = null;
+
+     #[ORM\Column(type: 'integer', nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?int $nb_taxons = null;
 
     /**
-     * @ORM\Column(type="datetime")
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     */
-    private $date_creation;
-
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     */
-    private $date_modification;
-
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     */
-    private $date_suppression;
-
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     */
-    private $date_publication;
-
-     /**
-     * @ORM\Column(type="integer", nullable=true)
-      * @Groups({"show_trail", "list_trail", "user_trail"})
-     */
-    private $nb_taxons;
-
-    /**
-     * @ORM\OneToMany(targetEntity=Occurrence::class, mappedBy="sentier", cascade={"persist"}, fetch="EAGER")
      * @OA\Property(
      *     type="array",
      *     @OA\Items(ref=@Model(type=Occurrence::class)),
      * )
-     * @Groups({"show_trail", "list_trail", "create_trail"})
      */
-    private $occurrences;
+    #[ORM\OneToMany(targetEntity: Occurrence::class, mappedBy: 'sentier', cascade: ['persist'], fetch: 'EAGER')]
+    #[Groups(['show_trail', 'list_trail', 'create_trail'])]
+    private ArrayCollection|array $occurrences;
 
     /**
-     * @ORM\Column(type="json", nullable=true)
      * @OA\Property(ref=@Model(type=Image::class))
-     * @Groups({"show_trail", "list_trail", "user_trail","add_occurrence", "create_trail", "update_trail", "update_image"})
      */
-    private ?array $image;
+    #[ORM\Column(type: 'json', nullable: true)]
+    #[Groups(['show_trail', 'list_trail', 'user_trail', 'add_occurrence', 'create_trail', 'update_trail', 'update_image'])]
+    private ?array $image = null;
 
-    /**
-     * @ORM\Column(type="integer", nullable=true)
-     */
-    private $ancien_id;
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $ancien_id = null;
 
     public function __construct()
     {
@@ -279,8 +257,8 @@ class Sentier
     {
         $this->displayName = $this->displayName ?: $this->getNom();
         // mb_ucfirst
-        $firstChar = mb_substr($this->displayName, 0, 1);
-        $then = mb_substr($this->displayName, 1);
+        $firstChar = mb_substr((string) $this->displayName, 0, 1);
+        $then = mb_substr((string) $this->displayName, 1);
         return mb_strtoupper($firstChar) . $then;
     }
 
@@ -379,7 +357,7 @@ class Sentier
             $this->position = $position;
         }
         else {
-            throw new \InvalidArgumentException('Invalid position format: expected [lng, lat] or start/end structure.');
+            throw new InvalidArgumentException('Invalid position format: expected [lng, lat] or start/end structure.');
         }
 
         return $this;
@@ -447,7 +425,7 @@ class Sentier
     public function setPmr(?int $pmr): self
     {
         if (!in_array($pmr, self::PRM_VALUES)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "Given PRM value : $pmr is not in allowed range : ".implode(', ', self::PRM_VALUES));
         }
         $this->pmr = $pmr;
@@ -464,14 +442,10 @@ class Sentier
      * @Assert\All({
      *     @Assert\Type("bool")
      * })
-     * @Assert\Count(
-     *     min=4,
-     *     max=4,
-     *     exactMessage="Vous devez spécifier exactement 4 saisons"
-     * )
-     * @SerializedName("best_season")
-     * @Groups({"show_trail", "list_trail", "user_trail","create_trail", "update_trail"})
      */
+    #[Assert\Count(min: 4, max: 4, exactMessage: 'Vous devez spécifier exactement 4 saisons')]
+    #[SerializedName('best_season')]
+    #[Groups(['show_trail', 'list_trail', 'user_trail', 'create_trail', 'update_trail'])]
     public function getMeilleuresSaisons(): ?array
     {
         return $this->meilleures_saisons;
@@ -485,7 +459,7 @@ class Sentier
 //        }
         foreach ($meilleures_saisons as $season) {
             if (!is_bool($season)) {
-                throw new \InvalidArgumentException(
+                throw new InvalidArgumentException(
                     'Best season array should contain only boolean instead of given '.gettype($season));
             }
         }
@@ -493,48 +467,48 @@ class Sentier
         return $this;
     }
 
-    public function getDateCreation(): ?\DateTimeInterface
+    public function getDateCreation(): ?DateTimeInterface
     {
         return $this->date_creation;
     }
 
-    public function setDateCreation(\DateTimeInterface $date_creation): self
+    public function setDateCreation(DateTimeInterface $date_creation): self
     {
         $this->date_creation = $date_creation;
 
         return $this;
     }
 
-    public function getDateModification(): ?\DateTimeInterface
+    public function getDateModification(): ?DateTimeInterface
     {
         return $this->date_modification;
     }
 
-    public function setDateModification(?\DateTimeInterface $date_modification): self
+    public function setDateModification(?DateTimeInterface $date_modification): self
     {
         $this->date_modification = $date_modification;
 
         return $this;
     }
 
-    public function getDateSuppression(): ?\DateTimeInterface
+    public function getDateSuppression(): ?DateTimeInterface
     {
         return $this->date_suppression;
     }
 
-    public function setDateSuppression(?\DateTimeInterface $date_suppression): self
+    public function setDateSuppression(?DateTimeInterface $date_suppression): self
     {
         $this->date_suppression = $date_suppression;
 
         return $this;
     }
 
-    public function getDatePublication(): ?\DateTimeInterface
+    public function getDatePublication(): ?DateTimeInterface
     {
         return $this->date_publication;
     }
 
-    public function setDatePublication(?\DateTimeInterface $date_publication): self
+    public function setDatePublication(?DateTimeInterface $date_publication): self
     {
         $this->date_publication = $date_publication;
 

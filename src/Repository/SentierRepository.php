@@ -81,8 +81,8 @@ class SentierRepository extends ServiceEntityRepository
                 ->setParameter('pmr', $criterias['pmr']);
         }
 
-        if (!empty($criterias['ordre']) && in_array(strtoupper($criterias['ordre']), ['ASC', 'DESC'])) {
-            $qb->orderBy('s.nom', strtoupper($criterias['ordre']));
+        if (!empty($criterias['ordre']) && in_array(strtoupper((string) $criterias['ordre']), ['ASC', 'DESC'])) {
+            $qb->orderBy('s.nom', strtoupper((string) $criterias['ordre']));
         } else {
             $qb->orderBy('s.nom', 'ASC');
         }

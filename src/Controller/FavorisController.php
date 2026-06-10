@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use Exception;
 use App\Entity\Favoris;
 use App\Repository\FavorisRepository;
 use App\Service\AnnuaireService;
@@ -15,32 +16,13 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class FavorisController extends AbstractController
 {
-    private SerializerInterface $serializer;
-    private AnnuaireService $annuaire;
-    private FavorisService $favoris;
-    private CreateTrailService $createTrail;
-    private EntityManagerInterface $em;
-    private FavorisRepository $favorisRepository;
-    /**
-     * @var \App\Service\EfloreService
-     */
-    private $eflore;
-
-    public function __construct(SerializerInterface $serializer, AnnuaireService $annuaire, FavorisService $favoris, CreateTrailService $createTrail, EntityManagerInterface $em, FavorisRepository $favorisRepository, \App\Service\EfloreService $eflore)
+    public function __construct(private readonly SerializerInterface $serializer, private readonly AnnuaireService $annuaire, private readonly FavorisService $favoris, private readonly CreateTrailService $createTrail, private readonly EntityManagerInterface $em, private readonly FavorisRepository $favorisRepository, private readonly EfloreService $eflore)
     {
-        $this->serializer = $serializer;
-        $this->annuaire = $annuaire;
-        $this->favoris = $favoris;
-        $this->createTrail = $createTrail;
-        $this->em = $em;
-        $this->favorisRepository = $favorisRepository;
-        $this->eflore = $eflore;
     }
     /**
      * @OA\Response(
@@ -55,8 +37,8 @@ class FavorisController extends AbstractController
      * @OA\Get(
      *     summary="Get user favorite species"
      * )
-     * @Route("/favoris", name="user_favorite", methods={"GET"})
      */
+    #[Route(path: '/favoris', name: 'user_favorite', methods: ['GET'])]
     public function getFavoris(Request $request): Response
     {
         $user = null;
@@ -66,7 +48,7 @@ class FavorisController extends AbstractController
                 return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
             }
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return new JsonResponse(['error' => 'Veuillez vous connecter pour afficher votre liste de fiches favorites'], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -101,8 +83,8 @@ class FavorisController extends AbstractController
      * @OA\Post(
      *     summary="Add a taxon to the favorite list"
      * )
-     * @Route("/favoris", name="add_favorite", methods={"POST"})
      */
+    #[Route(path: '/favoris', name: 'add_favorite', methods: ['POST'])]
     public function addFavoris(Request $request): Response
     {
         $user = null;
@@ -112,7 +94,7 @@ class FavorisController extends AbstractController
                 return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
             }
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Veuillez vous connecter pour ajouter une fiche en favoris'], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -140,7 +122,7 @@ class FavorisController extends AbstractController
 
         try {
             $taxon = $this->eflore->getTaxonRawInfo($favoris->getReferentiel(), $favoris->getTaxonId());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur lors de la récupération du taxon . Veuillez vérifier le référentiel '.$favoris->getReferentiel() .'et le taxon id: taxon_id='.$favoris->getTaxonId().'.: message='.$e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
 
@@ -173,8 +155,8 @@ class FavorisController extends AbstractController
      * @OA\Delete(
      *     summary="Remove a taxon from the favorite list"
      * )
-     * @Route("/favoris/{id}", name="delete_favoris", methods={"DELETE"})
      */
+    #[Route(path: '/favoris/{id}', name: 'delete_favoris', methods: ['DELETE'])]
     public function deleteOccurrence(Request $request, string $id): Response
     {
         $user = null;
@@ -184,7 +166,7 @@ class FavorisController extends AbstractController
                 return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
             }
             $user = $this->annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return new JsonResponse(['error' => 'Veuillez vous connecter pour ajouter une fiche en favoris'], Response::HTTP_UNAUTHORIZED);
         }
 
