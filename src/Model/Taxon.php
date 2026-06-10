@@ -117,7 +117,7 @@ class Taxon
     /**
      * @return string
      */
-    public function getEspece(): string
+    public function getEspece(): ?string
     {
         return $this->espece;
     }
@@ -135,7 +135,7 @@ class Taxon
     /**
      * @return string
      */
-    public function getFullScientificName(): string
+    public function getFullScientificName(): ?string
     {
         return $this->fullScientificName;
     }
@@ -153,7 +153,7 @@ class Taxon
     /**
      * @return string
      */
-    public function getHtmlFullScientificName(): string
+    public function getHtmlFullScientificName(): ?string
     {
         return $this->htmlFullScientificName;
     }
@@ -171,7 +171,7 @@ class Taxon
     /**
      * @return string
      */
-    public function getGenre(): string
+    public function getGenre(): ?string
     {
         return $this->genre;
     }
@@ -189,7 +189,7 @@ class Taxon
     /**
      * @return string
      */
-    public function getFamille(): string
+    public function getFamille(): ?string
     {
         return $this->famille;
     }
@@ -207,7 +207,7 @@ class Taxon
     /**
      * @return string
      */
-    public function getReferentiel(): string
+    public function getReferentiel(): ?string
     {
         return $this->referentiel;
     }
@@ -225,7 +225,7 @@ class Taxon
     /**
      * @return int
      */
-    public function getNumNom(): int
+    public function getNumNom(): ?int
     {
         return $this->numNom;
     }
@@ -243,7 +243,7 @@ class Taxon
     /**
      * @return int
      */
-    public function getAcceptedScientificNameId(): int
+    public function getAcceptedScientificNameId(): ?int
     {
         return $this->acceptedScientificNameId;
     }
@@ -261,7 +261,7 @@ class Taxon
     /**
      * @return int
      */
-    public function getTaxonomicId(): int
+    public function getTaxonomicId(): ?int
     {
         return $this->taxonomicId;
     }
@@ -352,7 +352,7 @@ class Taxon
     /**
      * @return CardTab[]
      */
-    public function getTabs(): array
+    public function getTabs(): ?array
     {
         return $this->tabs;
     }

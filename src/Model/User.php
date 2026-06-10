@@ -41,7 +41,7 @@ class User
      * )
      */
     #[Groups(['user_trail'])]
-    private ?array $trails = null;
+    private array $trails = [];
 
     public function getId(): string
     {

@@ -181,10 +181,8 @@ class Sentier
      *     example={true, false, false, true},
      *     description="Which seasons are the best to visit this sentier? 4 booleans: spring, summer, autumn, winter"
      * )
-     * @Assert\All({
-     *     @Assert\Type("bool")
-     * })
      */
+    #[Assert\All([new Assert\Type('bool')])]
     #[ORM\Column(type: 'json', nullable: true)]
     #[Assert\Count(min: 4, max: 4, exactMessage: 'Vous devez spécifier exactement 4 saisons')]
     #[SerializedName('best_season')]
@@ -439,10 +437,8 @@ class Sentier
      *     example={true, false, false, true},
      *     description="Which seasons are the best to visit this sentier? 4 booleans: spring, summer, autumn, winter"
      * )
-     * @Assert\All({
-     *     @Assert\Type("bool")
-     * })
      */
+    #[Assert\All([new Assert\Type('bool')])]
     #[Assert\Count(min: 4, max: 4, exactMessage: 'Vous devez spécifier exactement 4 saisons')]
     #[SerializedName('best_season')]
     #[Groups(['show_trail', 'list_trail', 'user_trail', 'create_trail', 'update_trail'])]

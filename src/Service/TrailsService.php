@@ -204,7 +204,7 @@ class TrailsService
     {
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxon();
-            if ($taxon['taxon_repository'] & $taxon['name_id']) {
+            if ($taxon['taxon_repository'] && $taxon['name_id']) {
                 $taxon = $this->efloreService->getTaxon(
                     $taxon['taxon_repository'], $taxon['name_id'], true);
 
