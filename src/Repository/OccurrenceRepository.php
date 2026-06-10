@@ -45,7 +45,7 @@ class OccurrenceRepository extends ServiceEntityRepository
 
         return array_filter(
             $occurrences,
-            static function (Occurrence $occurrence) use ($taxonRepository, $taxonId) {
+            static function (Occurrence $occurrence) use ($taxonRepository, $taxonId): bool {
                 $taxon = $occurrence->getTaxon();
 
                 return isset(

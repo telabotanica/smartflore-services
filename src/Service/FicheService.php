@@ -87,8 +87,8 @@ class FicheService extends AbstractController
          return true;
     }
 
-    public function getPagesPourRechercheAsync($recherche) {
-        $retour = array('pagination' => array('total' => 0), 'resultats' => array());
+    public function getPagesPourRechercheAsync(array $recherche): array {
+        $retour = ['pagination' => ['total' => 0], 'resultats' => []];
 
         if($recherche['nom_verna'] == "true") {
             $case_nom = 'nom';
@@ -108,7 +108,7 @@ class FicheService extends AbstractController
         return $retour;
     }
 
-    public function getPagesPourRechercheNormale($recherche): array {
+    public function getPagesPourRechercheNormale(array $recherche): array {
         if ($recherche['retour'] === 'un' || $this->referentielAndNtExist($recherche)) {
             return $this->traiterRechercheTaxonUnique($recherche);
         }
@@ -120,7 +120,7 @@ class FicheService extends AbstractController
         return $this->traiterRechercheNomSci($recherche);
     }
 
-    public function formaterResultatsFiches($infos, $list, $filtres): FicheCollection
+    public function formaterResultatsFiches(array $infos, $list, array $filtres): FicheCollection
     {
         $resultats = [];
         foreach ($infos['resultat'] as $taxon) {
@@ -215,7 +215,7 @@ class FicheService extends AbstractController
 
     private function getNomsVernaculaires(string $referentiel, string $num_tax): array {
         $noms = [];
-        $vernacular_names = $this->efloreService->getVernacularName($referentiel, $num_tax, true);
+        $vernacular_names = $this->efloreService->getVernacularName($referentiel, (int) $num_tax, true);
         if ($vernacular_names) {
             foreach ($vernacular_names as $vn) {
                 $noms[] = $vn['nom'];

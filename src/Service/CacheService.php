@@ -56,7 +56,7 @@ class CacheService
         return $stats;
     }
 
-    public function refresh()
+    public function refresh(): array
     {
         return $this->warmup(true);
     }

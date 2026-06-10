@@ -175,7 +175,7 @@ class OccurrenceController extends AbstractController
      * )
      * @Route("/occurrence/{id}", name="update_occurrence", methods={"PUT"})
      */
-    public function updateOccurrence(Request $request, $id): Response
+    public function updateOccurrence(Request $request, string $id): Response
     {
         try {
             $token = $this->annuaire->getRequestToken($request);
@@ -273,7 +273,7 @@ class OccurrenceController extends AbstractController
      * )
      * @Route("/occurrence/{id}", name="delete_occurrence", methods={"DELETE"})
      */
-    public function deleteOccurrence(Request $request, $id): Response
+    public function deleteOccurrence(Request $request, string $id): Response
     {
         try {
             $token = $this->annuaire->getRequestToken($request);
@@ -337,7 +337,7 @@ class OccurrenceController extends AbstractController
      * )
      * @Route("/occurrence/image/{id}", name="delete_image", methods={"DELETE"})
      */
-    public function deleteImage(Request $request, $id): Response
+    public function deleteImage(Request $request, string $id): Response
     {
         try {
             $token = $this->annuaire->getRequestToken($request);

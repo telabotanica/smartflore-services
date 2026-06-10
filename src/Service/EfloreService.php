@@ -98,13 +98,13 @@ class EfloreService
         return $taxonCache->get();
     }
 
-    public function getCardText(string $taxonRepository, string $taxonId,string $taxon_num_nom = null,  bool $refresh = false)
+    public function getCardText(string $taxonRepository, int $taxonId, int $taxon_num_nom = null,  bool $refresh = false)
     {
         $cardCache = $this->cache->getItem('taxon.card.SmartFlore'.strtoupper($taxonRepository).'nt'.$taxonId);
 
         $cached = $this->cacheFile->getFiche($taxonRepository, $taxonId); //For Smarflore v2
         if ($cached) {
-            $fiche = $this->serializer->deserialize(json_encode($cached, true), Fiche::class, 'json');
+            $fiche = $this->serializer->deserialize(json_encode($cached), Fiche::class, 'json');
             $card['id'] = $fiche->getId();
             $card['titre'] = $fiche->getTag();
             //TODO: voir comment ajouter le num nom du taxon
@@ -139,7 +139,7 @@ class EfloreService
         return $cardCache->get();
     }
 
-    public function getCardSpeciesImages(string $taxonRepository, string $taxonNameId, bool $refresh = false, int $limit = 4)
+    public function getCardSpeciesImages(string $taxonRepository, int $taxonNameId, bool $refresh = false, int $limit = 4)
     {
         $cardImagesCache = $this->cache->getItem('taxon.card.images.'.$taxonNameId);
 
@@ -204,7 +204,7 @@ class EfloreService
         return $cardImageCosteCache->get();
     }
 
-    public function getVernacularName(string $taxonRepository, string $taxonId, bool $refresh = false)
+    public function getVernacularName(string $taxonRepository, int $taxonId, bool $refresh = false)
     {
         $vernacularReferential = $this::REFERENTIALS[$taxonRepository] ?? null;
         $vernacularNameCache = $this->cache->getItem('taxon.vernacular.name.'.$taxonId);
@@ -232,7 +232,7 @@ class EfloreService
         return $vernacularNameCache->get();
     }
 
-    public function consulterRechercheNomsVernaEflore($filtres) {
+    public function consulterRechercheNomsVernaEflore(array $filtres) {
         $vernacularReferential = $this::REFERENTIALS[$filtres['referentiel']] ?? null;
         $vernacularNames = [];
 
@@ -256,7 +256,7 @@ class EfloreService
         return $vernacularNames;
     }
 
-    public function consulterRechercheNomsSciEflore($filtres) {
+    public function consulterRechercheNomsSciEflore(array $filtres) {
         $url_eflore_tpl = $this->taxonApiBaseUrl . $this->rechercheNomUrl;
         $url = sprintf($url_eflore_tpl , strtolower($filtres['referentiel']), 'etendue', urlencode($filtres['recherche'].'%'), $filtres['debut'], $filtres['limite']);
 
@@ -306,7 +306,7 @@ class EfloreService
         return json_decode($response->getContent(false), true) ?? [];
     }
 
-    public function getTaxon(string $taxonRepository, string $taxonNameId, bool $refresh = false)
+    public function getTaxon(string $taxonRepository, int $taxonNameId, bool $refresh = false): ?\App\Model\Taxon
     {
         try {
             $taxonInfos = $this->getTaxonRawInfo(
@@ -402,7 +402,7 @@ class EfloreService
         return $taxon;
     }
 
-    public function getTaxonRepositories(){
+    public function getTaxonRepositories(): array{
         $referentiels= [];
 
         $bdtfx = new Referentiel();

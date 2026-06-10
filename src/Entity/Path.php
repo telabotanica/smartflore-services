@@ -63,7 +63,7 @@ class Path
         return $coordinates;
     }
 
-    public function setCoordinates(array $coordinates)
+    public function setCoordinates(array $coordinates): self
     {
         $this->coordinates = $coordinates;
 

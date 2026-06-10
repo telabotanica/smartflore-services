@@ -305,7 +305,7 @@ class Taxon
         return $this;
     }
 
-    public function addVernacularName(string $vernacularName, int $order = 0)
+    public function addVernacularName(string $vernacularName, int $order = 0): void
     {
         if ($order) {
             $previous = $this->vernacularNames[$order] ?? null;

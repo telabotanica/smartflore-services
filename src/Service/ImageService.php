@@ -153,7 +153,7 @@ class ImageService
     }
 */
 
-    public function findImageForTrail(Sentier $trail)
+    public function findImageForTrail(Sentier $trail): void
     {
         $image = null;
         $occurrences = $trail->getOccurrences();
@@ -193,7 +193,7 @@ class ImageService
 
     }
 
-    public function findImageFromId(string $image_id)
+    public function findImageFromId(string $image_id): \App\Model\Image
     {
         $image_api_id = str_pad($image_id, 9, '0', STR_PAD_LEFT);
         $mini = sprintf($this->imageMiniatureUrl, $image_api_id);
@@ -207,7 +207,7 @@ class ImageService
         }
 
         $image = new \App\Model\Image(
-            $image_id,
+            (int) $image_id,
             $url,
             $author,
             $mini

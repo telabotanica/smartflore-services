@@ -17,6 +17,19 @@ use Symfony\Component\Serializer\SerializerInterface;
 class MeController extends AbstractController
 {
     /**
+     * @var \App\Service\AnnuaireService
+     */
+    private $annuaire;
+    /**
+     * @var \Symfony\Component\Serializer\SerializerInterface
+     */
+    private $serializer;
+    public function __construct(\App\Service\AnnuaireService $annuaire, \Symfony\Component\Serializer\SerializerInterface $serializer)
+    {
+        $this->annuaire = $annuaire;
+        $this->serializer = $serializer;
+    }
+    /**
      * @OA\Response (
      *     response="200",
      *     description="Get user info and trails",
@@ -38,19 +51,19 @@ class MeController extends AbstractController
      * )
      * @Route("/me", name="user_trail", methods={"GET"})
      */
-    public function me(AnnuaireService $annuaire, SerializerInterface $serializer, Request $request): Response
+    public function me(Request $request): Response
     {
         try {
-            $token = $annuaire->getRequestToken($request);
+            $token = $this->annuaire->getRequestToken($request);
             if (!$token) {
                 return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
             }
 
-            $cookie = $request->cookies->get($annuaire->getCookieName()) ?? null;
+            $cookie = $request->cookies->get($this->annuaire->getCookieName()) ?? null;
             $cookie = [
-                $annuaire->getCookieName() => $token
+                $this->annuaire->getCookieName() => $token
             ];
-            $user = $annuaire->getUser($token, $cookie);
+            $user = $this->annuaire->getUser($token, $cookie);
         } catch (\Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification sur la route /me: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
@@ -59,7 +72,7 @@ class MeController extends AbstractController
             // if it's a string, then it's an error (yes, could be handled better)
             $json = json_encode($user);
         } else {
-            $json = $serializer->serialize($user, 'json', ['groups' => 'user_trail']);
+            $json = $this->serializer->serialize($user, 'json', ['groups' => 'user_trail']);
         }
 
         return new JsonResponse($json, Response::HTTP_OK, [], true);

@@ -16,23 +16,23 @@ class SharedService
         $this->smartfloreFrontUrl = $smartfloreFrontUrl;
         $this->ficheRepository = $ficheRepository;
     }
-    public function chercherFiche(string $referentiel, string $num_taxonomique): ?Fiche {
-        $nom_page = $this->formaterPageNom($referentiel, $num_taxonomique); // Fiche SmartFlore eg. SmartFloreBDTFXnt6200
+    public function chercherFiche(string $referentiel, int $num_taxonomique): ?Fiche {
+        $nom_page = $this->formaterPageNom($referentiel, (string) $num_taxonomique); // Fiche SmartFlore eg. SmartFloreBDTFXnt6200
         $fiche = $this->ficheRepository->findOneBy(['tag' => $nom_page, 'derniere_version' => 1]);
 
         if (!$fiche) {
-            $nom_page = $this->formaterPageNomGlobal($referentiel, $num_taxonomique); // Fiche globale eg. BDTFXnt36750
+            $nom_page = $this->formaterPageNomGlobal($referentiel, (string) $num_taxonomique); // Fiche globale eg. BDTFXnt36750
             $fiche = $this->ficheRepository->findOneBy(['tag' => $nom_page, 'derniere_version' => 1]);
         }
 
         return $fiche;
     }
 
-    public function formaterPageNom($referentiel, $nt) {
+    public function formaterPageNom($referentiel, string $nt): string {
         return 'SmartFlore'.strtoupper($referentiel).'nt'.$nt;
     }
 
-    public function formaterPageNomGlobal($referentiel, $nt) {
+    public function formaterPageNomGlobal($referentiel, string $nt): string {
         return strtoupper($referentiel).'nt'.$nt;
     }
 
@@ -49,7 +49,7 @@ class SharedService
         return explode("nt", $infos);
     }
 
-    public function splitNt($page) {
+    public function splitNt($page): array {
         $page = str_replace('SmartFlore', '', $page);
         return explode("nt", $page);
     }

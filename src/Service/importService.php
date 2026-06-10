@@ -71,7 +71,7 @@ class importService
         foreach ($individus as $individu) {
             $positions = array_filter(
                 $individusWithPosition,
-                fn($item) => ($item['ficheTag'] ?? null) === $individu
+                fn(array $item) => ($item['ficheTag'] ?? null) === $individu
             );
 
             if (count($positions) > 0) {
@@ -106,11 +106,14 @@ class importService
             $path->setCoordinates($coordinates);
             $sentier->setChemin($path);
         }
-        $sentier->setPathLength(round(TrailsService::getTrailLength($sentier)));
+        $sentier->setPathLength((int) round(TrailsService::getTrailLength($sentier)));
         return $sentier;
     }
 
-    public function addTaxonToOccurrence(Occurrence $occurrence, array $individu, array $trail, array $taxons)
+    /**
+     * @return mixed[]
+     */
+    public function addTaxonToOccurrence(Occurrence $occurrence, array $individu, array $trail, array $taxons): array
     {
         $tabs = array_column($taxons, 'tabs');
         $index = array_search($individu['ficheTag'],$tabs);
@@ -205,7 +208,7 @@ class importService
         return $taxon;
     }
 
-    public function addImagesToOccurrence(array $trail, array $individu, Occurrence $occurrence)
+    public function addImagesToOccurrence(array $trail, array $individu, Occurrence $occurrence): void
     {
         if ($trail['images']) {
             foreach (json_decode($trail['images']) as $key => $value) { //$key=fichetag, $value=array avec images id

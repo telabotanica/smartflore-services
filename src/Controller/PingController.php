@@ -18,6 +18,24 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class PingController extends AbstractController
 {
     /**
+     * @var \Doctrine\ORM\EntityManagerInterface
+     */
+    private $entityManager;
+    /**
+     * @var \Symfony\Component\Serializer\SerializerInterface
+     */
+    private $serializer;
+    /**
+     * @var \Symfony\Component\Validator\Validator\ValidatorInterface
+     */
+    private $validator;
+    public function __construct(\Doctrine\ORM\EntityManagerInterface $entityManager, \Symfony\Component\Serializer\SerializerInterface $serializer, \Symfony\Component\Validator\Validator\ValidatorInterface $validator)
+    {
+        $this->entityManager = $entityManager;
+        $this->serializer = $serializer;
+        $this->validator = $validator;
+    }
+    /**
      * @OA\Response (
      *     response="201",
      *     description="Ping Created",
@@ -39,10 +57,10 @@ class PingController extends AbstractController
      * )
      * @Route("/ping", name="Ping",methods={"POST"})
      */
-    public function ping(Request $request, EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator): Response
+    public function ping(Request $request): Response
     {
-        $ping = $serializer->deserialize($request->getContent(), Ping::class, 'json');
-        $errors = $validator->validate($ping);
+        $ping = $this->serializer->deserialize($request->getContent(), Ping::class, 'json');
+        $errors = $this->validator->validate($ping);
         if (count($errors) > 0) {
             throw new BadRequestHttpException((string)$errors);
         }
@@ -50,7 +68,7 @@ class PingController extends AbstractController
         if ($ping->isFromWebsite() === true) {
             $ip = $request->getClientIp();
 
-            $existingPing = $entityManager
+            $existingPing = $this->entityManager
                 ->getRepository(Ping::class)
                 ->findTodayPingByIpAndTrail($ip, $ping->getTrail());
 
@@ -61,10 +79,10 @@ class PingController extends AbstractController
             $ping->setIp($ip);
         }
 
-        $entityManager->persist($ping);
-        $entityManager->flush();
+        $this->entityManager->persist($ping);
+        $this->entityManager->flush();
 
-        return new JsonResponse('Ping saved in Database', 201);
+        return new JsonResponse('Ping saved in Database', \Symfony\Component\HttpFoundation\Response::HTTP_CREATED);
     }
 
     /**
@@ -90,13 +108,11 @@ class PingController extends AbstractController
      * @Route("/ping/{id}", name="show_ping", methods={"GET"})
      */
     public function pingDetails(
-        SerializerInterface $serializer,
-        EntityManagerInterface $entityManager,
         $id
-    ) {
-        $pings = $entityManager->getRepository(Ping::class)->findBy(['trail' => $id]);
+    ): \Symfony\Component\HttpFoundation\JsonResponse {
+        $pings = $this->entityManager->getRepository(Ping::class)->findBy(['trail' => $id]);
 
-        $json = $serializer->serialize($pings, 'json', ['groups' => 'show_ping']);
+        $json = $this->serializer->serialize($pings, 'json', ['groups' => 'show_ping']);
 
         return new JsonResponse($json, Response::HTTP_OK, [], true);
     }

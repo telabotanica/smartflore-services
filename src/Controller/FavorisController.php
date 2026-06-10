@@ -27,8 +27,12 @@ class FavorisController extends AbstractController
     private CreateTrailService $createTrail;
     private EntityManagerInterface $em;
     private FavorisRepository $favorisRepository;
+    /**
+     * @var \App\Service\EfloreService
+     */
+    private $eflore;
 
-    public function __construct(SerializerInterface $serializer, AnnuaireService $annuaire, FavorisService $favoris, CreateTrailService $createTrail, EntityManagerInterface $em, FavorisRepository $favorisRepository)
+    public function __construct(SerializerInterface $serializer, AnnuaireService $annuaire, FavorisService $favoris, CreateTrailService $createTrail, EntityManagerInterface $em, FavorisRepository $favorisRepository, \App\Service\EfloreService $eflore)
     {
         $this->serializer = $serializer;
         $this->annuaire = $annuaire;
@@ -36,6 +40,7 @@ class FavorisController extends AbstractController
         $this->createTrail = $createTrail;
         $this->em = $em;
         $this->favorisRepository = $favorisRepository;
+        $this->eflore = $eflore;
     }
     /**
      * @OA\Response(
@@ -98,7 +103,7 @@ class FavorisController extends AbstractController
      * )
      * @Route("/favoris", name="add_favorite", methods={"POST"})
      */
-    public function addFavoris(Request $request, EfloreService $eflore): Response
+    public function addFavoris(Request $request): Response
     {
         $user = null;
         try {
@@ -134,7 +139,7 @@ class FavorisController extends AbstractController
         }
 
         try {
-            $taxon = $eflore->getTaxonRawInfo($favoris->getReferentiel(), $favoris->getTaxonId());
+            $taxon = $this->eflore->getTaxonRawInfo($favoris->getReferentiel(), $favoris->getTaxonId());
         } catch (\Exception $e) {
             return new JsonResponse(['error' => 'Erreur lors de la récupération du taxon . Veuillez vérifier le référentiel '.$favoris->getReferentiel() .'et le taxon id: taxon_id='.$favoris->getTaxonId().'.: message='.$e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
@@ -170,7 +175,7 @@ class FavorisController extends AbstractController
      * )
      * @Route("/favoris/{id}", name="delete_favoris", methods={"DELETE"})
      */
-    public function deleteOccurrence(Request $request, $id): Response
+    public function deleteOccurrence(Request $request, string $id): Response
     {
         $user = null;
         try {

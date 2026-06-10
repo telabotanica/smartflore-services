@@ -32,6 +32,14 @@ class AdminController extends AbstractController
     private EmailService $emailService;
     private CacheFileService $cacheFile;
     private TrailsService $trailsService;
+    /**
+     * @var \App\Service\TrailsService
+     */
+    private $trails;
+    /**
+     * @var \App\Service\BoundingBoxPolygonFactory
+     */
+    private $polygonFactory;
 
     public function __construct(
         SerializerInterface $serializer,
@@ -42,7 +50,9 @@ class AdminController extends AbstractController
         SharedService $sharedService,
         EmailService $emailService,
         CacheFileService $cacheFile,
-        TrailsService $trailsService
+        TrailsService $trailsService,
+        \App\Service\TrailsService $trails,
+        \App\Service\BoundingBoxPolygonFactory $polygonFactory
     )
     {
         $this->serializer = $serializer;
@@ -54,6 +64,8 @@ class AdminController extends AbstractController
         $this->emailService = $emailService;
         $this->cacheFile = $cacheFile;
         $this->trailsService = $trailsService;
+        $this->trails = $trails;
+        $this->polygonFactory = $polygonFactory;
     }
 
     /**
@@ -92,11 +104,8 @@ class AdminController extends AbstractController
      * @Route("/admin/trails", name="admin_list_trail", methods={"GET"})
      */
     public function trailsList(
-        TrailsService $trails,
-        SerializerInterface $serializer,
-        Request $request,
-        BoundingBoxPolygonFactory $polygonFactory
-    ) {
+        Request $request
+    ): \Symfony\Component\HttpFoundation\JsonResponse {
         ['user' => $user, 'token'=> $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
         if ($error) {
             return new JsonResponse(['error' => $error], Response::HTTP_UNAUTHORIZED);
@@ -110,11 +119,11 @@ class AdminController extends AbstractController
             return new JsonResponse(['error' => 'You need to be an administrator to display this list of trails'], Response::HTTP_FORBIDDEN);
         }
 
-        $searchCriterias = $trails->getSearchCriterias($request);
+        $searchCriterias = $this->trails->getSearchCriterias($request);
 
         $list = $this->sentierRepository->findByCriterias($searchCriterias);
 
-        $json = $serializer->serialize($list, 'json', ['groups' => 'list_trail']);
+        $json = $this->serializer->serialize($list, 'json', ['groups' => 'list_trail']);
 
         return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
@@ -138,7 +147,7 @@ class AdminController extends AbstractController
      * )
      * @Route("/admin/trail/{id}/publish", name="publish_trail", methods={"POST"})
      */
-    public function publishTrail(Request $request, $id): Response
+    public function publishTrail(Request $request, string $id): Response
     {
         ['user' => $user, 'token'=> $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
 
@@ -235,7 +244,7 @@ class AdminController extends AbstractController
      * )
      * @Route("/admin/trail/{id}/unpublish", name="unpublish_trail", methods={"POST"})
      */
-    public function unPublishTrail(Request $request, $id): Response
+    public function unPublishTrail(Request $request, string $id): Response
     {
         ['user' => $user, 'token'=> $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
 
@@ -318,7 +327,7 @@ class AdminController extends AbstractController
      * )
      * @Route("/admin/trail/{id}/reject", name="reject_trail", methods={"POST"})
      */
-    public function rejectTrail(Request $request, $id): Response
+    public function rejectTrail(Request $request, string $id): Response
     {
         ['user' => $user, 'token'=> $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
 
@@ -400,7 +409,7 @@ class AdminController extends AbstractController
      * )
      * @Route("/admin/trail/{id}/reactivate", name="reactivate_trail", methods={"POST"})
      */
-    public function reactivateTrail(Request $request, $id): Response
+    public function reactivateTrail(Request $request, string $id): Response
     {
         ['user' => $user, 'token' => $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);
 

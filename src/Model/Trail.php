@@ -170,7 +170,7 @@ class Trail
     /**
      * @return int|string
      */
-    public function getId()
+    public function getId(): int
     {
         return (int) $this->id;
     }

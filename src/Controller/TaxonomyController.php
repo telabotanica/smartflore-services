@@ -23,15 +23,21 @@ class TaxonomyController extends AbstractController
     private SerializerInterface $serializer;
     private FicheService $ficheService;
     private CacheFileService $cacheFile;
+    /**
+     * @var \App\Service\EfloreService
+     */
+    private $eflore;
 
     public function __construct(
         SerializerInterface $serializer,
         FicheService $ficheService,
-        CacheFileService $cacheFile
+        CacheFileService $cacheFile,
+        \App\Service\EfloreService $eflore
     ) {
         $this->serializer = $serializer;
         $this->ficheService = $ficheService;
         $this->cacheFile = $cacheFile;
+        $this->eflore = $eflore;
     }
 
     /**
@@ -64,18 +70,16 @@ class TaxonomyController extends AbstractController
      * @Route("/taxon/{taxonRepository}/{taxonNameId}", name="show_taxon", methods={"GET"})
      */
     public function taxonInfo(
-        SerializerInterface $serializer,
-        EfloreService $eflore,
         string $taxonRepository,
         int $taxonNameId
-    ) {
+    ): \Symfony\Component\HttpFoundation\JsonResponse {
         // --- Lecture cache fichier ---
         $cached = $this->cacheFile->getTaxon($taxonRepository, $taxonNameId);
         if ($cached !== null) {
             return new JsonResponse($cached, Response::HTTP_OK);
         }
 
-        $taxon = $eflore->getTaxon($taxonRepository, $taxonNameId, true);
+        $taxon = $this->eflore->getTaxon($taxonRepository, $taxonNameId, true);
 
         if (!$taxon) {
             return new JsonResponse(
@@ -88,9 +92,9 @@ class TaxonomyController extends AbstractController
         // --- Mise en cache ---
         $this->cacheFile->saveTaxon($taxonRepository, $taxonNameId, $taxon, ['show_taxon', 'full_images']);
 
-        $json = $serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
+        $json = $this->serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
 
-        return new JsonResponse($json, 200, [], true);
+        return new JsonResponse($json, \Symfony\Component\HttpFoundation\Response::HTTP_OK, [], true);
     }
 
     /**
@@ -123,12 +127,10 @@ class TaxonomyController extends AbstractController
      * @Route("/taxon/{taxonRepository}/nt/{taxonId}", name="show_taxon_from_nt", methods={"GET"})
      */
     public function taxonInfoFromNt(
-        SerializerInterface $serializer,
-        EfloreService $eflore,
         string $taxonRepository,
         int $taxonId
-    ) {
-        $taxon = $eflore->getInfosTaxons($taxonRepository, $taxonId);
+    ): \Symfony\Component\HttpFoundation\JsonResponse {
+        $taxon = $this->eflore->getInfosTaxons($taxonRepository, $taxonId);
 
         if (!$taxon) {
             return new JsonResponse(
@@ -138,9 +140,9 @@ class TaxonomyController extends AbstractController
                 ], Response::HTTP_BAD_REQUEST);
         }
 
-        $json = $serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
+        $json = $this->serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
 
-        return new JsonResponse($json, 200, [], true);
+        return new JsonResponse($json, \Symfony\Component\HttpFoundation\Response::HTTP_OK, [], true);
     }
 
     /**
@@ -158,12 +160,11 @@ class TaxonomyController extends AbstractController
      * )
      * @Route("/taxon/referentiels", name="list_referentiel", methods={"GET"})
      */
-    public function referentielInfo(SerializerInterface $serializer,EfloreService $eflore){
-        $referentiels= $eflore->getTaxonRepositories();
-
-        $json = $serializer->serialize($referentiels, 'json', ['groups' => 'list_referentiel']);
-
-        return new JsonResponse($json, 200, [], true);
+    public function referentielInfo(): \Symfony\Component\HttpFoundation\JsonResponse
+    {
+        $referentiels= $this->eflore->getTaxonRepositories();
+        $json = $this->serializer->serialize($referentiels, 'json', ['groups' => 'list_referentiel']);
+        return new JsonResponse($json, \Symfony\Component\HttpFoundation\Response::HTTP_OK, [], true);
     }
 
     /**

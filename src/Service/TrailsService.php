@@ -62,7 +62,7 @@ class TrailsService
      * @return Sentier[]
      * encore dans cacheRefreshCommand et cacheService
      */
-    public function getTrails(bool $refresh = false)
+    public function getTrails(bool $refresh = false): array
     {
         if ($refresh) {
             $this->buildTrailsListCache();
@@ -97,7 +97,7 @@ class TrailsService
      * Description: get trail list from cache
      * TODO
      */
-    public function getTrailsList()
+    public function getTrailsList(): array
     {
         $trails = [];
         $trailsCache = $this->cache->getItem('trails.list');
@@ -349,7 +349,7 @@ class TrailsService
         return $userTrailsList;
     }
 
-    public function buildTrailsListCache()
+    public function buildTrailsListCache(): void
     {
         $trailsCache = $this->cache->getItem('trails.list');
 
@@ -359,7 +359,7 @@ class TrailsService
         $this->cache->save($trailsCache);
     }
 
-    public function buildAllTrailsCache()
+    public function buildAllTrailsCache(): void
     {
         $trailsCache = $this->cache->getItem('trails.list');
 
@@ -395,7 +395,7 @@ class TrailsService
         }
     }
 
-    public function buildTrailCache(string $trailName)
+    public function buildTrailCache(string $trailName): void
     {
         $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
         $trail = $this->sentierRepository->findOneBy(['nom' => $trailName, 'date_suppression' => null]);
@@ -411,7 +411,7 @@ class TrailsService
         $this->cache->save($trailCache);
     }
 
-    public function updateCacheTrailCards(array $trails){
+    public function updateCacheTrailCards(array $trails): void{
         foreach ($trails as $trail) {
             try {
                 $trailCache = $this->cache->getItem('trails.trail.' . $trail->getNom());
@@ -428,7 +428,10 @@ class TrailsService
         }
     }
 
-    public function getSearchCriterias(Request $request){
+    /**
+     * @return mixed[]
+     */
+    public function getSearchCriterias(Request $request): array{
         $criterias = [];
         $validSearchCriterias = ['nom', 'auteur', 'auteur_id', 'pmr', 'ordre', 'limite', 'page', 'status', 'show_deleted'];
 

@@ -21,7 +21,7 @@ class EmailService
     /**
      * @throws TransportExceptionInterface
      */
-    public function sendEmail($from, $to, $subject, $message, $cc = null)
+    public function sendEmail($from, $to, string $subject, $message, $cc = null): void
     {
         $email = (new Email())
             ->from($from)

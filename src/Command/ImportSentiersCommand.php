@@ -170,6 +170,7 @@ class ImportSentiersCommand extends Command
             $sentier = $this->importService->ajouterCheminAuSentier($trail, $sentier);
 
             // On cherche l'id de l'utilisateur
+            $userId = null;
             if ($sentier->getAuteurEmail()) {
                 //On cherche d'abord dans la table user avant de chercher dans l'annuaire pour éviter trop de requêtes
                 $emails = array_column($users, 'email');

@@ -23,7 +23,7 @@ class ExportService
         return $response;
     }
 
-    public function exportTrailsCsv(array $sentiers) {
+    public function exportTrailsCsv(array $sentiers): \Symfony\Component\HttpFoundation\Response {
         $list = [[
             'id',
             'titre',

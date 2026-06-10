@@ -393,7 +393,7 @@ class Sentier
     public function getPathLength(): int
     {
         if (!$this->pathLength) {
-            $this->setPathLength(round(TrailsService::getTrailLength($this)));
+            $this->setPathLength((int) round(TrailsService::getTrailLength($this)));
         }
 
         return $this->pathLength;

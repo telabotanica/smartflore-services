@@ -36,6 +36,22 @@ class TrailController extends AbstractController
     private EmailService $emailService;
     private SharedService $sharedService;
     private CacheFileService $cacheFile;
+    /**
+     * @var \App\Service\TrailsService
+     */
+    private $trails;
+    /**
+     * @var \App\Service\BoundingBoxPolygonFactory
+     */
+    private $polygonFactory;
+    /**
+     * @var \App\Repository\ImageRepository
+     */
+    private $imageRepository;
+    /**
+     * @var \App\Service\EfloreService
+     */
+    private $eflore;
 
     public function __construct(
         SerializerInterface $serializer,
@@ -46,7 +62,11 @@ class TrailController extends AbstractController
         EntityManagerInterface $em,
         EmailService $emailService,
         SharedService $sharedService,
-        CacheFileService $cacheFile
+        CacheFileService $cacheFile,
+        \App\Service\TrailsService $trails,
+        \App\Service\BoundingBoxPolygonFactory $polygonFactory,
+        \App\Repository\ImageRepository $imageRepository,
+        \App\Service\EfloreService $eflore
     ) {
         $this->serializer = $serializer;
         $this->validator = $validator;
@@ -57,6 +77,10 @@ class TrailController extends AbstractController
         $this->emailService = $emailService;
         $this->sharedService = $sharedService;
         $this->cacheFile = $cacheFile;
+        $this->trails = $trails;
+        $this->polygonFactory = $polygonFactory;
+        $this->imageRepository = $imageRepository;
+        $this->eflore = $eflore;
     }
 
     /**
@@ -96,12 +120,9 @@ class TrailController extends AbstractController
      * @Route("/trails", name="list_trail", methods={"GET"})
      */
     public function trailsList(
-        TrailsService $trails,
-        SerializerInterface $serializer,
-        Request $request,
-        BoundingBoxPolygonFactory $polygonFactory
-    ) {
-        $searchCriterias = $trails->getSearchCriterias($request);
+        Request $request
+    ): \Symfony\Component\HttpFoundation\JsonResponse {
+        $searchCriterias = $this->trails->getSearchCriterias($request);
         $hasBbox = (bool) $request->query->get('bbox');
 
         // Cache fichier uniquement si pas de critères de recherche et pas de bbox
@@ -119,13 +140,13 @@ class TrailController extends AbstractController
 
         if ($hasBbox) {
             $coords = explode(',', $request->query->get('bbox'));
-            $list = $trails->getTrailsInsideBoundaries(
-                $polygonFactory->createBoundingBoxPolygon($coords), $list
+            $list = $this->trails->getTrailsInsideBoundaries(
+                $this->polygonFactory->createBoundingBoxPolygon($coords), $list
             );
             $list = $list ?: [];
         }
 
-        $json = $serializer->serialize($list, 'json', ['groups' => 'list_trail']);
+        $json = $this->serializer->serialize($list, 'json', ['groups' => 'list_trail']);
         return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 
@@ -152,10 +173,8 @@ class TrailController extends AbstractController
      * @Route("/trail/{id}", name="show_trail", methods={"GET"})
      */
     public function trailDetails(
-        TrailsService $trails,
-        SerializerInterface $serializer,
-        $id
-    ) {
+        int $id
+    ): \Symfony\Component\HttpFoundation\JsonResponse {
         // --- Lecture cache fichier ---
         $cached = $this->cacheFile->getTrail($id);
         if ($cached !== null) {
@@ -170,7 +189,7 @@ class TrailController extends AbstractController
         // --- Mise en cache ---
         $this->cacheFile->saveTrail($trail->getId(), $trail, ['show_trail']);
 
-        $json = $serializer->serialize($trail, 'json', ['groups' => 'show_trail']);
+        $json = $this->serializer->serialize($trail, 'json', ['groups' => 'show_trail']);
 
         return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
@@ -195,16 +214,14 @@ class TrailController extends AbstractController
      * @Route("/batch/trail/{id}", name="batch_trail", methods={"GET"})
      */
     public function trailDetailsBatch(
-        TrailsService $trails,
-        SerializerInterface $serializer,
-        $id
-    ) {
+        string $id
+    ): \Symfony\Component\HttpFoundation\JsonResponse {
         $trail = $this->sentierRepository->findOneBy(['id' => $id]);
         if (!$trail) {
             return new JsonResponse(['error' => 'Trail not found (id: '. $id .')'], Response::HTTP_NOT_FOUND);
         }
 
-        $json = $serializer->serialize($trail, 'json', ['groups' => ['show_trail', 'show_taxon', 'short_images']]);
+        $json = $this->serializer->serialize($trail, 'json', ['groups' => ['show_trail', 'show_taxon', 'short_images']]);
 
         return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
@@ -305,7 +322,7 @@ class TrailController extends AbstractController
      * )
      * @Route("/trail/{id}", name="update_trail", methods={"PUT"})
      */
-    public function updateTrail(Request $request, $id): Response
+    public function updateTrail(Request $request, string $id): Response
     {
         try {
             $token = $this->annuaire->getRequestToken($request);
@@ -339,7 +356,7 @@ class TrailController extends AbstractController
 
         $trail = $this->serializer->deserialize(json_encode($content), Sentier::class, 'json', ['groups' => 'update_trail', 'object_to_populate' => $trail]);
 
-        $trail->setPathLength(round(TrailsService::getTrailLength($trail)));
+        $trail->setPathLength((int) round(TrailsService::getTrailLength($trail)));
         $trail->setDateModification(new \DateTime());
 
         if (isset($content->image)){
@@ -385,7 +402,7 @@ class TrailController extends AbstractController
      * )
      * @Route("/trail/{id}", name="delete_trail", methods={"DELETE"})
      */
-    public function deleteTrail(Request $request, $id): Response
+    public function deleteTrail(Request $request, int $id): Response
     {
         try {
             $token = $this->annuaire->getRequestToken($request);
@@ -433,7 +450,7 @@ class TrailController extends AbstractController
      * )
      * @Route("/trail/{id}/review", name="review_trail", methods={"POST"})
      */
-    public function reviewTrail(Request $request, $id): Response
+    public function reviewTrail(Request $request, string $id): Response
     {
         try {
             $token = $this->annuaire->getRequestToken($request);
@@ -529,7 +546,7 @@ class TrailController extends AbstractController
      * )
      * @Route("/trail/{id}/update-image", name="update_trail_image", methods={"PUT"})
      */
-    public function updateTrailImage(Request $request, $id): Response
+    public function updateTrailImage(Request $request, string $id): Response
     {
         try {
             $token = $this->annuaire->getRequestToken($request);
@@ -591,7 +608,7 @@ class TrailController extends AbstractController
      * )
      * @Route("/trail/{id}/delete-image", name="delete_trail_image", methods={"DELETE"})
      */
-    public function deleteTrailImage(Request $request, $id, ImageRepository $imageRepository): Response
+    public function deleteTrailImage(Request $request, string $id): Response
     {
         try {
             $token = $this->annuaire->getRequestToken($request);
@@ -613,12 +630,12 @@ class TrailController extends AbstractController
             return new JsonResponse(['error' => 'You are not allowed to update this trail (id: '. $id .')'], Response::HTTP_FORBIDDEN);
         }
 
-        $image = $imageRepository->findOneBy(['id' => $trail->getImage()->getId()]);
+        $image = $this->imageRepository->findOneBy(['id' => $trail->getImage()->getId()]);
         if (!$image) {
             return new JsonResponse(['error' => 'Image not found (id: '. $trail->getImage()->getId() .')'], Response::HTTP_NOT_FOUND);
         }
 
-        $imageRepository->remove($image);
+        $this->imageRepository->remove($image);
 
         $trail->setImage(null);
 
@@ -658,7 +675,7 @@ class TrailController extends AbstractController
      * )
      * @Route("/trail/{id}/check", name="check_trail", methods={"GET"})
      */
-    public function checkTrail(Request $request, $id): Response
+    public function checkTrail(string $id): Response
     {
         $trail = $this->sentierRepository->findOneBy(['id' => $id]);
         if (!$trail) {
@@ -700,11 +717,10 @@ class TrailController extends AbstractController
      * @Route("/trail/{id}/taxons", name="trail_taxons", methods={"GET"})
      */
     public function trailTaxons(
-        EfloreService $eflore,
-        SerializerInterface $serializer,
-        $id
+        int $id
     ): Response {
         $cached = $this->cacheFile->getTrail($id);
+        $trail = null;
         if ($cached !== null) {
             try {
                 $trail = $this->serializer->deserialize(
@@ -733,9 +749,9 @@ class TrailController extends AbstractController
             try {
                 $cachedTaxon = $this->cacheFile->getTaxon($taxonData['taxon_repository'], $taxonData['name_id']);
                 if ($cachedTaxon !== null) {
-                    $taxon = $this->serializer->deserialize(json_encode($cachedTaxon, true), Taxon::class, 'json', ['groups' => 'show_taxon']);
+                    $taxon = $this->serializer->deserialize(json_encode($cachedTaxon), Taxon::class, 'json', ['groups' => 'show_taxon']);
                 } else {
-                    $taxon = $eflore->getTaxon(
+                    $taxon = $this->eflore->getTaxon(
                         $taxonData['taxon_repository'],
                         $taxonData['name_id'],
                         true
@@ -751,7 +767,7 @@ class TrailController extends AbstractController
             }
         }
 
-        $json = $serializer->serialize($taxons, 'json', ['groups' => ['show_taxon', 'full_images']]);
+        $json = $this->serializer->serialize($taxons, 'json', ['groups' => ['show_taxon', 'full_images']]);
 
         return new JsonResponse($json, Response::HTTP_OK, [], true);
     }

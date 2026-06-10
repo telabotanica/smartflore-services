@@ -72,7 +72,7 @@ class AnnuaireService
         ];
     }
 
-    public function logout()
+    public function logout(): array
     {
         $client = new HttpBrowser();
         $error = null;
@@ -207,7 +207,7 @@ class AnnuaireService
     /**
      * Method compatible with "urlsafe" base64 encoding used by JWT lib
      */
-    public function urlsafeB64Decode($input) {
+    public function urlsafeB64Decode(string $input): string {
         $remainder = strlen($input) % 4;
         if ($remainder) {
             $padlen = 4 - $remainder;

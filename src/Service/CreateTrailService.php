@@ -108,9 +108,9 @@ class CreateTrailService
         }
 
         $user = $this->annuaire->getUserInfos($this->getAuth());
-        $auteur = $user->getName() ? $user->getName() : $user->getEmail();
+        $auteur = $user->getName() ?: $user->getEmail();
 
-        $trail->setPathLength(round(TrailsService::getTrailLength($trail)));
+        $trail->setPathLength((int) round(TrailsService::getTrailLength($trail)));
         $trail->setAuteur($auteur);
         $trail->setNom($trailName);
         $trail->setAuthorId($user->getId());
@@ -125,6 +125,7 @@ class CreateTrailService
         $array['sentierTitre'] = $trail->getName();
         $array['sentierLocalisation']['sentier'] = $trail->getPosition()->getStart();
         // prepare complex array structure (as in legacy app)
+        $complex = [];
         foreach ($trail->getOccurrences() as $occurrence) {
             $complex[$occurrence->getCardTag()][] = $occurrence;
         }
@@ -340,7 +341,7 @@ class CreateTrailService
         return $taxons;
     }
 
-    public function setTaxonToOccurrence(Occurrence $occurrence, $content) {
+    public function setTaxonToOccurrence(Occurrence $occurrence, $content): Occurrence {
         $taxon = new Taxon();
         if (isset($content->taxon)) {
             $taxon->setFullScientificName($content->taxon->scientific_name);
@@ -365,7 +366,7 @@ class CreateTrailService
         return $occurrence;
     }
 
-    public function setImagesToOccurrence(Occurrence $occurrence, $image_id) {
+    public function setImagesToOccurrence(Occurrence $occurrence, $image_id): Occurrence {
         if (!is_int($image_id) && !is_numeric($image_id)) {
             return $occurrence;
         }
