@@ -2,7 +2,7 @@
 
 ## Quick Facts
 
-- **Stack**: Symfony 5.4, PHP 7.4, MySQL 8, Doctrine ORM
+- **Stack**: Symfony 6.4, PHP 8.1, MySQL 8, Doctrine ORM
 - **Type**: API backend for mobile app (Smart'Flore) and web dashboard
 - **Structure**: Single monolithic Symfony app with Entity/Repository/Service/Controller/Command layers
 - **Entry point**: `bin/console` for CLI, `public/index.php` for HTTP
@@ -99,4 +99,4 @@ Paths analyzed: `bin/`, `config/`, `public/`, `src/`, `tests/` (see `phpstan.dis
 
 - **Project rules**: `.opencode/rules/instructions.md`, `.opencode/rules/workflow.md`
 - **README**: Legacy import commands, trail cache V1/V2 usage
-- **Composer.json**: Dependency versions pinned to Symfony 5.4.* and PHP >=7.2.5
+- **Composer.json**: Dependency versions pinned to Symfony 6.4.* and PHP >=8.1

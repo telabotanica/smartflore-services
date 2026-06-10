@@ -1,21 +1,12 @@
 <?php
 
-use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
-use Symfony\Bundle\MakerBundle\MakerBundle;
-use Symfony\Bundle\MonologBundle\MonologBundle;
-use Nelmio\ApiDocBundle\NelmioApiDocBundle;
-use Symfony\Bundle\TwigBundle\TwigBundle;
-use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
-use Doctrine\Bundle\MigrationsBundle\DoctrineMigrationsBundle;
-use Nelmio\CorsBundle\NelmioCorsBundle;
-
 return [
-    FrameworkBundle::class => ['all' => true],
-    MakerBundle::class => ['dev' => true],
-    MonologBundle::class => ['all' => true],
-    NelmioApiDocBundle::class => ['all' => true],
-    TwigBundle::class => ['all' => true],
-    DoctrineBundle::class => ['all' => true],
-    DoctrineMigrationsBundle::class => ['all' => true],
-    NelmioCorsBundle::class => ['all' => true],
+    Symfony\Bundle\FrameworkBundle\FrameworkBundle::class => ['all' => true],
+    Symfony\Bundle\MakerBundle\MakerBundle::class => ['dev' => true],
+    Symfony\Bundle\MonologBundle\MonologBundle::class => ['all' => true],
+    Nelmio\ApiDocBundle\NelmioApiDocBundle::class => ['all' => true],
+    Symfony\Bundle\TwigBundle\TwigBundle::class => ['all' => true],
+    Doctrine\Bundle\DoctrineBundle\DoctrineBundle::class => ['all' => true],
+    Doctrine\Bundle\MigrationsBundle\DoctrineMigrationsBundle::class => ['all' => true],
+    Nelmio\CorsBundle\NelmioCorsBundle::class => ['all' => true],
 ];

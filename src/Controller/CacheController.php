@@ -2,10 +2,10 @@
 
 namespace App\Controller;
 
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Service\CacheService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Routing\Annotation\Route;
 
 class CacheController extends AbstractController
 {

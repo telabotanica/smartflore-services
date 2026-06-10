@@ -219,7 +219,7 @@ class Sentier
      */
     #[ORM\OneToMany(targetEntity: Occurrence::class, mappedBy: 'sentier', cascade: ['persist'], fetch: 'EAGER')]
     #[Groups(['show_trail', 'list_trail', 'create_trail'])]
-    private ArrayCollection|array $occurrences;
+    private Collection|array $occurrences;
 
     /**
      * @OA\Property(ref=@Model(type=Image::class))

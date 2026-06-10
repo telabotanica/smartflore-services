@@ -74,7 +74,7 @@ class Occurrence
      */
     #[ORM\OneToMany(targetEntity: Image::class, mappedBy: 'occurrence', cascade: ['persist'], fetch: 'EAGER')]
     #[Groups(['show_trail', 'list_trail', 'create_trail', 'update_occurrence'])]
-    private ArrayCollection|array $images;
+    private Collection|array $images;
 
     public function __construct()
     {

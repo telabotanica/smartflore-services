@@ -181,8 +181,8 @@ class Trail
     public function getDisplayName(): string
     {
         // mb_ucfirst
-        $firstChar = mb_substr($this->displayName, 0, 1);
-        $then = mb_substr($this->displayName, 1);
+        $firstChar = mb_substr((string) $this->displayName, 0, 1);
+        $then = mb_substr((string) $this->displayName, 1);
         return mb_strtoupper($firstChar) . $then;
     }
 
