@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use Symfony\Component\Routing\Attribute\Route;
 use App\Repository\SentierRepository;
 use App\Service\AnnuaireService;
 use App\Service\ExportService;
@@ -10,19 +11,11 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
 
 class ExportController extends AbstractController
 {
-    private AnnuaireService $annuaire;
-    private ExportService $exportService;
-    private SentierRepository $sentierRepository;
-
-    public function __construct(AnnuaireService $annuaire, ExportService $exportService, SentierRepository $sentierRepository)
+    public function __construct(private readonly AnnuaireService $annuaire, private readonly ExportService $exportService, private readonly SentierRepository $sentierRepository)
     {
-        $this->annuaire = $annuaire;
-        $this->exportService = $exportService;
-        $this->sentierRepository = $sentierRepository;
     }
 
     /**
@@ -34,8 +27,8 @@ class ExportController extends AbstractController
      * @OA\Get(
      *     summary="Generate a csv file with all trails (admins only)",
      * )
-     * @Route("/export/csv", name="export_csv", methods={"GET"})
      */
+    #[Route(path: '/export/csv', name: 'export_csv', methods: ['GET'])]
     public function export_csv(Request $request): Response
     {
         ['user' => $user, 'token'=> $token, 'error' => $error] = $this->annuaire->getUserFromRequest($request);

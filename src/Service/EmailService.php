@@ -2,8 +2,6 @@
 
 namespace App\Service;
 
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
@@ -11,17 +9,14 @@ use Symfony\Component\Mime\Email;
 
 class EmailService
 {
-    private MailerInterface $mailer;
-
-    public function __construct(MailerInterface $mailer)
+    public function __construct(private readonly MailerInterface $mailer)
     {
-        $this->mailer = $mailer;
     }
 
     /**
      * @throws TransportExceptionInterface
      */
-    public function sendEmail($from, $to, $subject, $message, $cc = null)
+    public function sendEmail(Address|string $from, Address|string $to, string $subject, $message, $cc = null): void
     {
         $email = (new Email())
             ->from($from)

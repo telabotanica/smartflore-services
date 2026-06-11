@@ -2,7 +2,6 @@
 
 namespace App\Service;
 
-use App\Entity\Fiche;
 use App\Model\FicheCollection;
 use App\Model\FicheResultats;
 use App\Repository\FicheRepository;
@@ -13,21 +12,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class FicheService extends AbstractController
 {
-    private EfloreService $efloreService;
-    private FicheRepository $ficheRepository;
-    private SerializerInterface $serializer;
-    private SharedService $sharedService;
-
-    public function __construct(
-    EfloreService $efloreService,
-        FicheRepository $ficheRepository,
-        SerializerInterface $serializer,
-        SharedService $sharedService
-    ) {
-        $this->efloreService = $efloreService;
-        $this->ficheRepository = $ficheRepository;
-        $this->serializer = $serializer;
-        $this->sharedService = $sharedService;
+    public function __construct(private readonly EfloreService $efloreService, private readonly FicheRepository $ficheRepository, private readonly SerializerInterface $serializer, private readonly SharedService $sharedService)
+    {
     }
 
     public function getPagination(Request $request): array
@@ -87,8 +73,8 @@ class FicheService extends AbstractController
          return true;
     }
 
-    public function getPagesPourRechercheAsync($recherche) {
-        $retour = array('pagination' => array('total' => 0), 'resultats' => array());
+    public function getPagesPourRechercheAsync(array $recherche): array {
+        $retour = ['pagination' => ['total' => 0], 'resultats' => []];
 
         if($recherche['nom_verna'] == "true") {
             $case_nom = 'nom';
@@ -108,7 +94,7 @@ class FicheService extends AbstractController
         return $retour;
     }
 
-    public function getPagesPourRechercheNormale($recherche): array {
+    public function getPagesPourRechercheNormale(array $recherche): array {
         if ($recherche['retour'] === 'un' || $this->referentielAndNtExist($recherche)) {
             return $this->traiterRechercheTaxonUnique($recherche);
         }
@@ -120,7 +106,7 @@ class FicheService extends AbstractController
         return $this->traiterRechercheNomSci($recherche);
     }
 
-    public function formaterResultatsFiches($infos, $list, $filtres): FicheCollection
+    public function formaterResultatsFiches(array $infos, $list, array $filtres): FicheCollection
     {
         $resultats = [];
         foreach ($infos['resultat'] as $taxon) {
@@ -173,7 +159,7 @@ class FicheService extends AbstractController
         if (empty($infos)) return [];
 
         foreach ($infos['resultat'] as $taxon) {
-            $nums_taxo = explode(",", $taxon['num_taxon']);
+            $nums_taxo = explode(",", (string) $taxon['num_taxon']);
             foreach ($nums_taxo as $num_taxo) {
                 $infosTaxon = $this->efloreService->getInfosTaxons($recherche['referentiel'], $num_taxo);
                 if (!isset($infosTaxon['resultat'])) continue;
@@ -215,7 +201,7 @@ class FicheService extends AbstractController
 
     private function getNomsVernaculaires(string $referentiel, string $num_tax): array {
         $noms = [];
-        $vernacular_names = $this->efloreService->getVernacularName($referentiel, $num_tax, true);
+        $vernacular_names = $this->efloreService->getVernacularName($referentiel, (int) $num_tax, true);
         if ($vernacular_names) {
             foreach ($vernacular_names as $vn) {
                 $noms[] = $vn['nom'];

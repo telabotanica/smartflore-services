@@ -2,7 +2,6 @@
 
 namespace App\Model;
 
-use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -14,9 +13,9 @@ class Referentiel
      *     type="string",
      *     example="BDTFX"
      * )
-     * @Groups({"list_referentiel", "show_taxon"})
      */
-    private $nom;
+    #[Groups(['list_referentiel', 'show_taxon'])]
+    private string $nom;
 
     /**
      * @var string
@@ -24,9 +23,9 @@ class Referentiel
      *     type="string",
      *     example="France métropolitaine"
      * )
-     * @Groups({"list_referentiel", "show_taxon"})
      */
-    private $label;
+    #[Groups(['list_referentiel', 'show_taxon'])]
+    private string $label;
 
     /**
      * @var string|null
@@ -34,9 +33,9 @@ class Referentiel
      *     type="string",
      *     example="nvjfl"
      * )
-     * @Groups({"list_referentiel", "show_taxon"})
      */
-    private $nomVernaculaire;
+    #[Groups(['list_referentiel', 'show_taxon'])]
+    private ?string $nomVernaculaire = null;
 
     /**
      * @var string|null
@@ -44,9 +43,9 @@ class Referentiel
      *     type="string",
      *     example="null"
      * )
-     * @Groups({"list_referentiel", "show_taxon"})
      */
-    private $filtre;
+    #[Groups(['list_referentiel', 'show_taxon'])]
+    private ?string $filtre = null;
 
     /**
      * @var string
@@ -54,9 +53,9 @@ class Referentiel
      *     type="string",
      *     example="null"
      * )
-     * @Groups({"list_referentiel", "show_taxon"})
      */
-    private $fournisseur_fiches_especes;
+    #[Groups(['list_referentiel', 'show_taxon'])]
+    private string $fournisseur_fiches_especes;
 
     /**
      * @return string

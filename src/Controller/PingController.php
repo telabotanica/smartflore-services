@@ -2,12 +2,12 @@
 
 namespace App\Controller;
 
+use Symfony\Component\Routing\Attribute\Route;
 use App\Entity\Ping;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\Routing\Annotation\Route;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,6 +17,9 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class PingController extends AbstractController
 {
+    public function __construct(private readonly EntityManagerInterface $entityManager, private readonly SerializerInterface $serializer, private readonly ValidatorInterface $validator)
+    {
+    }
     /**
      * @OA\Response (
      *     response="201",
@@ -37,12 +40,12 @@ class PingController extends AbstractController
      * @OA\Post(
      *     summary="Save trails access (public)",
      * )
-     * @Route("/ping", name="Ping",methods={"POST"})
      */
-    public function ping(Request $request, EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator): Response
+    #[Route(path: '/ping', name: 'Ping', methods: ['POST'])]
+    public function ping(Request $request): Response
     {
-        $ping = $serializer->deserialize($request->getContent(), Ping::class, 'json');
-        $errors = $validator->validate($ping);
+        $ping = $this->serializer->deserialize($request->getContent(), Ping::class, 'json');
+        $errors = $this->validator->validate($ping);
         if (count($errors) > 0) {
             throw new BadRequestHttpException((string)$errors);
         }
@@ -50,7 +53,7 @@ class PingController extends AbstractController
         if ($ping->isFromWebsite() === true) {
             $ip = $request->getClientIp();
 
-            $existingPing = $entityManager
+            $existingPing = $this->entityManager
                 ->getRepository(Ping::class)
                 ->findTodayPingByIpAndTrail($ip, $ping->getTrail());
 
@@ -61,10 +64,10 @@ class PingController extends AbstractController
             $ping->setIp($ip);
         }
 
-        $entityManager->persist($ping);
-        $entityManager->flush();
+        $this->entityManager->persist($ping);
+        $this->entityManager->flush();
 
-        return new JsonResponse('Ping saved in Database', 201);
+        return new JsonResponse('Ping saved in Database', Response::HTTP_CREATED);
     }
 
     /**
@@ -87,16 +90,14 @@ class PingController extends AbstractController
      * @OA\Get(
      *     summary="Get a trail number of consultations",
      * )
-     * @Route("/ping/{id}", name="show_ping", methods={"GET"})
      */
+    #[Route(path: '/ping/{id}', name: 'show_ping', methods: ['GET'])]
     public function pingDetails(
-        SerializerInterface $serializer,
-        EntityManagerInterface $entityManager,
         $id
-    ) {
-        $pings = $entityManager->getRepository(Ping::class)->findBy(['trail' => $id]);
+    ): JsonResponse {
+        $pings = $this->entityManager->getRepository(Ping::class)->findBy(['trail' => $id]);
 
-        $json = $serializer->serialize($pings, 'json', ['groups' => 'show_ping']);
+        $json = $this->serializer->serialize($pings, 'json', ['groups' => 'show_ping']);
 
         return new JsonResponse($json, Response::HTTP_OK, [], true);
     }

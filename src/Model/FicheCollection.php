@@ -13,10 +13,10 @@ class FicheCollection
     /**
      * @var Entete
      * @OA\Property(ref=@Model(type=Entete::class))
-     * @Assert\Type(Entete::class)
-     * @Groups({"list_fiche"})
      */
-    private $entete;
+    #[Assert\Type(Entete::class)]
+    #[Groups(['list_fiche'])]
+    private Entete $entete;
 
     /**
      * @var FicheResultats[] | null $resultats
@@ -27,14 +27,14 @@ class FicheCollection
      * @Assert\All(
      *     @Assert\Type(FicheResultats::class)
      * )
-     * @Groups({"list_fiche"})
      */
-    private $resultats;
+    #[Groups(['list_fiche'])]
+    private ?array $resultats = null;
 
     /**
      * @return Entete
      */
-    public function getEntete(): \App\Model\Entete
+    public function getEntete(): Entete
     {
         return $this->entete;
     }
@@ -42,7 +42,7 @@ class FicheCollection
     /**
      * @param Entete $entete
      */
-    public function setEntete(\App\Model\Entete $entete): void
+    public function setEntete(Entete $entete): void
     {
         $this->entete = $entete;
     }

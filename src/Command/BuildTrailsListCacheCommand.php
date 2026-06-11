@@ -2,40 +2,28 @@
 
 namespace App\Command;
 
+use Symfony\Component\Console\Attribute\AsCommand;
+use Exception;
 use App\Repository\SentierRepository;
 use App\Service\CacheFileService;
 use App\Service\EfloreService;
 use App\Service\SharedService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'app:cache:build-trails-list', description: 'Construit le cache JSON de la liste des sentiers validés (smartflore_trails.json), ainsi que le cache des taxons et fiches de ses sentiers')]
 class BuildTrailsListCacheCommand extends Command
 {
-    protected static $defaultName = 'app:cache:build-trails-list';
-    protected static $defaultDescription = 'Construit le cache JSON de la liste des sentiers validés (smartflore_trails.json), ainsi que le cache des taxons et fiches de ses sentiers';
-    private CacheFileService $cacheFile;
-    private SentierRepository $sentierRepository;
-    private EfloreService $efloreService;
-    private SharedService $sharedService;
-    private EntityManagerInterface $em;
-
     public function __construct(
-        SentierRepository $sentierRepository,
-        CacheFileService $cacheFile,
-        EfloreService $efloreService,
-        SharedService $sharedService,
-        EntityManagerInterface $em
+        private readonly SentierRepository $sentierRepository,
+        private readonly CacheFileService $cacheFile,
+        private readonly EfloreService $efloreService,
+        private readonly SharedService $sharedService,
+        private readonly EntityManagerInterface $em
     ) {
-        $this->em = $em;
-        $this->sharedService = $sharedService;
-        $this->efloreService = $efloreService;
-        $this->sentierRepository = $sentierRepository;
-        $this->cacheFile = $cacheFile;
         parent::__construct();
     }
 
@@ -84,7 +72,7 @@ class BuildTrailsListCacheCommand extends Command
                             if ($taxon) {
                                 $this->cacheFile->saveTaxon($referentiel, $nameId, $taxon, ['show_taxon', 'full_images']);
                             }
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             $errors[] = sprintf('Trail %d,Taxon %s/%d : %s', $trail->getId(), $referentiel, $nameId, $e->getMessage());
                         }
                     }
@@ -96,7 +84,7 @@ class BuildTrailsListCacheCommand extends Command
                             if ($fiche) {
                                 $this->cacheFile->saveFiche($referentiel, $acceptedId, $fiche, ['list_fiche']);
                             }
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             $errors[] = sprintf('Fiche %s/%d : %s', $referentiel, $acceptedId, $e->getMessage());
                         }
                     }
@@ -105,7 +93,7 @@ class BuildTrailsListCacheCommand extends Command
                 // Libère la mémoire Doctrine après chaque sentier
                 $this->em->detach($trail);
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $errors[] = sprintf('Sentier %d (%s) : %s', $trail->getId(), $trail->getNom(), $e->getMessage());
             }
 

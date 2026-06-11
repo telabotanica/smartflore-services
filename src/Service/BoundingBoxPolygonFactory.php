@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use Exception;
 use League\Geotools\Polygon\Polygon;
 
 class BoundingBoxPolygonFactory
@@ -9,7 +10,7 @@ class BoundingBoxPolygonFactory
     public function createBoundingBoxPolygon(array $coords): Polygon
     {
         if (4 !== count($coords)) {
-            throw new \Exception('missing coords: '.implode(',', $coords));
+            throw new Exception('missing coords: '.implode(',', $coords));
         }
 
         $polygon = new Polygon([

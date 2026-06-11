@@ -2,7 +2,7 @@
 
 namespace App\Model;
 
-use App\Service\TrailsService;
+use DateTimeInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -16,57 +16,50 @@ class Trail
      *     type="int",
      *     example="146"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
     private $id;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="Arbres Remarquables"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     * @SerializedName("name")
      */
-    private $nom;
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    #[SerializedName('name')]
+    private ?string $nom = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="Arbres vraiment remarquables mais genre de ouf tmtc"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     * @SerializedName("display_name")
      */
-    private $displayName;
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    #[SerializedName('display_name')]
+    private ?string $displayName = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="Tela Botanica"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     * @SerializedName("author")
      */
-    private $auteur;
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    #[SerializedName('author')]
+    private ?string $auteur = null;
+
+    private ?string $authorId = null;
 
     /**
-     * @var string
-     */
-    private $authorId;
-
-    /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="draft"
      * )
-	 * @Groups({"user_trail"})
      */
-    private $status;
+    #[Groups(['user_trail'])]
+    private ?string $status = null;
 
     /**
      * @var float[]
@@ -75,9 +68,9 @@ class Trail
      *     @OA\Items(type="array", @OA\Items(type="float")),
      *     example={"start":{"lat":43.610769, "lng":3.876716}, "end":{"lat":43.610769, "lng":3.876716}}
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
-    private $position;
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?array $position = null;
 
     /**
      * @var ?Occurrence[] $occurrences
@@ -85,92 +78,74 @@ class Trail
      *     type="array",
      *     @OA\Items(ref=@Model(type=Occurrence::class))
      * )
-     * @Groups({"show_trail"})
      */
-    private $occurrences;
+    #[Groups(['show_trail'])]
+    private ?array $occurrences = null;
 
     /**
-     * @var ?int $occurrencesCount
      * @OA\Property(
      *     type="int",
      *     example="42"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
-    private $occurrencesCount;
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?int $occurrencesCount = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="https://example.com/link+to+trail+details"
      * )
-     * @Groups({"list_trail", "user_trail"})
      */
-    private $details;
+    #[Groups(['list_trail', 'user_trail'])]
+    private ?string $details = null;
 
     /**
-     * @var ?Image
      * @OA\Property(ref=@Model(type=Image::class))
-     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
-    private $image;
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?Image $image = null;
 
     /**
-     * @var Path|null
      * @OA\Property(ref=@Model(type=Path::class))
-     * @SerializedName("path")
-     * @Groups({"show_trail"})
      */
-    private $chemin;
+    #[SerializedName('path')]
+    #[Groups(['show_trail'])]
+    private ?Path $chemin = null;
 
     /**
-     * @var int
      * @OA\Property(
      *     type="int",
      *     example="420"
      * )
-     * @Groups({"show_trail", "list_trail", "user_trail"})
      */
-    private $pathLength;
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    private ?int $pathLength = null;
 
 //    /**
-//     * @var int
-//     */
-//    private $dateModification;
+    //     * @var int
+    //     */
+    //    private $dateModification;
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    #[SerializedName('date_creation')]
+    private ?DateTimeInterface $date_creation = null;
 
-    /**
-     * @var \DateTimeInterface|null
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     * @SerializedName("date_creation")
-     */
-    private $date_creation;
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    #[SerializedName('date_modification')]
+    private ?DateTimeInterface $date_modification = null;
 
-    /**
-     * @var \DateTimeInterface|null
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     * @SerializedName("date_modification")
-     */
-    private $date_modification;
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    #[SerializedName('date_suppression')]
+    private ?DateTimeInterface $date_suppression = null;
 
-    /**
-     * @var \DateTimeInterface|null
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     * @SerializedName("date_suppression")
-     */
-    private $date_suppression;
-
-    /**
-     * @var \DateTimeInterface|null
-     * @Groups({"show_trail", "list_trail", "user_trail"})
-     * @SerializedName("date_publication")
-     */
-    private $date_publication;
+    #[Groups(['show_trail', 'list_trail', 'user_trail'])]
+    #[SerializedName('date_publication')]
+    private ?DateTimeInterface $date_publication = null;
 
     /**
      * @return int|string
      */
-    public function getId()
+    public function getId(): int
     {
         return (int) $this->id;
     }
@@ -206,8 +181,8 @@ class Trail
     public function getDisplayName(): string
     {
         // mb_ucfirst
-        $firstChar = mb_substr($this->displayName, 0, 1);
-        $then = mb_substr($this->displayName, 1);
+        $firstChar = mb_substr((string) $this->displayName, 0, 1);
+        $then = mb_substr((string) $this->displayName, 1);
         return mb_strtoupper($firstChar) . $then;
     }
 
@@ -461,48 +436,48 @@ class Trail
 //        return $this;
 //    }
 
-    public function getDateCreation(): ?\DateTimeInterface
+    public function getDateCreation(): ?DateTimeInterface
     {
         return $this->date_creation;
     }
 
-    public function setDateCreation(?\DateTimeInterface $date_creation): self
+    public function setDateCreation(?DateTimeInterface $date_creation): self
     {
         $this->date_creation = $date_creation;
 
         return $this;
     }
 
-    public function getDateModification(): ?\DateTimeInterface
+    public function getDateModification(): ?DateTimeInterface
     {
         return $this->date_modification;
     }
 
-    public function setDateModification(?\DateTimeInterface $date_modification): self
+    public function setDateModification(?DateTimeInterface $date_modification): self
     {
         $this->date_modification = $date_modification;
 
         return $this;
     }
 
-    public function getDateSuppression(): ?\DateTimeInterface
+    public function getDateSuppression(): ?DateTimeInterface
     {
         return $this->date_suppression;
     }
 
-    public function setDateSuppression(?\DateTimeInterface $date_suppression): self
+    public function setDateSuppression(?DateTimeInterface $date_suppression): self
     {
         $this->date_suppression = $date_suppression;
 
         return $this;
     }
 
-    public function getDatePublication(): ?\DateTimeInterface
+    public function getDatePublication(): ?DateTimeInterface
     {
         return $this->date_publication;
     }
 
-    public function setDatePublication(?\DateTimeInterface $date_publication): self
+    public function setDatePublication(?DateTimeInterface $date_publication): self
     {
         $this->date_publication = $date_publication;
 

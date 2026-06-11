@@ -2,22 +2,25 @@
 
 namespace App\Controller;
 
+use Symfony\Component\Routing\Attribute\Route;
+use Exception;
 use App\Model\Login;
 use App\Service\AnnuaireService;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
-use phpDocumentor\Reflection\Types\Boolean;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class LoginController extends AbstractController
 {
+    public function __construct(private readonly AnnuaireService $annuaire, private readonly SerializerInterface $serializer)
+    {
+    }
     /**
      * @OA\Response (
      *     response="200",
@@ -26,20 +29,20 @@ class LoginController extends AbstractController
      *         @OA\Schema(type="string", example="thisisatokenlol")
      *     )
      * )
-	 * @OA\RequestBody(
-	 *     description="A JSON object containing login informations",
-	 *     required=true,
-	 *     @OA\JsonContent(
-	 *         type="object",
-	 *         ref=@Model(type=Login::class)
-	 *     )
-	 * )
+     * @OA\RequestBody(
+     *     description="A JSON object containing login informations",
+     *     required=true,
+     *     @OA\JsonContent(
+     *         type="object",
+     *         ref=@Model(type=Login::class)
+     *     )
+     * )
      * @OA\Tag(name="Login")
-     * @Route("/login", methods={"POST"})
      */
-    public function login(AnnuaireService $annuaire, Request $request, SerializerInterface $serializer)
+    #[Route(path: '/login', methods: ['POST'])]
+    public function login(Request $request): JsonResponse
     {
-		$loginInfos = $serializer->deserialize($request->getContent(), Login::class, 'json');
+		$loginInfos = $this->serializer->deserialize($request->getContent(), Login::class, 'json');
 		$login = $loginInfos->getLogin();
 		$password = $loginInfos->getPassword();
 
@@ -47,7 +50,7 @@ class LoginController extends AbstractController
             throw new BadRequestHttpException('Login or Password are empty');
         }
 
-        ['token' => $token, 'cookie' => $cookie, 'error' => $error] = $annuaire->getToken($login, $password);
+        ['token' => $token, 'cookie' => $cookie, 'error' => $error] = $this->annuaire->getToken($login, $password);
 
         $response = new JsonResponse($error ?? $token);
 		
@@ -58,7 +61,7 @@ class LoginController extends AbstractController
 			
 			return $response;
         } else {
-			return new JsonResponse($response->getContent(), 401, [], true);
+			return new JsonResponse($response->getContent(), Response::HTTP_UNAUTHORIZED, [], true);
 		}
 
     }
@@ -79,9 +82,9 @@ class LoginController extends AbstractController
      *     @OA\Schema(type="string")
      * )
      * @OA\Tag(name="Login")
-     * @Route("/login/refresh", methods={"POST"})
      */
-    public function refresh(AnnuaireService $annuaire, Request $request)
+    #[Route(path: '/login/refresh', methods: ['POST'])]
+    public function refresh(Request $request): JsonResponse
     {
         $token = $request->query->get('token', null);
         if (!$token) {
@@ -93,7 +96,7 @@ class LoginController extends AbstractController
             throw new BadRequestHttpException('Token is empty');
         }
 
-        ['token' => $token, 'error' => $error] = $annuaire->refreshToken($token, $cookie);
+        ['token' => $token, 'error' => $error] = $this->annuaire->refreshToken($token, $cookie);
 
         return $this->json(
             $error ?? $token
@@ -116,9 +119,9 @@ class LoginController extends AbstractController
      *     @OA\Schema(type="string")
      * )
      * @OA\Tag(name="Login")
-     * @Route("/login/refreshv2", methods={"GET"})
      */
-    public function refreshV2(AnnuaireService $annuaire, Request $request)
+    #[Route(path: '/login/refreshv2', methods: ['GET'])]
+    public function refreshV2(Request $request): Response|JsonResponse
     {
         $forceCookie = $request->query->get('cookie', null);
 
@@ -128,12 +131,12 @@ class LoginController extends AbstractController
                 $token = $request->headers->get('Authorization') ?? '';
             }
         } else {
-            $token = $annuaire->getRequestToken($request);
+            $token = $this->annuaire->getRequestToken($request);
         }
 
         $cookie = $request->cookies->all() ?? [];
 
-        ['token' => $token, 'duration' => $duration, 'token_id' => $token_id, 'error' => $error] = $annuaire->refreshToken($token, $cookie);
+        ['token' => $token, 'duration' => $duration, 'token_id' => $token_id, 'error' => $error] = $this->annuaire->refreshToken($token, $cookie);
 
         if ($error) {
             return new Response($error, Response::HTTP_BAD_REQUEST);
@@ -155,12 +158,12 @@ class LoginController extends AbstractController
      *     )
      * )
      * @OA\Tag(name="Login")
-     * @Route("/register", methods={"GET"})
      */
-    public function register(AnnuaireService $annuaire)
+    #[Route(path: '/register', methods: ['GET'])]
+    public function register(): JsonResponse
     {
         return $this->json([
-            'redirect' => $annuaire->getRegisterUrl(),
+            'redirect' => $this->annuaire->getRegisterUrl(),
             'text' => 'Smart’Flore propose la connexion avec un compte Tela Botanica, si besoin créez donc le votre depuis le site tela-botanica.org. Un mail de validation vous parviendra pour valider votre email et activer votre compte. Une fois votre compte actif vous pourrez vous connecter ici.'
         ]);
     }
@@ -177,21 +180,21 @@ class LoginController extends AbstractController
      * @OA\get(
      *     summary="check if user is admin or not",
      * )
-     * @Route("/admincheck", name="user_admincheck", methods={"GET"})
      */
-    public function checkIfAdmin(AnnuaireService $annuaire, Request $request): Response
+    #[Route(path: '/admincheck', name: 'user_admincheck', methods: ['GET'])]
+    public function checkIfAdmin(Request $request): Response
     {
         try {
-            $token = $annuaire->getRequestToken($request);
+            $token = $this->annuaire->getRequestToken($request);
             if (!$token) {
                 return new JsonResponse(['error' => 'No token found, veuillez vous reconnecter'], Response::HTTP_UNAUTHORIZED);
             }
-            $user = $annuaire->getUserInfos($token);
-        } catch (\Exception $e) {
+            $user = $this->annuaire->getUserInfos($token);
+        } catch (Exception $e) {
             return new JsonResponse(['error' => 'Erreur d\'authentification lors de la recherche des droits utilisateurs: '. $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
-        $isAdmin = $annuaire->isAdmin($user);
+        $isAdmin = $this->annuaire->isAdmin($user);
 
         return new JsonResponse(json_encode($isAdmin), Response::HTTP_OK, [], true);
     }
@@ -202,21 +205,18 @@ class LoginController extends AbstractController
      *     description="Logout successful"
      * )
      * @OA\Tag(name="Login")
-     * @Route("/logout", name="user_logout", methods={"GET"})
      */
-    public function logout(AnnuaireService $annuaire): Response
+    #[Route(path: '/logout', name: 'user_logout', methods: ['GET'])]
+    public function logout(): Response
     {
-        ['data' => $data, 'cookie' => $cookie, 'error' => $error] = $annuaire->logout();
-
+        ['data' => $data, 'cookie' => $cookie, 'error' => $error] = $this->annuaire->logout();
         $response = new JsonResponse(
             $error ?? $data,
             $error ? Response::HTTP_BAD_REQUEST : Response::HTTP_OK
         );
-
         if ($cookie) {
             $response->headers->setCookie($cookie);
         }
-
         return $response;
     }
 }

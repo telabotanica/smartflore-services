@@ -2,29 +2,22 @@
 
 namespace App\Command;
 
+use Symfony\Component\Console\Attribute\AsCommand;
+use DateTime;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Fiche;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'app:import:fiches', description: 'Import fiches from old Smart\'Flore service')]
 class ImportFichesCommand extends Command
 {
-    protected static $defaultName = 'app:import:fiches';
-    protected static $defaultDescription = 'Import fiches from old Smart\'Flore service';
-
-    private $connection;
-    private $entityManager;
-
-    public function __construct(Connection $connection, EntityManagerInterface $entityManager)
+    public function __construct(private readonly Connection $connection, private readonly EntityManagerInterface $entityManager)
     {
         parent::__construct();
-        $this->connection = $connection;
-        $this->entityManager = $entityManager;
     }
 
     protected function configure(): void
@@ -45,15 +38,15 @@ class ImportFichesCommand extends Command
         foreach ($rows as $row) {
             $fiche = new Fiche();
             $fiche->setTag($row['tag']);
-            if (preg_match('/nt(\d+)/i', $row['tag'], $matches)) {
+            if (preg_match('/nt(\d+)/i', (string) $row['tag'], $matches)) {
                 $fiche->setNt((string)$matches[1]);
             }
 
-            if (preg_match('/(?:SmartFlore)?([A-Z]+)nt\d+/i', $row['tag'], $matches)) {
+            if (preg_match('/(?:SmartFlore)?([A-Z]+)nt\d+/i', (string) $row['tag'], $matches)) {
                 $fiche->setReferentiel(strtolower($matches[1]));
             }
 
-            $fiche->setDateModification((new \DateTime($row['time'])));
+            $fiche->setDateModification((new DateTime($row['time'])));
 
             $desc = $this->extractSection($row['body'], 'Description');
             $usages = $this->extractSection($row['body'], 'Usage');

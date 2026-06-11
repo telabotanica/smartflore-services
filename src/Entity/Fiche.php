@@ -2,124 +2,117 @@
 
 namespace App\Entity;
 
+use DateTimeInterface;
 use App\Repository\FicheRepository;
 use Doctrine\ORM\Mapping as ORM;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-/**
- * @ORM\Entity(repositoryClass=FicheRepository::class)
- */
+#[ORM\Entity(repositoryClass: FicheRepository::class)]
 class Fiche
 {
     /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
      * @OA\Property(
      *     type="int",
      *     example="146"
      * )
-     * @Groups({"show_fiche", "list_fiche"})
      */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
+    #[Groups(['show_fiche', 'list_fiche'])]
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=255)
      * @OA\Property(
      *     type="string",
      *     example="SmartFloreBDTFXnt3363"
      * )
-     * @Groups({"create_fiche", "show_fiche", "list_fiche"})
      */
-    private $tag;
+    #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(['create_fiche', 'show_fiche', 'list_fiche'])]
+    private ?string $tag = null;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
      * @OA\Property(
      *     type="int",
      *     example="3363"
      * )
-     * @Groups({"create_fiche", "show_fiche", "list_fiche"})
      */
-    private $nt;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['create_fiche', 'show_fiche', 'list_fiche'])]
+    private ?string $nt = null;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
      * @OA\Property(
      *     type="string",
      *     example="bdtfx"
      * )
-     * @Groups({"create_fiche", "show_fiche", "list_fiche"})
      */
-    private $referentiel;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['create_fiche', 'show_fiche', 'list_fiche'])]
+    private ?string $referentiel = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Groups(['show_fiche', 'list_fiche'])]
+    private ?DateTimeInterface $date_modification = null;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
-     * @Groups({"show_fiche", "list_fiche"})
-     */
-    private $date_modification;
-
-    /**
-     * @ORM\Column(type="text", nullable=true)
      * @OA\Property(
      *     type="string",
      *     example="Plante vivace de 20-80 cm, velue, à souche épaisse et oblique\n- feuilles d'un vert terne\n- pédoncules hérissés\n- fleurs roses ou lilas..."
      * )
-     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
      */
-    private $description;
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['create_fiche', 'update_fiche', 'show_fiche', 'list_fiche'])]
+    private ?string $description = null;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
      * @OA\Property(
      *     type="string",
      *     example="Plante amère et détersive."
      * )
-     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
      */
-    private $usages;
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['create_fiche', 'update_fiche', 'show_fiche', 'list_fiche'])]
+    private ?string $usages = null;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
      * @OA\Property(
      *     type="string",
      *     example="Champs, prés et côteaux, dans toute la France et en Corse."
      * )
-     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
      */
-    private $ecologie;
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['create_fiche', 'update_fiche', 'show_fiche', 'list_fiche'])]
+    private ?string $ecologie = null;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
      * @OA\Property(
      *     type="string",
      *     example="https://www.tela-botanica.org/bdtfx-nn-75201-synthese"
      * )
-     * @Groups({"create_fiche", "update_fiche", "show_fiche", "list_fiche"})
      */
-    private $sources;
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['create_fiche', 'update_fiche', 'show_fiche', 'list_fiche'])]
+    private ?string $sources = null;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
      * @OA\Property(
      *     type="string",
      *     example="tela_user"
      * )
-     * @Groups({"show_fiche", "list_fiche"})
      */
-    private $proprietaire;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['show_fiche', 'list_fiche'])]
+    private ?string $proprietaire = null;
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
-    private $user;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $user = null;
 
-    /**
-     * @ORM\Column(type="boolean")
-     * @Groups({"show_fiche", "list_fiche"})
-     */
-    private $derniere_version;
+    #[ORM\Column(type: 'boolean')]
+    #[Groups(['show_fiche', 'list_fiche'])]
+    private ?bool $derniere_version = null;
 
 
 
@@ -164,12 +157,12 @@ class Fiche
         return $this;
     }
 
-    public function getDateModification(): ?\DateTimeInterface
+    public function getDateModification(): ?DateTimeInterface
     {
         return $this->date_modification;
     }
 
-    public function setDateModification(?\DateTimeInterface $date_modification): self
+    public function setDateModification(?DateTimeInterface $date_modification): self
     {
         $this->date_modification = $date_modification;
 
@@ -253,8 +246,8 @@ class Fiche
      *     type="boolean",
      *     example=true
      * )
-     * @Groups({"show_fiche", "list_fiche"})
      */
+    #[Groups(['show_fiche', 'list_fiche'])]
     public function isDerniereVersion(): ?bool
     {
         return $this->derniere_version;

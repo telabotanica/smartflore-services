@@ -8,24 +8,22 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class CardSection
 {
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="Description"
      * )
-     * @Groups({"show_taxon"})
      */
-    private $title;
+    #[Groups(['show_taxon'])]
+    private ?string $title = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="This is a description"
      * )
-     * @Groups({"show_taxon"})
      */
-    private $text;
+    #[Groups(['show_taxon'])]
+    private ?string $text = null;
 
     /**
      * @return string

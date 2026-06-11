@@ -8,24 +8,24 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class Login
 {
 	/**
-	 * @var string
-	 * @OA\Property(
-	 *     type="string",
-	 *     example="login@example.org"
-	 * )
-	 * @Groups({"Login"})
-	 */
-	private $login;
+     * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="login@example.org"
+     * )
+     */
+    #[Groups(['Login'])]
+    private string $login;
 	
 	/**
-	 * @var string
-	 * @OA\Property(
-	 *     type="string",
-	 *     example="Pa$$W0rd!"
-	 * )
-	 * @Groups({"Login"})
-	 */
-	private $password;
+     * @var string
+     * @OA\Property(
+     *     type="string",
+     *     example="Pa$$W0rd!"
+     * )
+     */
+    #[Groups(['Login'])]
+    private string $password;
 	
 	/**
 	 * @return string

@@ -3,6 +3,7 @@
 namespace App\Service;
 
 //use App\Service\ImageService;
+use Exception;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -17,21 +18,17 @@ use Symfony\Component\Serializer\SerializerInterface;
  */
 class CacheFileService
 {
-    private string $cachePath;
-    private Filesystem $filesystem;
-    private SerializerInterface $serializer;
-    private LoggerInterface $logger;
+    private readonly string $cachePath;
+    private readonly Filesystem $filesystem;
 //    private ImageService $imageService;
 
     public function __construct(
         string $cachePath,
-        SerializerInterface $serializer,
-        LoggerInterface $logger
+        private readonly SerializerInterface $serializer,
+        private readonly LoggerInterface $logger
     ) {
         $this->cachePath = rtrim($cachePath, '/');
         $this->filesystem = new Filesystem();
-        $this->serializer = $serializer;
-        $this->logger = $logger;
 
         $this->ensureCacheDirectoriesExist();
     }
@@ -206,7 +203,7 @@ class CacheFileService
         try {
             $dir = dirname($path);
             if (!is_dir($dir)) {
-                $this->filesystem->mkdir($dir, 0755, true);
+                $this->filesystem->mkdir($dir, 0755);
             }
 
             // Écriture atomique : on écrit dans un fichier temporaire puis on le déplace
@@ -215,7 +212,7 @@ class CacheFileService
             $this->filesystem->rename($tmpPath, $path, true);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error('FileCacheService: erreur lors de l\'écriture du cache.', [
                 'path' => $path,
                 'error' => $e->getMessage(),
@@ -236,7 +233,7 @@ class CacheFileService
         try {
             $this->filesystem->remove($path);
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error('FileCacheService: erreur lors de la suppression du cache.', [
                 'path' => $path,
                 'error' => $e->getMessage(),
@@ -263,7 +260,7 @@ class CacheFileService
                 try {
                     // Le composant Filesystem de Symfony crée les dossiers récursivement par défaut
                     $this->filesystem->mkdir($dir, 0755);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->logger->error('CacheFileService: impossible de créer le répertoire cache.', [
                         'dir' => $dir,
                         'error' => $e->getMessage(),

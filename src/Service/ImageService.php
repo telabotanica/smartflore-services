@@ -11,30 +11,20 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class ImageService
 {
-    private $client;
-    private $imageUrl;
-    private $imageMiniatureUrl;
-    private $ipApiV2Image;
-    private $cache;
-    private $efloreService;
+    private readonly HttpClientInterface $client;
 
 
     public function __construct(
-        string $imageUrl,
-        string $imageMiniatureUrl,
-        string $ipApiV2Image,
-        CacheInterface $cache,
-        EfloreService $efloreService
+        private readonly string $imageUrl,
+        private readonly string $imageMiniatureUrl,
+        private readonly string $ipApiV2Image,
+        private readonly CacheInterface $cache,
+        private readonly EfloreService $efloreService
     ) {
         /**
          * @var $client HttpClientInterface
          */
         $this->client = HttpClient::create();
-        $this->imageUrl = $imageUrl;
-        $this->imageMiniatureUrl = $imageMiniatureUrl;
-        $this->ipApiV2Image = $ipApiV2Image;
-        $this->cache = $cache;
-        $this->efloreService = $efloreService;
     }
 /*
     public function buildTrailImagesCache(Sentier $trail): void
@@ -153,7 +143,7 @@ class ImageService
     }
 */
 
-    public function findImageForTrail(Sentier $trail)
+    public function findImageForTrail(Sentier $trail): void
     {
         $image = null;
         $occurrences = $trail->getOccurrences();
@@ -193,7 +183,7 @@ class ImageService
 
     }
 
-    public function findImageFromId(string $image_id)
+    public function findImageFromId(string $image_id): \App\Model\Image
     {
         $image_api_id = str_pad($image_id, 9, '0', STR_PAD_LEFT);
         $mini = sprintf($this->imageMiniatureUrl, $image_api_id);
@@ -207,7 +197,7 @@ class ImageService
         }
 
         $image = new \App\Model\Image(
-            $image_id,
+            (int) $image_id,
             $url,
             $author,
             $mini

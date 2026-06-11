@@ -2,12 +2,10 @@
 
 namespace App\Command;
 
-use App\Entity\Favoris;
+use Symfony\Component\Console\Attribute\AsCommand;
+use DateTime;
 use App\Entity\Occurrence;
-use App\Entity\Path;
 use App\Entity\Sentier;
-use App\Model\Image;
-use App\Model\Taxon;
 use App\Service\AnnuaireService;
 use App\Service\CreateTrailService;
 use App\Service\EfloreService;
@@ -15,57 +13,31 @@ use App\Service\FicheService;
 use App\Service\ImageService;
 use App\Service\importService;
 use App\Service\SharedService;
-use App\Service\TrailsService;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Stopwatch\Stopwatch;
 
+#[AsCommand(name: 'app:import:sentiers', description: 'Import trails from old Smart\'Flore service')]
 class ImportSentiersCommand extends Command
 {
-    protected static $defaultName = 'app:import:sentiers';
-    protected static $defaultDescription = 'Import trails from old Smart\'Flore service';
-
-    private Connection $connection;
-    private EntityManagerInterface $entityManager;
-    private SerializerInterface $serializer;
-    private CreateTrailService $createTrailService;
-    private SharedService $sharedService;
-    private FicheService $ficheService;
-    private EfloreService $efloreService;
-    private importService $importService;
-    private AnnuaireService $annuaire;
-    private ImageService $imageService;
-
-    public function __construct(Connection $connection,
-                                EntityManagerInterface $entityManager,
-                                SerializerInterface $serializer,
-                                CreateTrailService $createTrailService,
-                                SharedService $sharedService,
-                                FicheService $ficheService,
-                                EfloreService $efloreService,
-                                importService $importService,
-                                AnnuaireService $annuaire,
-                                ImageService $imageService
+    public function __construct(private readonly Connection $connection,
+                                private readonly EntityManagerInterface $entityManager,
+                                private readonly SerializerInterface $serializer,
+                                private readonly CreateTrailService $createTrailService,
+                                private readonly SharedService $sharedService,
+                                private readonly FicheService $ficheService,
+                                private readonly EfloreService $efloreService,
+                                private readonly importService $importService,
+                                private readonly AnnuaireService $annuaire,
+                                private readonly ImageService $imageService
     )
     {
         parent::__construct();
-        $this->connection = $connection;
-        $this->entityManager = $entityManager;
-        $this->serializer = $serializer;
-        $this->createTrailService = $createTrailService;
-        $this->sharedService = $sharedService;
-        $this->ficheService = $ficheService;
-        $this->efloreService = $efloreService;
-        $this->importService = $importService;
-        $this->annuaire = $annuaire;
-        $this->imageService = $imageService;
     }
 
     protected function configure(): void
@@ -81,7 +53,7 @@ class ImportSentiersCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $stopwatch = new Stopwatch();
         $stopwatch->start('import-trails');
-        $today = new \DateTime("now");
+        $today = new DateTime("now");
 
         $timeStarted = $today->format('d-m-Y H:i:s');
         $io->title(sprintf('script started at %s .', ($timeStarted)));
@@ -143,7 +115,7 @@ class ImportSentiersCommand extends Command
         foreach ($trails as $trail) {
             // On récupère l'auteur et son email
             foreach ($trailsNames as $trailNameData) {
-                $data = json_decode($trailNameData['value'], true);
+                $data = json_decode((string) $trailNameData['value'], true);
                 if (isset($data['titre']) && $data['titre'] === $trail['nom']) {
                     $trail['auteur'] = $data['utilisateur'];
                     $trail['auteur_email'] = $data['utilisateur_courriel'];
@@ -162,7 +134,7 @@ class ImportSentiersCommand extends Command
             $sentierCoords = $positionJson['sentier'] ?? null;
             $individusWithPosition = $positionJson['individus'] ?? [];
 
-            $individus = explode('||', $trail['fiches']);;
+            $individus = explode('||', (string) $trail['fiches']);;
             $individusFusionnes = $this->importService->fusionneFichesAvecEtSansLocalisation($individus, $individusWithPosition);
 
             $sentier = new Sentier();
@@ -170,6 +142,7 @@ class ImportSentiersCommand extends Command
             $sentier = $this->importService->ajouterCheminAuSentier($trail, $sentier);
 
             // On cherche l'id de l'utilisateur
+            $userId = null;
             if ($sentier->getAuteurEmail()) {
                 //On cherche d'abord dans la table user avant de chercher dans l'annuaire pour éviter trop de requêtes
                 $emails = array_column($users, 'email');
@@ -241,7 +214,7 @@ class ImportSentiersCommand extends Command
         }
 
         $event = $stopwatch->stop('import-trails');
-        $end = new \DateTime("now");
+        $end = new DateTime("now");
         $timeFinished = $end->format('d-m-Y H:i:s');
         $io->success(['Sentiers, favoris et occurrences importées avec succès.',
             sprintf('Job started at %s, Job finished at %s. Elapsed time:%.2f m, Consumed memory: %.2f MB ',
