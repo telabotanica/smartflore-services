@@ -13,9 +13,9 @@ class Entete
      *     type="int",
      *     example="52"
      * )
-     * @Groups({"list_fiche"})
      */
-    private $total;
+    #[Groups(['list_fiche'])]
+    private int $total = 0;
 
     /**
      * @var int | string
@@ -23,9 +23,9 @@ class Entete
      *     type="int",
      *     example="0"
      * )
-     * @Groups({"list_fiche"})
      */
-    private $depart;
+    #[Groups(['list_fiche'])]
+    private int $depart = 0;
 
     /**
      * @var int | string
@@ -33,9 +33,9 @@ class Entete
      *     type="int",
      *     example="10"
      * )
-     * @Groups({"list_fiche"})
      */
-    private $limite;
+    #[Groups(['list_fiche'])]
+    private int $limite = 0;
 
     /**
      * @var string | null
@@ -43,9 +43,9 @@ class Entete
      *     type="int",
      *     example="referentiel=bdtfx&num_tax=141"
      * )
-     * @Groups({"list_fiche"})
      */
-    private $masque;
+    #[Groups(['list_fiche'])]
+    private ?string $masque = null;
 
     /**
      * @var string | null
@@ -53,9 +53,9 @@ class Entete
      *     type="int",
      *     example="http://127.0.0.1:8000/fiche?limite=10&debut=20&referentiel=bdtfx&num_tax=141"
      * )
-     * @Groups({"list_fiche"})
      */
-    private $href_suivant;
+    #[Groups(['list_fiche'])]
+    private ?string $href_suivant = null;
 
     /**
      * @var string | null
@@ -63,9 +63,9 @@ class Entete
      *     type="int",
      *     example="http://127.0.0.1:8000/fiche?limite=10&debut=0&referentiel=bdtfx&num_tax=141"
      * )
-     * @Groups({"list_fiche"})
      */
-    private $href_precedent;
+    #[Groups(['list_fiche'])]
+    private ?string $href_precedent = null;
 
     /**
      * @return int

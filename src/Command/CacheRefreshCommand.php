@@ -2,6 +2,7 @@
 
 namespace App\Command;
 
+use Symfony\Component\Console\Attribute\AsCommand;
 use App\Service\CacheService;
 use App\Service\TrailsService;
 use Symfony\Component\Console\Command\Command;
@@ -10,21 +11,13 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'app:cache:refresh', description: 'Refresh cache, choose one or all at once')]
 class CacheRefreshCommand extends Command
 {
-    protected static $defaultName = 'app:cache:refresh';
-    protected static $defaultDescription = 'Refresh cache, choose one or all at once';
-
-    private $cache;
-    private $trails;
-
     public function __construct(
-        CacheService $cache,
-        TrailsService $trails
+        private readonly CacheService $cache,
+        private readonly TrailsService $trails
     ) {
-        $this->cache = $cache;
-        $this->trails = $trails;
-
         parent::__construct();
     }
 

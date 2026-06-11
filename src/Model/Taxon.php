@@ -10,94 +10,83 @@ use Symfony\Component\Serializer\Annotation\SerializedName;
 class Taxon
 {
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="Acer campestre"
      * )
-     * @Groups({"show_trail", "show_taxon"})
      */
-    private $espece;
+    #[Groups(['show_trail', 'show_taxon'])]
+    private ?string $espece = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="Acer campestre L."
      * )
-     * @SerializedName("scientific_name",  "create_trail")
-     * @Groups({"show_trail", "show_taxon",  "create_trail"})
      */
-    private $fullScientificName;
+    #[SerializedName('scientific_name')]
+    #[Groups(['show_trail', 'show_taxon', 'create_trail'])]
+    private ?string $fullScientificName = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="<span class=""sci""><span class=""gen"">Acer</span> <span class=""sp"">campestre</span></span> <span class=""auteur"">L.</span> [<span class=""annee"">1753</span>, <span class=""biblio"">Sp. Pl., 2 : 1055</span>]"
      * )
-     * @Groups({"show_taxon"})
      */
-    private $htmlFullScientificName;
+    #[Groups(['show_taxon'])]
+    private ?string $htmlFullScientificName = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="Acer"
      * )
-     * @SerializedName("genus")
-     * @Groups({"show_taxon"})
      */
-    private $genre;
+    #[SerializedName('genus')]
+    #[Groups(['show_taxon'])]
+    private ?string $genre = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="Sapindaceae"
      * )
-     * @SerializedName("family")
-     * @Groups({"show_taxon"})
      */
-    private $famille;
+    #[SerializedName('family')]
+    #[Groups(['show_taxon'])]
+    private ?string $famille = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     example="bdtfx"
      * )
-     * @SerializedName("taxon_repository")
-     * @Groups({"show_trail", "show_taxon", "create_trail", "add_occurrence"})
      */
-    private $referentiel;
+    #[SerializedName('taxon_repository')]
+    #[Groups(['show_trail', 'show_taxon', 'create_trail', 'add_occurrence'])]
+    private ?string $referentiel = null;
 
     /**
-     * @var int
      * @OA\Property(
      *     type="int",
      *     example="141"
      * )
-     * @SerializedName("name_id")
-     * @Groups({"show_trail", "show_taxon",  "create_trail", "add_occurrence"})
      */
-    private $numNom;
+    #[SerializedName('name_id')]
+    #[Groups(['show_trail', 'show_taxon', 'create_trail', 'add_occurrence'])]
+    private ?int $numNom = null;
+
+    private ?int $acceptedScientificNameId = null;
 
     /**
-     * @var int
-     */
-    private $acceptedScientificNameId;
-
-    /**
-     * @var int
      * @OA\Property(
      *     type="int",
      *     example="8522"
      * )
-     * @Groups({"show_taxon"})
      */
-    private $taxonomicId;
+    #[Groups(['show_taxon'])]
+    private ?int $taxonomicId = null;
 
     /**
      * @var string[]
@@ -111,8 +100,8 @@ class Taxon
      *         "Érable champêtre"
      *     }
      * )
-     * @Groups({"show_trail", "show_taxon"})
      */
+    #[Groups(['show_trail', 'show_taxon'])]
     private $vernacularNames;
 
     /**
@@ -121,14 +110,14 @@ class Taxon
      *     type="array",
      *     @OA\Items(ref=@Model(type=CardTab::class))
      * )
-     * @Groups({"show_taxon"})
      */
-    private $tabs;
+    #[Groups(['show_taxon'])]
+    private ?array $tabs = null;
 
     /**
      * @return string
      */
-    public function getEspece(): string
+    public function getEspece(): ?string
     {
         return $this->espece;
     }
@@ -146,7 +135,7 @@ class Taxon
     /**
      * @return string
      */
-    public function getFullScientificName(): string
+    public function getFullScientificName(): ?string
     {
         return $this->fullScientificName;
     }
@@ -164,7 +153,7 @@ class Taxon
     /**
      * @return string
      */
-    public function getHtmlFullScientificName(): string
+    public function getHtmlFullScientificName(): ?string
     {
         return $this->htmlFullScientificName;
     }
@@ -182,7 +171,7 @@ class Taxon
     /**
      * @return string
      */
-    public function getGenre(): string
+    public function getGenre(): ?string
     {
         return $this->genre;
     }
@@ -200,7 +189,7 @@ class Taxon
     /**
      * @return string
      */
-    public function getFamille(): string
+    public function getFamille(): ?string
     {
         return $this->famille;
     }
@@ -218,7 +207,7 @@ class Taxon
     /**
      * @return string
      */
-    public function getReferentiel(): string
+    public function getReferentiel(): ?string
     {
         return $this->referentiel;
     }
@@ -236,7 +225,7 @@ class Taxon
     /**
      * @return int
      */
-    public function getNumNom(): int
+    public function getNumNom(): ?int
     {
         return $this->numNom;
     }
@@ -254,7 +243,7 @@ class Taxon
     /**
      * @return int
      */
-    public function getAcceptedScientificNameId(): int
+    public function getAcceptedScientificNameId(): ?int
     {
         return $this->acceptedScientificNameId;
     }
@@ -272,7 +261,7 @@ class Taxon
     /**
      * @return int
      */
-    public function getTaxonomicId(): int
+    public function getTaxonomicId(): ?int
     {
         return $this->taxonomicId;
     }
@@ -305,7 +294,7 @@ class Taxon
         return $this;
     }
 
-    public function addVernacularName(string $vernacularName, int $order = 0)
+    public function addVernacularName(string $vernacularName, int $order = 0): void
     {
         if ($order) {
             $previous = $this->vernacularNames[$order] ?? null;
@@ -363,7 +352,7 @@ class Taxon
     /**
      * @return CardTab[]
      */
-    public function getTabs(): array
+    public function getTabs(): ?array
     {
         return $this->tabs;
     }

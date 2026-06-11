@@ -2,27 +2,27 @@
 
 namespace App\Controller;
 
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Service\CacheService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Routing\Annotation\Route;
 
 class CacheController extends AbstractController
 {
-    /**
-     * @Route("/cache/status", methods={"GET"})
-     */
-    public function cacheStatus(CacheService $cache)
+    public function __construct(private readonly CacheService $cache)
     {
-        return $this->json($cache->getStatus());
+    }
+    #[Route(path: '/cache/status', methods: ['GET'])]
+    public function cacheStatus(): JsonResponse
+    {
+        return $this->json($this->cache->getStatus());
     }
 
-    /**
-     * @Route("/cache/warmup/{force}", name="cache_warmup", requirements={"force"="force"}, methods={"GET"})
-     */
-    public function warmupCache(CacheService $cache, bool $force = false)
+    #[Route(path: '/cache/warmup/{force}', name: 'cache_warmup', requirements: ['force' => 'force'], methods: ['GET'])]
+    public function warmupCache(bool $force = false): JsonResponse
     {
         set_time_limit(0);
 
-        return $this->json($cache->warmup($force));
+        return $this->json($this->cache->warmup($force));
     }
 }

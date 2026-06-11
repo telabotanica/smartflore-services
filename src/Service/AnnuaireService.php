@@ -2,6 +2,9 @@
 
 namespace App\Service;
 
+use DateTimeImmutable;
+use DateTimeZone;
+use Exception;
 use App\Entity\Occurrence;
 use App\Entity\Sentier;
 use App\Model\User;
@@ -10,38 +13,22 @@ use App\Model\User;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Cookie;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class AnnuaireService
 {
-    private $loginBaseUrl;
-    private $registerUrl;
-    private $cookieName;
-    private $admins;
-    private $annuaireFindUser;
-    private $trails;
-    private $client;
-    private $cookieDomaine;
+    private readonly HttpClientInterface $client;
 
     public function __construct(
-        string $annuaireLoginBaseUrl,
-        string $annuaireRegisterUrl,
-        string $annuaireCookieName,
-        string $admins,
-        string $annuaireFindUser,
-        string $cookieDomaine,
-        TrailsService $trailsService
+        private readonly string $loginBaseUrl,
+        private readonly string $registerUrl,
+        private readonly string $cookieName,
+        private readonly string $admins,
+        private readonly string $annuaireFindUser,
+        private readonly string $cookieDomaine,
+        private readonly TrailsService $trails
     ) {
-        $this->loginBaseUrl = $annuaireLoginBaseUrl;
-        $this->registerUrl = $annuaireRegisterUrl;
-        $this->cookieName = $annuaireCookieName;
-        $this->admins = $admins;
-        $this->annuaireFindUser = $annuaireFindUser;
-        $this->cookieDomaine = $cookieDomaine;
-        $this->trails = $trailsService;
         $this->client = HttpClient::create();
     }
 
@@ -72,7 +59,7 @@ class AnnuaireService
         ];
     }
 
-    public function logout()
+    public function logout(): array
     {
         $client = new HttpBrowser();
         $error = null;
@@ -88,7 +75,7 @@ class AnnuaireService
         }
         $cookie = Cookie::create($this->cookieName)
             ->withValue("deleted")
-            ->withExpires(new \DateTimeImmutable('1970-01-01', new \DateTimeZone('UTC')))
+            ->withExpires(new DateTimeImmutable('1970-01-01', new DateTimeZone('UTC')))
             ->withPath('/')
             ->withDomain($this->cookieDomaine)
             ->withSecure(false);
@@ -186,7 +173,7 @@ class AnnuaireService
             }
             $user = $this->getUserInfos($token);
             return ['user' => $user, 'token'=>$token, 'error' => null];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return ['user' => null, 'token'=> null, 'error' => 'Erreur d\'authentification: '. $e->getMessage()];
         }
     }
@@ -196,7 +183,7 @@ class AnnuaireService
      * (payload / claims)
      */
     public function decodeToken($token) {
-        $parts = explode('.', $token);
+        $parts = explode('.', (string) $token);
         $payload = $parts[1];
         $payload = $this->urlsafeB64Decode($payload);
         $payload = json_decode($payload, true);
@@ -207,7 +194,7 @@ class AnnuaireService
     /**
      * Method compatible with "urlsafe" base64 encoding used by JWT lib
      */
-    public function urlsafeB64Decode($input) {
+    public function urlsafeB64Decode(string $input): string {
         $remainder = strlen($input) % 4;
         if ($remainder) {
             $padlen = 4 - $remainder;
@@ -248,7 +235,7 @@ class AnnuaireService
             ['token' => $token, 'error' => $error] = $this->refreshToken($token, $cookie);
         } else {
             $error = 'No token found, veuillez vous reconnecter';
-            throw new \Exception($error);
+            throw new Exception($error);
         }
 
         return $token;
@@ -303,13 +290,13 @@ class AnnuaireService
                     return false;
                 }
 
-                throw new \Exception(sprintf(
+                throw new Exception(sprintf(
                     'Annuaire is not happy, getting some %d error for: "%s"',
                     $response->getStatusCode(),
                     $response->getInfo('url')
                 ));
             }
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return false;
         }
 

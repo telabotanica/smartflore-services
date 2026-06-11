@@ -39,7 +39,7 @@ class FicheRepository extends ServiceEntityRepository
         }
     }
 
-    public function findAllPaginated($filtres)
+    public function findAllPaginated(array $filtres)
     {
         $qb = $this->createQueryBuilder('f')
         ->select('f');
@@ -63,7 +63,7 @@ class FicheRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    private function addFiltersToQuery($qb, $filters)
+    private function addFiltersToQuery($qb, array $filters)
     {
         foreach ($filters as $key => $value) {
             if ($key == 'pages_existantes'){

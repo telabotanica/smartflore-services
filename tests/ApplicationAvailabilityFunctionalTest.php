@@ -13,15 +13,15 @@ class ApplicationAvailabilityFunctionalTest extends WebTestCase
     /**
      * @dataProvider urlProvider
      */
-    public function testPageIsSuccessful($url)
+    public function testPageIsSuccessful(string $url): void
     {
         $client = self::createClient();
-        $client->request('GET', $url);
+        $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, $url);
 
         $this->assertResponseIsSuccessful();
     }
 
-    public function urlProvider()
+    public function urlProvider(): \Iterator
     {
         yield ['/'];
         yield ['/cache/status'];
@@ -30,38 +30,38 @@ class ApplicationAvailabilityFunctionalTest extends WebTestCase
 //        yield ['/taxon/bdtfx/74934'];
     }
 
-    public function testSentierByName()
+    public function testSentierByName(): void
     {
         $client = self::createClient();
         $container = static::getContainer();
         $container->set(HttpClientInterface::class,
             new FakeHttpClient(TrailsApiMock::getResponses() + EfloreApiMock::getResponses()));
 
-        $client->request('GET', '/trail/REVE');
+        $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/trail/REVE');
 
         $this->assertResponseIsSuccessful();
     }
 
-    public function testSentierById()
+    public function testSentierById(): void
     {
         $client = self::createClient();
         $container = static::getContainer();
         $container->set(HttpClientInterface::class,
             new FakeHttpClient(TrailsApiMock::getResponses() + EfloreApiMock::getResponses()));
 
-        $client->request('GET', '/trail/146');
+        $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/trail/146');
 
         $this->assertResponseIsSuccessful();
     }
 
-    public function testTrailsList()
+    public function testTrailsList(): void
     {
         $client = self::createClient();
         $container = static::getContainer();
         $container->set(HttpClientInterface::class,
             new FakeHttpClient(TrailsApiMock::getResponses() + EfloreApiMock::getResponses()));
 
-        $client->request('GET', '/trails');
+        $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/trails');
 
         $this->assertResponseIsSuccessful();
     }

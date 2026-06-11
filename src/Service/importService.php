@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use DateTime;
+use Exception;
 use App\Entity\Favoris;
 use App\Entity\Occurrence;
 use App\Entity\Path;
@@ -13,15 +15,8 @@ use App\Service\CreateTrailService;
 
 class importService
 {
-    private EfloreService $efloreService;
-    private CreateTrailService $createTrailService;
-    private SharedService $sharedService;
-
-    public function __construct(EfloreService $efloreService, CreateTrailService $createTrailService, SharedService $sharedService)
+    public function __construct(private readonly EfloreService $efloreService, private readonly CreateTrailService $createTrailService, private readonly SharedService $sharedService)
     {
-        $this->efloreService = $efloreService;
-        $this->createTrailService = $createTrailService;
-        $this->sharedService = $sharedService;
     }
 
     public function creerSentier(array $trail, Sentier $sentier, array $sentierCoords = null): Sentier
@@ -44,19 +39,19 @@ class importService
         }
 
         if (is_numeric($trail['date_creation'])) {
-            $sentier->setDateCreation((new \DateTime())->setTimestamp((int)$trail['date_creation']));
+            $sentier->setDateCreation((new DateTime())->setTimestamp((int)$trail['date_creation']));
         } else {
-            $sentier->setDateCreation(new \DateTime('01-01-1970'));
+            $sentier->setDateCreation(new DateTime('01-01-1970'));
         }
         if (is_numeric($trail['date_modification'])) {
-            $sentier->setDateModification((new \DateTime())->setTimestamp((int)$trail['date_modification']));
+            $sentier->setDateModification((new DateTime())->setTimestamp((int)$trail['date_modification']));
 
             if ($sentier->getStatus() == 'Validé'){
-                $sentier->setDatePublication((new \DateTime())->setTimestamp((int)$trail['date_modification']));
+                $sentier->setDatePublication((new DateTime())->setTimestamp((int)$trail['date_modification']));
             }
         }
         if (is_numeric($trail['date_suppression'])) {
-            $sentier->setDateSuppression((new \DateTime())->setTimestamp((int)$trail['date_suppression']));
+            $sentier->setDateSuppression((new DateTime())->setTimestamp((int)$trail['date_suppression']));
         }
 
 
@@ -71,7 +66,7 @@ class importService
         foreach ($individus as $individu) {
             $positions = array_filter(
                 $individusWithPosition,
-                fn($item) => ($item['ficheTag'] ?? null) === $individu
+                fn(array $item): bool => ($item['ficheTag'] ?? null) === $individu
             );
 
             if (count($positions) > 0) {
@@ -106,11 +101,14 @@ class importService
             $path->setCoordinates($coordinates);
             $sentier->setChemin($path);
         }
-        $sentier->setPathLength(round(TrailsService::getTrailLength($sentier)));
+        $sentier->setPathLength((int) round(TrailsService::getTrailLength($sentier)));
         return $sentier;
     }
 
-    public function addTaxonToOccurrence(Occurrence $occurrence, array $individu, array $trail, array $taxons)
+    /**
+     * @return mixed[]
+     */
+    public function addTaxonToOccurrence(Occurrence $occurrence, array $individu, array $trail, array $taxons): array
     {
         $tabs = array_column($taxons, 'tabs');
         $index = array_search($individu['ficheTag'],$tabs);
@@ -137,7 +135,7 @@ class importService
                 // Besoin de $occurrence->getTaxon()['taxon_repository'] et $occurrence->getTaxon()['name_id']
                 $this->createTrailService->getCardTag($occurrence);
                 $taxons[] = $occurrence->getTaxon();
-            } catch (\Exception $e) {
+            } catch (Exception) {
 //                echo (" || ". $trail['nom'] . ": ". $referentiel ." ". $num_taxonomique ." ". $e->getMessage()) ;
             }
         }
@@ -183,7 +181,7 @@ class importService
             try {
                 $infos = $this->efloreService->getInfosTaxons($referentiel, $num_taxonomique);
                 $taxon = $this->mapTaxonInfos($infos, $referentiel, $num_taxonomique);
-            }  catch (\Exception $e) {
+            }  catch (Exception $e) {
                 echo (" || ". "erreur lors de la récupération du taxon" . ": ". $referentiel ." ". $num_taxonomique ." ". $e->getMessage()) ;
             }
         }
@@ -205,10 +203,10 @@ class importService
         return $taxon;
     }
 
-    public function addImagesToOccurrence(array $trail, array $individu, Occurrence $occurrence)
+    public function addImagesToOccurrence(array $trail, array $individu, Occurrence $occurrence): void
     {
         if ($trail['images']) {
-            foreach (json_decode($trail['images']) as $key => $value) { //$key=fichetag, $value=array avec images id
+            foreach (json_decode((string) $trail['images']) as $key => $value) { //$key=fichetag, $value=array avec images id
                 if (!is_array($value)) { // Cas où l'image est une simple string
                     $value = [$value];
                 }

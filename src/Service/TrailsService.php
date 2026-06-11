@@ -2,10 +2,9 @@
 
 namespace App\Service;
 
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Exception;
 use App\Entity\Sentier;
-//use App\Model\Image;
-use App\Entity\Image;
-use App\Model\Taxon;
 use App\Model\Trail;
 use App\Model\User;
 use App\Repository\SentierRepository;
@@ -20,41 +19,21 @@ use Symfony\Contracts\Cache\CacheInterface;
 
 class TrailsService
 {
-    private $client;
-    private $cache;
-    private $smartfloreLegacyApiBaseUrl;
-    private $userHashSecret;
-    private $router;
-    private $efloreService;
-    private SentierRepository $sentierRepository;
-    private ImageService $imageService;
-    private SerializerInterface $serializer;
-    private SharedService $sharedService;
-    private CacheFileService $cacheFile;
+    private readonly HttpClientInterface $client;
 
     public function __construct(
-        string $smartfloreLegacyApiBaseUrl,
-        string $userHashSecret,
-        CacheInterface $cache,
-        UrlGeneratorInterface $router,
-        EfloreService $efloreService,
-        SentierRepository $sentierRepository,
-        ImageService $imageService,
-        SerializerInterface $serializer,
-        SharedService $sharedService,
-        CacheFileService $cacheFile
+        private readonly string $smartfloreLegacyApiBaseUrl,
+        private readonly string $userHashSecret,
+        private readonly CacheInterface $cache,
+        private readonly UrlGeneratorInterface $router,
+        private readonly EfloreService $efloreService,
+        private readonly SentierRepository $sentierRepository,
+        private readonly ImageService $imageService,
+        private readonly SerializerInterface $serializer,
+        private readonly SharedService $sharedService,
+        private readonly CacheFileService $cacheFile
     ) {
         $this->client = HttpClient::create();
-        $this->cache = $cache;
-        $this->smartfloreLegacyApiBaseUrl = $smartfloreLegacyApiBaseUrl;
-        $this->userHashSecret = $userHashSecret;
-        $this->router = $router;
-        $this->efloreService = $efloreService;
-        $this->sentierRepository = $sentierRepository;
-        $this->imageService = $imageService;
-        $this->serializer = $serializer;
-        $this->sharedService = $sharedService;
-        $this->cacheFile = $cacheFile;
     }
 
     /**
@@ -62,7 +41,7 @@ class TrailsService
      * @return Sentier[]
      * encore dans cacheRefreshCommand et cacheService
      */
-    public function getTrails(bool $refresh = false)
+    public function getTrails(bool $refresh = false): array
     {
         if ($refresh) {
             $this->buildTrailsListCache();
@@ -97,7 +76,7 @@ class TrailsService
      * Description: get trail list from cache
      * TODO
      */
-    public function getTrailsList()
+    public function getTrailsList(): array
     {
         $trails = [];
         $trailsCache = $this->cache->getItem('trails.list');
@@ -157,7 +136,7 @@ class TrailsService
             return urldecode(end($parts));
         }
 
-        throw new \Exception('missing trail name');
+        throw new Exception('missing trail name');
     }
 
     public static function getTrailLength(Sentier $trail): float
@@ -225,7 +204,7 @@ class TrailsService
     {
         foreach ($trail->getOccurrences() as $occurrence) {
             $taxon = $occurrence->getTaxon();
-            if ($taxon['taxon_repository'] & $taxon['name_id']) {
+            if ($taxon['taxon_repository'] && $taxon['name_id']) {
                 $taxon = $this->efloreService->getTaxon(
                     $taxon['taxon_repository'], $taxon['name_id'], true);
 
@@ -254,7 +233,7 @@ class TrailsService
             );
         }
 
-        return array_map(fn(Sentier $sentier): Trail => $this->mapSentierToTrail($sentier), $sentiers);
+        return array_map($this->mapSentierToTrail(...), $sentiers);
     }
 
     private function mapSentierToTrail(Sentier $sentier): Trail
@@ -349,7 +328,7 @@ class TrailsService
         return $userTrailsList;
     }
 
-    public function buildTrailsListCache()
+    public function buildTrailsListCache(): void
     {
         $trailsCache = $this->cache->getItem('trails.list');
 
@@ -359,7 +338,7 @@ class TrailsService
         $this->cache->save($trailsCache);
     }
 
-    public function buildAllTrailsCache()
+    public function buildAllTrailsCache(): void
     {
         $trailsCache = $this->cache->getItem('trails.list');
 
@@ -385,7 +364,7 @@ class TrailsService
 					$this->buildOccurrencesTaxonInfos($trail);
 //					$this->imageService->buildTrailImagesCache($trail);
 				}
-			} catch (\Exception $e){
+			} catch (Exception $e){
 				print_r(' Erreur lors de la création du build trail cache du sentier: ');
 				print_r($trailName);
 				print_r(' '. $e->getMessage() . '/////');
@@ -395,7 +374,7 @@ class TrailsService
         }
     }
 
-    public function buildTrailCache(string $trailName)
+    public function buildTrailCache(string $trailName): void
     {
         $trailCache = $this->cache->getItem('trails.trail.'.$trailName);
         $trail = $this->sentierRepository->findOneBy(['nom' => $trailName, 'date_suppression' => null]);
@@ -411,7 +390,7 @@ class TrailsService
         $this->cache->save($trailCache);
     }
 
-    public function updateCacheTrailCards(array $trails){
+    public function updateCacheTrailCards(array $trails): void{
         foreach ($trails as $trail) {
             try {
                 $trailCache = $this->cache->getItem('trails.trail.' . $trail->getNom());
@@ -419,7 +398,7 @@ class TrailsService
                 if ($trail) {
                     $this->buildOccurrencesTaxonInfos($trail);
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 print_r(' Erreur lors de la maj du cache (cards)du sentier: ');
                 print_r($trail->getNom(), $trail->getId());
                 print_r(' ' . $e->getMessage() . '/////');
@@ -428,7 +407,10 @@ class TrailsService
         }
     }
 
-    public function getSearchCriterias(Request $request){
+    /**
+     * @return mixed[]
+     */
+    public function getSearchCriterias(Request $request): array{
         $criterias = [];
         $validSearchCriterias = ['nom', 'auteur', 'auteur_id', 'pmr', 'ordre', 'limite', 'page', 'status', 'show_deleted'];
 

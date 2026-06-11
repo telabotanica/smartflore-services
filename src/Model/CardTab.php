@@ -2,6 +2,7 @@
 
 namespace App\Model;
 
+use InvalidArgumentException;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -13,37 +14,34 @@ class CardTab
     public const CARD_TAB_ICONS = ['card', 'gallery', 'map', 'wikipedia', 'form', 'webview', 'default'];
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     description="Card, Gallery, Map, Wikipedia, etc.",
      *     example="Form"
      * )
-     * @Groups({"show_taxon"})
      */
-    private $title;
+    #[Groups(['show_taxon'])]
+    private ?string $title = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     description="card, gallery, webview, etc.",
      *     example="webview"
      * )
-     * @Groups({"show_taxon"})
      */
-    private $type;
+    #[Groups(['show_taxon'])]
+    private ?string $type = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     description="tab's icon: card, gallery, map, wikipedia, form, default, webview, etc.",
      *     example="map"
      * )
-     * @Groups({"show_taxon"})
      */
-    private $icon;
+    #[Groups(['show_taxon'])]
+    private ?string $icon = null;
 
     /**
      * @var CardSection[]
@@ -51,9 +49,9 @@ class CardTab
      *     type="array",
      *     @OA\Items(ref=@Model(type=CardSection::class))
      * )
-     * @Groups({"show_taxon"})
      */
-    private $sections;
+    #[Groups(['show_taxon'])]
+    private ?array $sections = null;
 
     /**
      * @var Image[]
@@ -61,9 +59,9 @@ class CardTab
      *     type="array",
      *     @OA\Items(ref=@Model(type=Image::class))
      * )
-     * @Groups({"full_images"})
      */
-    private $images;
+    #[Groups(['full_images'])]
+    private ?array $images = null;
 
     /**
      * @var Image[]
@@ -71,21 +69,20 @@ class CardTab
      *     type="array",
      *     @OA\Items(ref=@Model(type=Image::class))
      * )
-     * @Groups({"short_images"})
-     * @SerializedName("images")
      */
-    private $imagesShort;
+    #[Groups(['short_images'])]
+    #[SerializedName('images')]
+    private ?array $imagesShort = null;
 
     /**
-     * @var string
      * @OA\Property(
      *     type="string",
      *     description="Webview URL",
      *     example="https://fr.wikipedia.org/wiki/Acer_campestre"
      * )
-     * @Groups({"show_taxon"})
      */
-    private $url;
+    #[Groups(['show_taxon'])]
+    private ?string $url = null;
 
     /**
      * @return string
@@ -120,7 +117,7 @@ class CardTab
     public function setType(string $type): CardTab
     {
         if (!in_array($type, self::CARD_TAB_TYPES)) {
-            throw new \InvalidArgumentException('Given card type :"'.$type.'" is not allowed');
+            throw new InvalidArgumentException('Given card type :"'.$type.'" is not allowed');
         }
 
         $this->type = $type;
@@ -142,7 +139,7 @@ class CardTab
     public function setIcon(string $icon): CardTab
     {
         if (!in_array($icon, self::CARD_TAB_ICONS)) {
-            throw new \InvalidArgumentException('Given icon :"'.$icon.'" is not allowed');
+            throw new InvalidArgumentException('Given icon :"'.$icon.'" is not allowed');
         }
 
         $this->icon = $icon;

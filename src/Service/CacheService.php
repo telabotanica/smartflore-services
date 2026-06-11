@@ -2,23 +2,14 @@
 
 namespace App\Service;
 
+use DateTime;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Component\Stopwatch\Stopwatch;
 
 class CacheService
 {
-    private $trails;
-    private $cache;
-    private $stopwatch;
-
-    public function __construct(
-        TrailsService $trails,
-        CacheInterface $trailsCache,
-        Stopwatch $stopwatch
-    ) {
-        $this->trails = $trails;
-        $this->cache = $trailsCache;
-        $this->stopwatch = $stopwatch;
+    public function __construct(private readonly TrailsService $trails, private readonly CacheInterface $cache, private readonly Stopwatch $stopwatch)
+    {
     }
 
     /**
@@ -45,7 +36,7 @@ class CacheService
         } else {
             $stats = [
                 'trails' => count($trails),
-                'date' => (new \DateTime())->format('r'),
+                'date' => (new DateTime())->format('r'),
                 'forced' => $force,
                 'time' => $time.'s',
             ];
@@ -56,7 +47,7 @@ class CacheService
         return $stats;
     }
 
-    public function refresh()
+    public function refresh(): array
     {
         return $this->warmup(true);
     }

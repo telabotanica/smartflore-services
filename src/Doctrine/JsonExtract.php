@@ -12,7 +12,7 @@ class JsonExtract extends FunctionNode
     public $field = null;
     public $path = null;
 
-    public function parse(Parser $parser)
+    public function parse(Parser $parser): void
     {
         $parser->match(Lexer::T_IDENTIFIER); // JSON_EXTRACT
         $parser->match(Lexer::T_OPEN_PARENTHESIS);

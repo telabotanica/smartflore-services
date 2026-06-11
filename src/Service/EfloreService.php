@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Exception;
 use App\Entity\Fiche;
 use App\Model\CardTab;
 use App\Entity\Image;
@@ -22,55 +24,28 @@ class EfloreService
         'bdtxa' => 'nva',
     ];
 
-    private $client;
-    private $cache;
-    private $taxonApiBaseUrl;
-    private $cardApiBaseUrl;
-    private $imagesApiUrlTemplate;
-    private $imageCosteApiUrlTemplate;
-    private $vernacularNameApiUrlTemplate;
-    private $rechercheNomsVernaEfloreUrl;
-    private $rechercheNomUrl;
-    private $infosTaxonsUrl;
-    private $smartflorefronturl;
-    private SharedService $sharedService;
-    private CacheFileService $cacheFile;
-    private SerializerInterface $serializer;
+    private HttpClientInterface $client;
 
     public function __construct(
-        string           $taxonApiBaseUrl,
-        string           $cardApiBaseUrl,
-        string           $imagesApiUrlTemplate,
-        string           $imageCosteApiUrlTemplate,
-        string           $vernacularNameApiUrlTemplate,
+        private readonly string           $taxonApiBaseUrl,
+        private readonly string           $cardApiBaseUrl,
+        private readonly string           $imagesApiUrlTemplate,
+        private readonly string           $imageCosteApiUrlTemplate,
+        private readonly string           $vernacularNameApiUrlTemplate,
         bool             $useNativeHttpClient,
-        string           $rechercheNomsVernaEfloreUrl,
-        string           $rechercheNomUrl,
-        string           $infosTaxonsUrl,
-        string           $smartflorefronturl,
-        SharedService    $sharedService,
-        CacheFileService $cacheFile,
-        CacheInterface   $trailsCache, SerializerInterface $serializer
+        private readonly string           $rechercheNomsVernaEfloreUrl,
+        private readonly string           $rechercheNomUrl,
+        private readonly string           $infosTaxonsUrl,
+        private readonly string           $smartflorefronturl,
+        private readonly SharedService    $sharedService,
+        private readonly CacheFileService $cacheFile,
+        private readonly CacheInterface   $cache, private readonly SerializerInterface $serializer
     ) {
         if ($useNativeHttpClient) {
             $this->client = new NativeHttpClient();
         } else {
             $this->client = HttpClient::create();
         }
-
-        $this->cache = $trailsCache;
-        $this->taxonApiBaseUrl = $taxonApiBaseUrl;
-        $this->cardApiBaseUrl = $cardApiBaseUrl;
-        $this->imagesApiUrlTemplate = $imagesApiUrlTemplate;
-        $this->imageCosteApiUrlTemplate = $imageCosteApiUrlTemplate;
-        $this->vernacularNameApiUrlTemplate = $vernacularNameApiUrlTemplate;
-        $this->rechercheNomsVernaEfloreUrl = $rechercheNomsVernaEfloreUrl;
-        $this->rechercheNomUrl = $rechercheNomUrl;
-        $this->infosTaxonsUrl = $infosTaxonsUrl;
-        $this->smartflorefronturl = $smartflorefronturl;
-        $this->sharedService = $sharedService;
-        $this->cacheFile = $cacheFile;
-        $this->serializer = $serializer;
     }
 
     public function getTaxonRawInfo(string $taxonRepository, int $taxonNameId, bool $refresh = false)
@@ -85,9 +60,9 @@ class EfloreService
             );
 
             if (200 !== $response->getStatusCode()) {
-                throw new \Exception('Response status code is different than expected.');
+                throw new Exception('Response status code is different than expected.');
             }
-            $taxon = json_decode($response->getContent(), true);
+            $taxon = json_decode((string) $response->getContent(), true);
 
             $taxonCache->set($taxon);
             $this->cache->save($taxonCache);
@@ -98,13 +73,13 @@ class EfloreService
         return $taxonCache->get();
     }
 
-    public function getCardText(string $taxonRepository, string $taxonId,string $taxon_num_nom = null,  bool $refresh = false)
+    public function getCardText(string $taxonRepository, int $taxonId, int $taxon_num_nom = null,  bool $refresh = false)
     {
         $cardCache = $this->cache->getItem('taxon.card.SmartFlore'.strtoupper($taxonRepository).'nt'.$taxonId);
 
         $cached = $this->cacheFile->getFiche($taxonRepository, $taxonId); //For Smarflore v2
         if ($cached) {
-            $fiche = $this->serializer->deserialize(json_encode($cached, true), Fiche::class, 'json');
+            $fiche = $this->serializer->deserialize(json_encode($cached), Fiche::class, 'json');
             $card['id'] = $fiche->getId();
             $card['titre'] = $fiche->getTag();
             //TODO: voir comment ajouter le num nom du taxon
@@ -121,7 +96,7 @@ class EfloreService
             $fiche = $this->sharedService->chercherFiche($taxonRepository, $taxonId);
 
             if (!$fiche) {
-                throw new \Exception('No page found for taxon '.$taxonId.' in referentiel '.$taxonRepository);
+                throw new Exception('No page found for taxon '.$taxonId.' in referentiel '.$taxonRepository);
             }
 
             $card['id'] = $fiche->getId();
@@ -139,7 +114,7 @@ class EfloreService
         return $cardCache->get();
     }
 
-    public function getCardSpeciesImages(string $taxonRepository, string $taxonNameId, bool $refresh = false, int $limit = 4)
+    public function getCardSpeciesImages(string $taxonRepository, int $taxonNameId, bool $refresh = false, int $limit = 4)
     {
         $cardImagesCache = $this->cache->getItem('taxon.card.images.'.$taxonNameId);
 
@@ -149,10 +124,10 @@ class EfloreService
             $response = $this->client->request('GET', $imagesApiUrl, ['timeout' => 120]);
 
             if (200 !== $response->getStatusCode()) {
-                throw new \Exception('Response status code is different than expected.');
+                throw new Exception('Response status code is different than expected.');
             }
 
-            $images = json_decode($response->getContent(), true)['resultats'];
+            $images = json_decode((string) $response->getContent(), true)['resultats'];
 
             $res = [];
             foreach ($images as $image) {
@@ -188,9 +163,9 @@ class EfloreService
                 $response = $this->client->request('GET', $imageCosteApiUrl);
 
                 if (200 !== $response->getStatusCode()) {
-                    throw new \Exception('Response status code is different than expected.');
+                    throw new Exception('Response status code is different than expected.');
                 }
-                $image = json_decode($response->getContent(), true)['resultats'] ?? [];
+                $image = json_decode((string) $response->getContent(), true)['resultats'] ?? [];
                 $image = reset($image) ?: [];
                 if ($image) {
                     $image = new Image(0, $image['binaire.href'], 'Hippolyte Jacques Coste');
@@ -204,7 +179,7 @@ class EfloreService
         return $cardImageCosteCache->get();
     }
 
-    public function getVernacularName(string $taxonRepository, string $taxonId, bool $refresh = false)
+    public function getVernacularName(string $taxonRepository, int $taxonId, bool $refresh = false)
     {
         $vernacularReferential = $this::REFERENTIALS[$taxonRepository] ?? null;
         $vernacularNameCache = $this->cache->getItem('taxon.vernacular.name.'.$taxonId);
@@ -220,9 +195,9 @@ class EfloreService
                         404 === $response->getStatusCode()
                         && 'Les données recherchées sont introuvables.' === $response->getContent(false)
                     )) {
-                    throw new \Exception('Response status code is different than expected.');
+                    throw new Exception('Response status code is different than expected.');
                 }
-                $vernacularNames = json_decode($response->getContent(false), true)['resultat'] ?? [];
+                $vernacularNames = json_decode((string) $response->getContent(false), true)['resultat'] ?? [];
             }
 
             $vernacularNameCache->set($vernacularNames);
@@ -232,7 +207,7 @@ class EfloreService
         return $vernacularNameCache->get();
     }
 
-    public function consulterRechercheNomsVernaEflore($filtres) {
+    public function consulterRechercheNomsVernaEflore(array $filtres) {
         $vernacularReferential = $this::REFERENTIALS[$filtres['referentiel']] ?? null;
         $vernacularNames = [];
 
@@ -248,17 +223,17 @@ class EfloreService
                     404 === $response->getStatusCode()
                     && 'Les données recherchées sont introuvables.' === $response->getContent(false)
                 )) {
-                throw new \Exception('Response status code is different than expected.');
+                throw new Exception('Response status code is different than expected.');
             }
-            $vernacularNames = json_decode($response->getContent(false), true) ?? [];
+            $vernacularNames = json_decode((string) $response->getContent(false), true) ?? [];
         }
 
         return $vernacularNames;
     }
 
-    public function consulterRechercheNomsSciEflore($filtres) {
+    public function consulterRechercheNomsSciEflore(array $filtres) {
         $url_eflore_tpl = $this->taxonApiBaseUrl . $this->rechercheNomUrl;
-        $url = sprintf($url_eflore_tpl , strtolower($filtres['referentiel']), 'etendue', urlencode($filtres['recherche'].'%'), $filtres['debut'], $filtres['limite']);
+        $url = sprintf($url_eflore_tpl , strtolower((string) $filtres['referentiel']), 'etendue', urlencode($filtres['recherche'].'%'), $filtres['debut'], $filtres['limite']);
 
         if (isset($filtres['filtre'])) {
             $url .= '&masque.ref='.$filtres['filtre'];
@@ -270,22 +245,22 @@ class EfloreService
                 404 === $response->getStatusCode()
                 && 'Les données recherchées sont introuvables.' === $response->getContent(false)
             )) {
-            throw new \Exception('Response status code is different than expected.');
+            throw new Exception('Response status code is different than expected.');
         }
 
-        $infos = json_decode($response->getContent(false), true) ?? [];
+        $infos = json_decode((string) $response->getContent(false), true) ?? [];
 
         if (empty($infos)){
-            $url = sprintf($url_eflore_tpl, strtolower($filtres['referentiel']), 'floue', urlencode($filtres['recherche'].'%'), $filtres['debut'], $filtres['limite']);
+            $url = sprintf($url_eflore_tpl, strtolower((string) $filtres['referentiel']), 'floue', urlencode($filtres['recherche'].'%'), $filtres['debut'], $filtres['limite']);
             $response = $this->client->request('GET', $url);
             if (200 !== $response->getStatusCode() && !(
                     404 === $response->getStatusCode()
                     && 'Les données recherchées sont introuvables.' === $response->getContent(false)
                 )) {
-                throw new \Exception('Response status code is different than expected.');
+                throw new Exception('Response status code is different than expected.');
             }
 
-            $infos = json_decode($response->getContent(false), true) ?? [];
+            $infos = json_decode((string) $response->getContent(false), true) ?? [];
         }
 
         return $infos;
@@ -294,24 +269,24 @@ class EfloreService
     public function getInfosTaxons($referentiel, $num_tax): array
     {
         $url_eflore_tpl = $this->taxonApiBaseUrl . $this->infosTaxonsUrl;
-        $url = sprintf($url_eflore_tpl, strtolower($referentiel), $num_tax);
+        $url = sprintf($url_eflore_tpl, strtolower((string) $referentiel), $num_tax);
         $response = $this->client->request('GET', $url);
         if (200 !== $response->getStatusCode() && !(
                 404 === $response->getStatusCode()
                 && 'Les données recherchées sont introuvables.' === $response->getContent(false)
             )) {
-            throw new \Exception('Response status code is different than expected.');
+            throw new Exception('Response status code is different than expected.');
         }
 
-        return json_decode($response->getContent(false), true) ?? [];
+        return json_decode((string) $response->getContent(false), true) ?? [];
     }
 
-    public function getTaxon(string $taxonRepository, string $taxonNameId, bool $refresh = false)
+    public function getTaxon(string $taxonRepository, int $taxonNameId, bool $refresh = false): ?Taxon
     {
         try {
             $taxonInfos = $this->getTaxonRawInfo(
                 $taxonRepository, $taxonNameId, $refresh);
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return null;
         }
 
@@ -389,8 +364,8 @@ class EfloreService
         if (isset($taxonInfos['rang.libelle'], $taxonInfos['type_epithete']) && 'Espèce' !== $taxonInfos['rang.libelle']) {
             $wikipediaUrl = 'https://fr.wikipedia.org/wiki/'
                 .str_replace(' ', '_',
-                    mb_substr($taxonInfos['nom_sci_complet'], 0,
-                        mb_strpos($taxonInfos['nom_sci_complet'], ' '.$taxonInfos['type_epithete'])))
+                    mb_substr((string) $taxonInfos['nom_sci_complet'], 0,
+                        mb_strpos((string) $taxonInfos['nom_sci_complet'], ' '.$taxonInfos['type_epithete'])))
             ;
         }
         $wikipedia->setTitle('Wikipedia')
@@ -402,7 +377,7 @@ class EfloreService
         return $taxon;
     }
 
-    public function getTaxonRepositories(){
+    public function getTaxonRepositories(): array{
         $referentiels= [];
 
         $bdtfx = new Referentiel();

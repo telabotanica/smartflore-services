@@ -1,0 +1,85 @@
+name: Validate Skills
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate skills structure
+        run: npx --yes tsx scripts/validate_skills.ts
+
+      - name: Check skill naming convention
+        run: |
+          echo "Checking skill naming conventions..."
+
+          # Find all SKILL.md files and check frontmatter
+          find skills -name "SKILL.md" | while read skill_file; do
+            # Extract the name field from frontmatter
+            name=$(grep -A1 "^---" "$skill_file" | grep "^name:" | sed 's/name: //')
+
+            # Check if name starts with "symfony:"
+            if [[ -n "$name" && ! "$name" =~ ^symfony: ]]; then
+              echo "ERROR: $skill_file has invalid name: $name (must start with 'symfony:')"
+              exit 1
+            fi
+          done
+
+          echo "All skills follow naming convention!"
+
+      - name: Validate plugin.json
+        run: |
+          echo "Validating plugin.json..."
+
+          # Check required fields exist
+          if ! jq -e '.name' .claude-plugin/plugin.json > /dev/null 2>&1; then
+            echo "ERROR: plugin.json missing 'name' field"
+            exit 1
+          fi
+
+          if ! jq -e '.version' .claude-plugin/plugin.json > /dev/null 2>&1; then
+            echo "ERROR: plugin.json missing 'version' field"
+            exit 1
+          fi
+
+          if ! jq -e '.description' .claude-plugin/plugin.json > /dev/null 2>&1; then
+            echo "ERROR: plugin.json missing 'description' field"
+            exit 1
+          fi
+
+          echo "plugin.json is valid!"
+
+      - name: Validate command files
+        run: |
+          echo "Validating command files..."
+
+          for cmd_file in commands/*.md; do
+            if [[ -f "$cmd_file" ]]; then
+              # Check if file has frontmatter
+              if ! head -1 "$cmd_file" | grep -q "^---"; then
+                echo "ERROR: $cmd_file missing frontmatter"
+                exit 1
+              fi
+
+              # Check if description exists in frontmatter
+              if ! grep -q "^description:" "$cmd_file"; then
+                echo "ERROR: $cmd_file missing 'description' in frontmatter"
+                exit 1
+              fi
+            fi
+          done
+
+          echo "All command files are valid!"

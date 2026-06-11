@@ -64,3 +64,23 @@ symfony console app:cache:build-trails-list
 # En production (sans interaction)
 php bin/console app:cache:build-trails-list --no-ansi -q
 ```
+## Tests
+### Tous les tests
+```bash
+./bin/phpunit
+```
+
+### Tous les tests des contrôleurs
+```bash
+./bin/phpunit tests/Controller/
+```
+
+### Un fichier de test spécifique
+```bash
+./bin/phpunit tests/Controller/AdminControllerTest.php
+```
+
+### Un test spécifique
+```bash
+./bin/phpunit --filter "testPublishTrail$" tests/Controller/AdminControllerTest.php
+```

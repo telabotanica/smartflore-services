@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use DateTime;
 use Symfony\Component\HttpFoundation\Response;
 
 class ExportService
@@ -23,7 +24,7 @@ class ExportService
         return $response;
     }
 
-    public function exportTrailsCsv(array $sentiers) {
+    public function exportTrailsCsv(array $sentiers): Response {
         $list = [[
             'id',
             'titre',
@@ -61,7 +62,7 @@ class ExportService
             ];
         }
 
-        $today = (new \DateTime())->format('YmdHis');
+        $today = (new DateTime())->format('YmdHis');
 
         return $this->createCsv($list, 'export_sentiers_'. $today);
     }

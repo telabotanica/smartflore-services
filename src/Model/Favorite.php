@@ -2,7 +2,6 @@
 
 namespace App\Model;
 
-use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
@@ -16,15 +15,15 @@ class Favorite
      *     type="string",
      *     example="abcd@tela-botanica.org"
      * )
-     * @Groups({"show_favorite", "list_favorite"})
-     * @SerializedName("user")
      */
-    private $user;
+    #[Groups(['show_favorite', 'list_favorite'])]
+    #[SerializedName('user')]
+    private string $user;
 
     /**
      * @var string
      */
-    private $userId;
+    private string $userId;
 
     /**
      * @var string
@@ -32,9 +31,9 @@ class Favorite
      *     type="string",
      *     example="Acer campestre"
      * )
-     * @Groups({"show_favorite", "list_favorite"})
      */
-    private $scientificName;
+    #[Groups(['show_favorite', 'list_favorite'])]
+    private string $scientificName;
 
     /**
      * @var string
@@ -42,10 +41,10 @@ class Favorite
      *     type="string",
      *     example="bdtfx"
      * )
-     * @Assert\NotBlank
-     * @Groups({"show_favorite", "list_favorite"})
      */
-    private $taxonRepository;
+    #[Assert\NotBlank]
+    #[Groups(['show_favorite', 'list_favorite'])]
+    private string $taxonRepository;
 
     /**
      * @var int|string
@@ -53,9 +52,9 @@ class Favorite
      *     type="int",
      *     example="141"
      * )
-     * @Assert\NotBlank
-     * @Groups({"show_favorite", "list_favorite"})
      */
+    #[Assert\NotBlank]
+    #[Groups(['show_favorite', 'list_favorite'])]
     private $taxonId;
 
     /**

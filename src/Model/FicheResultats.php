@@ -15,8 +15,8 @@ class FicheResultats
      *     type="int",
      *     example="8522"
      * )
-     * @Groups({"list_fiche"})
      */
+    #[Groups(['list_fiche'])]
     private $num_taxonomique;
 
     /**
@@ -25,9 +25,9 @@ class FicheResultats
      *     type="string",
      *     example="Acer campestre"
      * )
-     * @Groups({"list_fiche"})
      */
-    private $nom_sci;
+    #[Groups(['list_fiche'])]
+    private string $nom_sci;
 
     /**
      * @var string
@@ -35,9 +35,9 @@ class FicheResultats
      *     type="string",
      *     example="Acer campestre L. [1753, Sp. Pl., 2 : 1055]"
      * )
-     * @Groups({"list_fiche"})
      */
-    private $nom_sci_complet;
+    #[Groups(['list_fiche'])]
+    private string $nom_sci_complet;
 
     /**
      * @var bool
@@ -45,9 +45,9 @@ class FicheResultats
      *     type="bool",
      *     example="true"
      * )
-     * @Groups({"list_fiche"})
      */
-    private $retenu;
+    #[Groups(['list_fiche'])]
+    private bool $retenu;
 
     /**
      * @var int | string
@@ -55,8 +55,8 @@ class FicheResultats
      *     type="int",
      *     example="141"
      * )
-     * @Groups({"list_fiche"})
      */
+    #[Groups(['list_fiche'])]
     private $num_nom;
 
     /**
@@ -65,9 +65,9 @@ class FicheResultats
      *     type="string",
      *     example="bdtfx"
      * )
-     * @Groups({"list_fiche"})
      */
-    private $referentiel;
+    #[Groups(['list_fiche'])]
+    private string $referentiel;
 
     /**
      * @var string[] | null
@@ -81,9 +81,9 @@ class FicheResultats
      *         "Érable champêtre"
      *     }
      * )
-     * @Groups({"list_fiche"})
      */
-    private $noms_vernaculaires;
+    #[Groups(['list_fiche'])]
+    private ?array $noms_vernaculaires = null;
 
     /**
      * @var Fiche | null
@@ -91,9 +91,9 @@ class FicheResultats
      *     type="object",
      *     ref=@Model(type=Fiche::class, groups={"list_fiche"})
      * )
-     * @Groups({"list_fiche"})
      */
-    private $fiche;
+    #[Groups(['list_fiche'])]
+    private ?Fiche $fiche = null;
 
     /**
      * @return int|string
@@ -101,8 +101,8 @@ class FicheResultats
      *     type="int",
      *     example="8522"
      * )
-     * @Groups({"list_fiche"})
      */
+    #[Groups(['list_fiche'])]
     public function getNumTaxonomique()
     {
         return $this->num_taxonomique;
@@ -122,8 +122,8 @@ class FicheResultats
      *     type="string",
      *     example="Acer campestre"
      * )
-     * @Groups({"list_fiche"})
      */
+    #[Groups(['list_fiche'])]
     public function getNomSci(): string
     {
         return $this->nom_sci;
@@ -131,8 +131,8 @@ class FicheResultats
 
     /**
      * @param string $nom_sci
-     * @Groups({"list_fiche"})
      */
+    #[Groups(['list_fiche'])]
     public function setNomSci(string $nom_sci): void
     {
         $this->nom_sci = $nom_sci;
@@ -144,8 +144,8 @@ class FicheResultats
      *     type="string",
      *     example="Acer campestre L. [1753, Sp. Pl., 2 : 1055]"
      * )
-     * @Groups({"list_fiche"})
      */
+    #[Groups(['list_fiche'])]
     public function getNomSciComplet(): string
     {
         return $this->nom_sci_complet;
@@ -181,8 +181,8 @@ class FicheResultats
      *     type="int",
      *     example="141"
      * )
-     * @Groups({"list_fiche"})
      */
+    #[Groups(['list_fiche'])]
     public function getNumNom()
     {
         return $this->num_nom;
@@ -224,8 +224,8 @@ class FicheResultats
      *         "Érable champêtre"
      *     }
      * )
-     * @Groups({"list_fiche"})
      */
+    #[Groups(['list_fiche'])]
     public function getNomsVernaculaires(): ?array
     {
         return $this->noms_vernaculaires;

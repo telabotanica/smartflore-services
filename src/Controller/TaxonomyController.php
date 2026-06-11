@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use Symfony\Component\Routing\Attribute\Route;
 use App\Model\Entete;
 use App\Model\FicheCollection;
 use App\Model\Referentiel;
@@ -15,23 +16,12 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class TaxonomyController extends AbstractController
 {
-    private SerializerInterface $serializer;
-    private FicheService $ficheService;
-    private CacheFileService $cacheFile;
-
-    public function __construct(
-        SerializerInterface $serializer,
-        FicheService $ficheService,
-        CacheFileService $cacheFile
-    ) {
-        $this->serializer = $serializer;
-        $this->ficheService = $ficheService;
-        $this->cacheFile = $cacheFile;
+    public function __construct(private readonly SerializerInterface $serializer, private readonly FicheService $ficheService, private readonly CacheFileService $cacheFile, private readonly EfloreService $eflore)
+    {
     }
 
     /**
@@ -61,21 +51,19 @@ class TaxonomyController extends AbstractController
      * @OA\Get(
      *     summary="Get taxon infos (public)",
      * )
-     * @Route("/taxon/{taxonRepository}/{taxonNameId}", name="show_taxon", methods={"GET"})
      */
+    #[Route(path: '/taxon/{taxonRepository}/{taxonNameId}', name: 'show_taxon', methods: ['GET'])]
     public function taxonInfo(
-        SerializerInterface $serializer,
-        EfloreService $eflore,
         string $taxonRepository,
         int $taxonNameId
-    ) {
+    ): JsonResponse {
         // --- Lecture cache fichier ---
         $cached = $this->cacheFile->getTaxon($taxonRepository, $taxonNameId);
         if ($cached !== null) {
             return new JsonResponse($cached, Response::HTTP_OK);
         }
 
-        $taxon = $eflore->getTaxon($taxonRepository, $taxonNameId, true);
+        $taxon = $this->eflore->getTaxon($taxonRepository, $taxonNameId, true);
 
         if (!$taxon) {
             return new JsonResponse(
@@ -88,9 +76,9 @@ class TaxonomyController extends AbstractController
         // --- Mise en cache ---
         $this->cacheFile->saveTaxon($taxonRepository, $taxonNameId, $taxon, ['show_taxon', 'full_images']);
 
-        $json = $serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
+        $json = $this->serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
 
-        return new JsonResponse($json, 200, [], true);
+        return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 
     /**
@@ -120,15 +108,13 @@ class TaxonomyController extends AbstractController
      * @OA\Get(
      *     summary="Get taxon infos (public)",
      * )
-     * @Route("/taxon/{taxonRepository}/nt/{taxonId}", name="show_taxon_from_nt", methods={"GET"})
      */
+    #[Route(path: '/taxon/{taxonRepository}/nt/{taxonId}', name: 'show_taxon_from_nt', methods: ['GET'])]
     public function taxonInfoFromNt(
-        SerializerInterface $serializer,
-        EfloreService $eflore,
         string $taxonRepository,
         int $taxonId
-    ) {
-        $taxon = $eflore->getInfosTaxons($taxonRepository, $taxonId);
+    ): JsonResponse {
+        $taxon = $this->eflore->getInfosTaxons($taxonRepository, $taxonId);
 
         if (!$taxon) {
             return new JsonResponse(
@@ -138,9 +124,9 @@ class TaxonomyController extends AbstractController
                 ], Response::HTTP_BAD_REQUEST);
         }
 
-        $json = $serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
+        $json = $this->serializer->serialize($taxon,'json', ['groups' => ['show_taxon', 'full_images']]);
 
-        return new JsonResponse($json, 200, [], true);
+        return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 
     /**
@@ -156,14 +142,13 @@ class TaxonomyController extends AbstractController
      * @OA\Get(
      *     summary="Get referentiels available (public)",
      * )
-     * @Route("/taxon/referentiels", name="list_referentiel", methods={"GET"})
      */
-    public function referentielInfo(SerializerInterface $serializer,EfloreService $eflore){
-        $referentiels= $eflore->getTaxonRepositories();
-
-        $json = $serializer->serialize($referentiels, 'json', ['groups' => 'list_referentiel']);
-
-        return new JsonResponse($json, 200, [], true);
+    #[Route(path: '/taxon/referentiels', name: 'list_referentiel', methods: ['GET'])]
+    public function referentielInfo(): JsonResponse
+    {
+        $referentiels= $this->eflore->getTaxonRepositories();
+        $json = $this->serializer->serialize($referentiels, 'json', ['groups' => 'list_referentiel']);
+        return new JsonResponse($json, Response::HTTP_OK, [], true);
     }
 
     /**
@@ -189,8 +174,8 @@ class TaxonomyController extends AbstractController
      * @OA\Get(
      *     summary="Search taxons with corresponding pages (public)",
      * )
-     * @Route("/taxons", name="list_fiche", methods={"GET"})
      */
+    #[Route(path: '/taxons', name: 'list_fiche', methods: ['GET'])]
     public function getFiches(Request $request): Response
     {
         $filtres = $this->ficheService->mapRequestFilters($request);
@@ -254,9 +239,9 @@ class TaxonomyController extends AbstractController
      * @OA\Get(
      *     summary="Search and return taxon names for reactive autocomplete search (public)",
      * )
-     * @Route("/taxons/search", name="search_fiche", methods={"GET"})
      */
     //eg. http://127.0.0.1:8000/fiche?referentiel=bdtfx&debut=10&num_tax=141&recherche=acer&retour=min&nom_verna=false&limite=10&referentiel_verna=nvjfl&filtre=acer&pages_existantes=true
+    #[Route(path: '/taxons/search', name: 'search_fiche', methods: ['GET'])]
     public function RechercheTaxon(Request $request): Response
     {
         $filtres = $this->ficheService->mapRequestFilters($request);

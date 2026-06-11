@@ -7,56 +7,41 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 class Image
 {
-    /**
-     * @var int
-     * @OA\Property(
-     *     type="int",
-     *     example="131269"
-     * )
-     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail"})
-     */
-    private $id;
-
-    /**
-     * @var string
-     * @OA\Property(
-     *     type="string",
-     *     example="https://api.tela-botanica.org/img:002221908O"
-     * )
-     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail"})
-     */
-    private $url;
-
-    /**
-     * @var string
-     * @OA\Property(
-     *     type="string",
-     *     example="Jean Michel Photographe"
-     * )
-     * @Groups({"show_trail", "list_trail", "show_taxon", "user_trail"})
-     */
-    private $author;
-
-    /**
-     * @var string|null
-     * @OA\Property(
-     *     type="string",
-     *     example="https://api.tela-botanica.org/img:002221908CXS"
-     * )
-     * @Groups({"show_trail", "list_trail", "user_trail", "show_taxon", "user_trail", "create_trail", "update_occurrence"})
-     */
-    private $mini;
-
     public function __construct(
-        int $id,
-        string $url,
-        string $author,
-        ?string $mini = null
-    ) {
-        $this->id = $id;
-        $this->url = $url;
-        $this->author = $author;
-        $this->mini = $mini;
+        /**
+         * @OA\Property(
+         *     type="int",
+         *     example="131269"
+         * )
+         */
+        #[Groups(['show_trail', 'list_trail', 'show_taxon', 'user_trail'])]
+        private int $id,
+        /**
+         * @OA\Property(
+         *     type="string",
+         *     example="https://api.tela-botanica.org/img:002221908O"
+         * )
+         */
+        #[Groups(['show_trail', 'list_trail', 'show_taxon', 'user_trail'])]
+        private string $url,
+        /**
+         * @OA\Property(
+         *     type="string",
+         *     example="Jean Michel Photographe"
+         * )
+         */
+        #[Groups(['show_trail', 'list_trail', 'show_taxon', 'user_trail'])]
+        private string $author,
+        /**
+         * @OA\Property(
+         *     type="string",
+         *     example="https://api.tela-botanica.org/img:002221908CXS"
+         * )
+         */
+        #[Groups(['show_trail', 'list_trail', 'user_trail', 'show_taxon', 'user_trail', 'create_trail', 'update_occurrence'])]
+        private ?string $mini = null
+    )
+    {
     }
 
     /**
