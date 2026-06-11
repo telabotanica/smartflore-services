@@ -6,11 +6,13 @@ New API for mobile app Smart'Flore & Smart'form dashboard
 
 ## Installation
 
-- PHP 7.4
-- Symfony 5.4
+- PHP 8.1
+- Symfony 6.4
 
 ```bash
 composer install
+ou
+/usr/bin/php8.1 /usr/local/bin/composer install
 ```
 
 ## Configuration
