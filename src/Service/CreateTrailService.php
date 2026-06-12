@@ -402,7 +402,8 @@ class CreateTrailService
     {
         $occurrences = $trail->getOccurrences();
         foreach ($occurrences as $occurrence) {
-            if (!$occurrence->getPosition()) {
+            $position = $occurrence->getPosition();
+            if (!$position || $position['lat'] === null || $position['lng'] === null) {
                 return false;
             }
         }
