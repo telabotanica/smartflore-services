@@ -187,12 +187,22 @@ class CreateTrailService
         $nt = $taxonFromOccurrence['taxonomic_id'] ?? null;
         $name_id = $taxonFromOccurrence['name_id'];
         $espece = $taxonFromOccurrence['scientific_name'];
+        if (stripos($espece, '<!doctype') !== false) {
+            throw new Exception('Nom scientifique invalide pour le taxon '.$name_id). 'un fichier html ne doit pas être associé au nom scientifique';
+        }
 
         $taxon = new Taxon();
         $taxonArray = [];
         try {
             //eg. https://api.tela-botanica.org/service:eflore:0.1/bdtfx/taxons/28211
             $taxonInfos = $this->eflore->getTaxonRawInfo($taxonRepository, $name_id);
+
+            if (
+                isset($taxonInfos['nom_sci'])
+                && stripos($taxonInfos['nom_sci'], '<!doctype') !== false
+            ) {
+                throw new Exception('Réponse invalide de l\'API Taxref pour le taxon '.$name_id);
+            }
 
             if (!$taxonRepository){
                 $taxonRepository = $taxonInfos['referentiel'] ?? "";
