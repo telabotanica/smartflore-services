@@ -198,6 +198,18 @@ class EfloreService
                     throw new Exception('Response status code is different than expected.');
                 }
                 $vernacularNames = json_decode((string) $response->getContent(false), true)['resultat'] ?? [];
+
+                $vernacularNames = array_filter(
+                    $vernacularNames,
+                    static function (array $vernacularName): bool {
+                        $name = ltrim((string) ($vernacularName['nom'] ?? ''));
+
+                        return stripos($name, '<!doctype html') !== 0
+                            && stripos($name, '<html') !== 0;
+                    }
+                );
+
+                $vernacularNames = array_values($vernacularNames);
             }
 
             $vernacularNameCache->set($vernacularNames);
