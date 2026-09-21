@@ -302,6 +302,13 @@ class EfloreService
             return null;
         }
 
+        if (
+            !isset($taxonInfos['nom_sci'])
+            || stripos($taxonInfos['nom_sci'], '<!doctype') !== false
+        ) {
+            return null;
+        }
+
         $taxon = new Taxon();
         $taxon
             ->setEspece($taxonInfos['nom_sci'])
